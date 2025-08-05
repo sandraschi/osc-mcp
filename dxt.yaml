@@ -1,0 +1,82 @@
+# DXT configuration for OSCMCP
+package:
+  name: oscmcp
+  version: 0.1.0
+  description: "Open Source Content Management Platform MCP Server"
+  author: "Your Name <your.email@example.com>"
+  license: "MIT"
+  classifiers:
+    - "Development Status :: 3 - Alpha"
+    - "Intended Audience :: Developers"
+    - "License :: OSI Approved :: MIT License"
+    - "Programming Language :: Python :: 3"
+    - "Programming Language :: Python :: 3.8"
+    - "Programming Language :: Python :: 3.9"
+    - "Programming Language :: Python :: 3.10"
+    - "Programming Language :: Python :: 3.11"
+
+# Dependencies
+dependencies:
+  - python>=3.8
+  - fastapi>=0.95.0
+  - uvicorn>=0.21.0
+  - pydantic>=1.10.0
+  - python-dotenv>=1.0.0
+
+# Development dependencies
+dev_dependencies:
+  - pytest>=7.0.0
+  - pytest-asyncio>=0.20.0
+  - black>=23.0.0
+  - isort>=5.12.0
+  - mypy>=1.0.0
+  - flake8>=6.0.0
+  - pytest-cov>=4.0.0
+
+# Build configuration
+build:
+  script: python -m build
+  output_dir: dist
+  clean_build: true
+
+# Test configuration
+test:
+  command: pytest --cov=oscmcp --cov-report=term-missing
+  coverage: 80
+
+# Package data
+package_data:
+  - "src/oscmcp/*.py"
+  - "src/oscmcp/*.yaml"
+  - "src/oscmcp/*.json"
+  - "README.md"
+  - "LICENSE"
+
+# Entry points
+entry_points:
+  console_scripts:
+    - "oscmcp = oscmcp.cli:main"
+
+# Documentation
+docs:
+  format: mkdocs
+  source_dir: docs
+  output_dir: site
+  theme: readthedocs
+
+# Deployment
+deploy:
+  pypi:
+    username: ${PYPI_USERNAME}
+    password: ${PYPI_PASSWORD}
+  test_pypi:
+    username: ${TEST_PYPI_USERNAME}
+    password: ${TEST_PYPI_PASSWORD}
+
+# Hooks
+hooks:
+  pre_build:
+    - "python -m pip install --upgrade pip"
+    - "pip install build"
+  post_build:
+    - "echo Build completed successfully!"
