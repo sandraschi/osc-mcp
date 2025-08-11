@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "oscmcp"
 version = "0.1.0"
-description = "Open Source Content Management Platform MCP Server"
+description = "Open Sound Control MCP Server for audio/visual automation"
 readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT"}
@@ -23,10 +23,11 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
 ]
 dependencies = [
-    "fastapi>=0.95.0",
-    "uvicorn>=0.21.0",
-    "pydantic>=1.10.0",
-    "python-dotenv>=1.0.0",
+    "fastmcp[all]>=2.10.0",
+    "python-osc>=1.8.0",
+    "python-rtmidi>=1.5.0",
+    "numpy>=1.21.0",
+    "asyncio>=3.4.3",
 ]
 
 [project.optional-dependencies]

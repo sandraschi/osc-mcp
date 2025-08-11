@@ -1,7 +1,7 @@
-"""OSCMCP - Open Source Content Management Platform MCP Server.
+"""OSCMCP - Open Sound Control MCP Server.
 
-This module provides a FastMCP 2.10 compliant MCP server for managing
-Open Source Content Management Platforms through a standardized interface.
+This module provides a FastMCP 2.10 compliant MCP server for audio/visual automation
+using the Open Sound Control (OSC) protocol.
 """
 
 __version__ = "0.1.0"
@@ -18,34 +18,38 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class OSCMCPServer:
-    """Main OSCMCP server class implementing FastMCP 2.10 protocol."""
+    """Main OSCMCP server class implementing FastMCP 2.10 protocol for OSC.
+    
+    This server provides tools for sending and receiving OSC messages,
+    with integration for audio/visual automation workflows.
+    """
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         """Initialize the OSCMCP server with optional configuration.
         
         Args:
-            config: Optional configuration dictionary
+            config: Optional configuration dictionary with OSC settings
         """
         self.config = config or {}
         self._initialized = False
         
     async def initialize(self) -> None:
-        """Initialize the MCP server resources."""
+        """Initialize the OSC server resources."""
         if self._initialized:
             return
             
         logger.info("Initializing OSCMCP server...")
-        # Add initialization logic here
+        # OSC server initialization will be added here
         self._initialized = True
         logger.info("OSCMCP server initialized successfully")
         
     async def shutdown(self) -> None:
-        """Shutdown the MCP server and release resources."""
+        """Shutdown the OSC server and release resources."""
         if not self._initialized:
             return
             
         logger.info("Shutting down OSCMCP server...")
-        # Add cleanup logic here
+        # OSC server cleanup will be added here
         self._initialized = False
         logger.info("OSCMCP server shutdown complete")
         
