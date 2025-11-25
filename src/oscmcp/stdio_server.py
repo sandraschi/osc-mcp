@@ -1,5 +1,9 @@
 """OSC-MCP Server with stdio transport.
 
+DEPRECATION WARNING: This module is deprecated and will be removed in v0.3.0.
+Use `oscmcp.server` instead, which supports both stdio and HTTP transports:
+    python -m oscmcp.server stdio
+
 This module implements a FastMCP 2.13 compliant MCP server for Open Sound Control
 that communicates over stdio, making it suitable for command-line usage and
 integration with other tools.

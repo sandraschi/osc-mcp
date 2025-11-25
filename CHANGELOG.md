@@ -7,8 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Unified Server Implementation** - Single server supporting both stdio and HTTP transports
+  - `python -m oscmcp.server` (stdio, default)
+  - `python -m oscmcp.server http` (HTTP transport)
+  - Command-line arguments for host/port configuration
+  - Eliminates code duplication across 3 separate server files
+
+### Changed
+- **Consolidated server.py** - Now the primary server implementation
+  - All comprehensive docstrings from mcp_server.py preserved
+  - Backward compatibility aliases (send_osc_message, start_osc_listener)
+  - Transport selection via command-line arguments
+
+### Deprecated
+- **mcp_server.py** - Use `oscmcp.server` instead (will be removed in v0.3.0)
+- **stdio_server.py** - Use `oscmcp.server` instead (will be removed in v0.3.0)
+
+### Documentation
+- Updated README.md with unified server usage instructions
+- Updated project structure section
+- Added Windows path for Claude Desktop configuration
+
 ### Planned
-- Consolidate duplicate server implementations
 - Persistent storage for OSC client/server state
 - Message buffer with `get_received_messages()` tool
 - OSC connection health monitoring

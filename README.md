@@ -78,33 +78,38 @@ pip install -e ".[dev]"
 
 ### Claude Desktop Integration
 
-Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS, `%APPDATA%\Claude\claude_desktop_config.json` on Windows):
 
 ```json
 {
   "mcpServers": {
     "osc": {
       "command": "python",
-      "args": ["-m", "oscmcp.mcp_server"],
+      "args": ["-m", "oscmcp.server"],
       "env": {}
     }
   }
 }
 ```
 
+**Note:** The unified `oscmcp.server` supports both stdio (default) and HTTP transports. For Claude Desktop, use the configuration above. For HTTP transport, run `python -m oscmcp.server http` separately.
+
 ## 🚀 Usage
 
 ### Starting the Server
 
 ```bash
-# Stdio transport (for Claude Desktop)
-python -m oscmcp.mcp_server
-
-# HTTP transport (alternative)
+# Stdio transport (default, for Claude Desktop)
 python -m oscmcp.server
+python -m oscmcp.server stdio
 
-# Alternative stdio server with extras
-python -m oscmcp.stdio_server
+# HTTP transport (for web-based MCP clients)
+python -m oscmcp.server http
+python -m oscmcp.server http --host 0.0.0.0 --port 8000
+
+# Deprecated alternatives (will be removed in v0.3.0)
+python -m oscmcp.mcp_server     # Use: python -m oscmcp.server stdio
+python -m oscmcp.stdio_server   # Use: python -m oscmcp.server stdio
 ```
 
 ### Basic Examples
@@ -223,9 +228,9 @@ await send_osc("localhost", 57120, "/n_free", [1000])
 ```
 osc-mcp/
 ├── src/oscmcp/
-│   ├── mcp_server.py        # Primary stdio server (3 tools)
-│   ├── stdio_server.py      # Alternative stdio server
-│   ├── server.py            # HTTP server variant
+│   ├── server.py            # Unified server (stdio + HTTP support)
+│   ├── mcp_server.py        # DEPRECATED: Use server.py instead
+│   ├── stdio_server.py      # DEPRECATED: Use server.py instead
 │   ├── osc/                 # OSC protocol implementation
 │   │   ├── client.py        # OSC client for sending
 │   │   └── server.py        # OSC server for receiving

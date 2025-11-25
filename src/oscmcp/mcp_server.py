@@ -1,5 +1,9 @@
 """OSC-MCP Server with stdio transport for MCP clients.
 
+DEPRECATION WARNING: This module is deprecated and will be removed in v0.3.0.
+Use `oscmcp.server` instead, which supports both stdio and HTTP transports:
+    python -m oscmcp.server stdio
+
 This module implements a FastMCP 2.13 compliant server that provides OSC functionality
 through the MCP protocol over stdio, making it compatible with MCP clients like Claude or Windsurf.
 """
