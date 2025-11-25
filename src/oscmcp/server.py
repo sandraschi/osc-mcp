@@ -39,6 +39,27 @@ server = FastMCP("OSC-MCP")
 osc_clients: Dict[str, SimpleUDPClient] = {}
 osc_servers: Dict[int, asyncio.Task] = {}
 
+# Message buffer for received OSC messages
+# Each port has its own message queue with max 1000 messages
+from collections import deque
+from datetime import datetime
+osc_message_buffer: Dict[int, deque] = {}
+MAX_BUFFER_SIZE = 1000
+
+# Connection health tracking
+connection_health: Dict[str, Dict[str, Any]] = {}
+# Format: {"host:port": {"last_success": datetime, "failure_count": int, "circuit_open": bool}}
+
+# Metrics tracking
+metrics = {
+    "messages_sent": 0,
+    "messages_received": 0,
+    "servers_started": 0,
+    "servers_stopped": 0,
+    "send_failures": 0,
+    "server_start_time": datetime.now()
+}
+
 # Note: ResponseCachingMiddleware and lifespan hooks may not be available
 # in all versions of FastMCP. They are optional features for improved performance
 # and resource management but not required for core functionality.
@@ -166,13 +187,37 @@ async def send_osc(
         values = []
 
     try:
-        # Get or create OSC client
+        # Check circuit breaker
         client_key = f"{host}:{port}"
+        if client_key in connection_health:
+            health = connection_health[client_key]
+            if health.get("circuit_open", False):
+                # Check if we should retry (after 30 seconds)
+                if (datetime.now() - health.get("last_failure", datetime.now())).seconds < 30:
+                    return {
+                        "status": "error",
+                        "message": f"Circuit breaker open for {client_key} - too many failures",
+                        "circuit_breaker": True
+                    }
+                else:
+                    # Reset circuit breaker
+                    health["circuit_open"] = False
+                    health["failure_count"] = 0
+
+        # Get or create OSC client
         if client_key not in osc_clients:
             osc_clients[client_key] = SimpleUDPClient(host, port)
 
         # Send the OSC message
         osc_clients[client_key].send_message(address, values)
+
+        # Update metrics and health
+        metrics["messages_sent"] += 1
+        if client_key not in connection_health:
+            connection_health[client_key] = {}
+        connection_health[client_key]["last_success"] = datetime.now()
+        connection_health[client_key]["failure_count"] = 0
+        connection_health[client_key]["circuit_open"] = False
 
         logger.info(f"Sent OSC to {host}:{port} - {address}: {values}")
         return {
@@ -183,6 +228,18 @@ async def send_osc(
             "values": values
         }
     except Exception as e:
+        # Update failure metrics
+        metrics["send_failures"] += 1
+        if client_key not in connection_health:
+            connection_health[client_key] = {}
+        connection_health[client_key]["failure_count"] = connection_health[client_key].get("failure_count", 0) + 1
+        connection_health[client_key]["last_failure"] = datetime.now()
+
+        # Open circuit breaker after 3 failures
+        if connection_health[client_key]["failure_count"] >= 3:
+            connection_health[client_key]["circuit_open"] = True
+            logger.warning(f"Circuit breaker opened for {client_key} after {connection_health[client_key]['failure_count']} failures")
+
         error = f"Failed to send OSC message: {e}"
         logger.error(error)
         return {"status": "error", "message": error}
@@ -334,12 +391,28 @@ async def start_osc_server(
         }
 
     try:
+        # Initialize message buffer for this port
+        if port not in osc_message_buffer:
+            osc_message_buffer[port] = deque(maxlen=MAX_BUFFER_SIZE)
+
         # Create dispatcher for OSC messages
         osc_dispatcher = dispatcher.Dispatcher()
 
-        # Default handler that logs received messages
+        # Default handler that logs and buffers received messages
         def osc_handler(osc_addr: str, *args: Any) -> None:
-            logger.info(f"Received OSC: {osc_addr} {args}")
+            # Store message in buffer
+            message = {
+                "address": osc_addr,
+                "values": list(args),
+                "timestamp": datetime.now().isoformat(),
+                "port": port
+            }
+            osc_message_buffer[port].append(message)
+
+            # Update metrics
+            metrics["messages_received"] += 1
+
+            logger.info(f"Received OSC on port {port}: {osc_addr} {args}")
 
         # Register default handler for all addresses
         osc_dispatcher.set_default_handler(osc_handler)
@@ -357,6 +430,9 @@ async def start_osc_server(
 
         # Store server info
         osc_servers[port] = transport
+
+        # Update metrics
+        metrics["servers_started"] += 1
 
         logger.info(f"Started OSC server on {address}:{port}")
         return {
@@ -517,6 +593,10 @@ async def stop_osc_server(port: int) -> Dict[str, Any]:
 
     try:
         transport.close()
+
+        # Update metrics
+        metrics["servers_stopped"] += 1
+
         logger.info(f"Stopped OSC server on port {port}")
         return {
             "status": "success",
@@ -527,6 +607,335 @@ async def stop_osc_server(port: int) -> Dict[str, Any]:
         error = f"Failed to stop OSC server: {e}"
         logger.error(error)
         return {"status": "error", "message": error}
+
+@server.tool()
+async def get_received_messages(
+    port: int,
+    limit: int = 100,
+    clear: bool = False
+) -> Dict[str, Any]:
+    """Get received OSC messages from the buffer for a specific port.
+
+    Retrieves messages that were received on the specified OSC server port.
+    Messages are stored in a circular buffer (max 1000 messages per port).
+
+    Args:
+        port: Port number of the OSC server to get messages from
+        limit: Maximum number of messages to return (default: 100, max: 1000)
+        clear: Whether to clear the buffer after retrieving messages (default: False)
+
+    Returns:
+        Dictionary with status, port, message count, and list of messages
+
+    Examples:
+        # Get last 10 messages
+        >>> await get_received_messages(9000, limit=10)
+        {'status': 'success', 'port': 9000, 'count': 10, 'messages': [...]}
+
+        # Get all messages and clear buffer
+        >>> await get_received_messages(9000, limit=1000, clear=True)
+    """
+    if port not in osc_message_buffer:
+        return {
+            "status": "error",
+            "message": f"No message buffer for port {port}. Start OSC server first."
+        }
+
+    buffer = osc_message_buffer[port]
+    messages = list(buffer)[-limit:]  # Get last N messages
+
+    if clear:
+        buffer.clear()
+
+    return {
+        "status": "success",
+        "port": port,
+        "count": len(messages),
+        "buffer_size": len(buffer),
+        "messages": messages
+    }
+
+@server.tool()
+async def get_connection_health() -> Dict[str, Any]:
+    """Get health status of all OSC connections.
+
+    Returns circuit breaker status, failure counts, and last success times
+    for all connections that have been used.
+
+    Returns:
+        Dictionary with health status for each connection
+
+    Examples:
+        >>> await get_connection_health()
+        {'status': 'success', 'connections': {'localhost:8000': {...}}}
+    """
+    health_status = {}
+    for key, health in connection_health.items():
+        health_status[key] = {
+            "failure_count": health.get("failure_count", 0),
+            "circuit_open": health.get("circuit_open", False),
+            "last_success": health.get("last_success", "Never").isoformat() if isinstance(health.get("last_success"), datetime) else "Never",
+            "last_failure": health.get("last_failure", "Never").isoformat() if isinstance(health.get("last_failure"), datetime) else "Never"
+        }
+
+    return {
+        "status": "success",
+        "connections": health_status
+    }
+
+@server.tool()
+async def get_metrics() -> Dict[str, Any]:
+    """Get server metrics and statistics.
+
+    Returns:
+        Dictionary with server metrics including message counts,
+        server status, and uptime
+
+    Examples:
+        >>> await get_metrics()
+        {'status': 'success', 'metrics': {...}}
+    """
+    uptime = (datetime.now() - metrics["server_start_time"]).total_seconds()
+
+    return {
+        "status": "success",
+        "metrics": {
+            "messages_sent": metrics["messages_sent"],
+            "messages_received": metrics["messages_received"],
+            "send_failures": metrics["send_failures"],
+            "servers_started": metrics["servers_started"],
+            "servers_stopped": metrics["servers_stopped"],
+            "active_servers": len(osc_servers),
+            "active_clients": len(osc_clients),
+            "uptime_seconds": uptime,
+            "start_time": metrics["server_start_time"].isoformat()
+        }
+    }
+
+@server.tool()
+async def clear_message_buffer(port: int = None) -> Dict[str, Any]:
+    """Clear the OSC message buffer for a port or all ports.
+
+    Args:
+        port: Port number to clear (None = clear all ports)
+
+    Returns:
+        Dictionary with status and cleared buffer information
+
+    Examples:
+        # Clear specific port
+        >>> await clear_message_buffer(9000)
+
+        # Clear all ports
+        >>> await clear_message_buffer()
+    """
+    if port is not None:
+        if port in osc_message_buffer:
+            count = len(osc_message_buffer[port])
+            osc_message_buffer[port].clear()
+            return {
+                "status": "success",
+                "message": f"Cleared {count} messages from port {port}"
+            }
+        else:
+            return {
+                "status": "error",
+                "message": f"No message buffer for port {port}"
+            }
+    else:
+        total = sum(len(buf) for buf in osc_message_buffer.values())
+        for buf in osc_message_buffer.values():
+            buf.clear()
+        return {
+            "status": "success",
+            "message": f"Cleared {total} messages from {len(osc_message_buffer)} ports"
+        }
+
+#
+# Application-Specific Tools
+#
+
+@server.tool()
+async def ableton_transport_control(
+    action: str,
+    host: str = "127.0.0.1",
+    port: int = 11000
+) -> Dict[str, Any]:
+    """Control Ableton Live transport (play, stop, etc).
+
+    Args:
+        action: Transport action - "play", "stop", "continue", or "record"
+        host: Ableton Live host (default: 127.0.0.1)
+        port: Ableton Live OSC port (default: 11000)
+
+    Returns:
+        Dictionary with status and action performed
+
+    Examples:
+        >>> await ableton_transport_control("play")
+        >>> await ableton_transport_control("stop")
+    """
+    action_map = {
+        "play": "/live/play",
+        "stop": "/live/stop",
+        "continue": "/live/continue_playing",
+        "record": "/live/start_listen"
+    }
+
+    if action not in action_map:
+        return {
+            "status": "error",
+            "message": f"Invalid action: {action}. Must be one of: {list(action_map.keys())}"
+        }
+
+    return await send_osc(host, port, action_map[action], [])
+
+@server.tool()
+async def ableton_set_tempo(
+    bpm: float,
+    host: str = "127.0.0.1",
+    port: int = 11000
+) -> Dict[str, Any]:
+    """Set Ableton Live tempo.
+
+    Args:
+        bpm: Tempo in beats per minute (20-999)
+        host: Ableton Live host (default: 127.0.0.1)
+        port: Ableton Live OSC port (default: 11000)
+
+    Returns:
+        Dictionary with status
+
+    Examples:
+        >>> await ableton_set_tempo(120.0)
+        >>> await ableton_set_tempo(140.5)
+    """
+    if not 20 <= bpm <= 999:
+        return {
+            "status": "error",
+            "message": "BPM must be between 20 and 999"
+        }
+
+    return await send_osc(host, port, "/live/tempo", [float(bpm)])
+
+@server.tool()
+async def ableton_track_control(
+    track: int,
+    parameter: str,
+    value: float,
+    host: str = "127.0.0.1",
+    port: int = 11000
+) -> Dict[str, Any]:
+    """Control Ableton Live track parameters.
+
+    Args:
+        track: Track number (1-based)
+        parameter: Parameter name - "volume", "pan", "mute", "solo", "arm"
+        value: Parameter value (0.0-1.0 for volume/pan, 0/1 for mute/solo/arm)
+        host: Ableton Live host (default: 127.0.0.1)
+        port: Ableton Live OSC port (default: 11000)
+
+    Returns:
+        Dictionary with status
+
+    Examples:
+        >>> await ableton_track_control(1, "volume", 0.8)
+        >>> await ableton_track_control(2, "mute", 1)
+    """
+    param_map = {
+        "volume": "/live/track/volume",
+        "pan": "/live/track/pan",
+        "mute": "/live/track/mute",
+        "solo": "/live/track/solo",
+        "arm": "/live/track/arm"
+    }
+
+    if parameter not in param_map:
+        return {
+            "status": "error",
+            "message": f"Invalid parameter: {parameter}. Must be one of: {list(param_map.keys())}"
+        }
+
+    address = f"{param_map[parameter]}/{track}"
+    return await send_osc(host, port, address, [float(value)])
+
+@server.tool()
+async def vrchat_avatar_parameter(
+    parameter: str,
+    value: float,
+    host: str = "127.0.0.1",
+    port: int = 9000
+) -> Dict[str, Any]:
+    """Set VRChat avatar parameter.
+
+    Args:
+        parameter: Avatar parameter name (e.g., "Voice", "Viseme", "GestureLeft")
+        value: Parameter value (typically 0.0-1.0)
+        host: VRChat OSC host (default: 127.0.0.1)
+        port: VRChat OSC port (default: 9000)
+
+    Returns:
+        Dictionary with status
+
+    Examples:
+        >>> await vrchat_avatar_parameter("Voice", 0.8)
+        >>> await vrchat_avatar_parameter("GestureLeft", 1.0)
+    """
+    address = f"/avatar/parameters/{parameter}"
+    return await send_osc(host, port, address, [float(value)])
+
+@server.tool()
+async def vrchat_input(
+    input_name: str,
+    value: float,
+    host: str = "127.0.0.1",
+    port: int = 9000
+) -> Dict[str, Any]:
+    """Simulate VRChat input.
+
+    Args:
+        input_name: Input name - "Jump", "Run", "MoveForward", "MoveBackward", etc.
+        value: Input value (0.0-1.0, or 0/1 for buttons)
+        host: VRChat OSC host (default: 127.0.0.1)
+        port: VRChat OSC port (default: 9000)
+
+    Returns:
+        Dictionary with status
+
+    Examples:
+        >>> await vrchat_input("Jump", 1)
+        >>> await vrchat_input("MoveForward", 0.5)
+    """
+    address = f"/input/{input_name}"
+    return await send_osc(host, port, address, [float(value)])
+
+@server.tool()
+async def touchdesigner_parameter(
+    operator_path: str,
+    parameter: str,
+    value: Any,
+    host: str = "127.0.0.1",
+    port: int = 9000
+) -> Dict[str, Any]:
+    """Set TouchDesigner operator parameter.
+
+    Args:
+        operator_path: Path to operator (e.g., "/project/geo1")
+        parameter: Parameter name (e.g., "tx", "ty", "tz", "opacity")
+        value: Parameter value (float, int, or string)
+        host: TouchDesigner OSC host (default: 127.0.0.1)
+        port: TouchDesigner OSC port (default: 9000)
+
+    Returns:
+        Dictionary with status
+
+    Examples:
+        >>> await touchdesigner_parameter("/project/geo1", "tx", 100.0)
+        >>> await touchdesigner_parameter("/project/comp1", "opacity", 0.75)
+    """
+    address = f"{operator_path}/{parameter}"
+    values = [value] if not isinstance(value, list) else value
+    return await send_osc(host, port, address, values)
 
 # Alias tools for backward compatibility
 send_osc_message = send_osc

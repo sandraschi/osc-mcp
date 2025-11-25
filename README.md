@@ -21,33 +21,35 @@ OSC-MCP bridges the gap between AI language models and professional creative too
 ## ✨ Features
 
 ### Core Capabilities
-- ✅ **FastMCP 2.13 Compliant** - Latest protocol support with server lifespans and caching
-- ✅ **Bidirectional Communication** - Send and receive OSC messages
-- ✅ **Response Caching** - 60-second TTL for improved performance
-- ✅ **Input Validation** - Pydantic models with port range and address pattern validation
-- ✅ **Resource Management** - Automatic cleanup with server lifespan hooks
-- ✅ **Multiple Transports** - Stdio (primary) and HTTP options
-- ✅ **Extensive Documentation** - Comprehensive docstrings with examples
+- ✅ **FastMCP 2.13 Compliant** - Latest protocol support
+- ✅ **Unified Server** - Single implementation supporting stdio and HTTP transports
+- ✅ **13 MCP Tools** - Core OSC, message management, monitoring, and app-specific tools
+- ✅ **Bidirectional Communication** - Send and receive OSC messages with automatic buffering
+- ✅ **Message Buffer** - Store and retrieve received messages (1000 msg capacity per port)
+- ✅ **Circuit Breaker** - Automatic failure detection and retry prevention
+- ✅ **Health Monitoring** - Track connection reliability and performance
+- ✅ **Metrics & Telemetry** - Real-time server statistics and usage tracking
+- ✅ **Input Validation** - Pydantic models with comprehensive validation
+- ✅ **Extensive Documentation** - 400+ lines of docstrings with examples
 
 ### Protocol Support
 - 🔌 **OSC 1.0 Protocol** - Full Open Sound Control specification support
 - 📡 **UDP Transport** - Low-latency, fire-and-forget messaging
 - 🔀 **Multiple Receivers** - Send to multiple applications simultaneously
-- 📥 **OSC Server** - Receive messages from applications
+- 📥 **Message Buffering** - Automatic storage with timestamps and metadata
 - 🏷️ **Type Support** - Int, float, string, bool values
+- 🔄 **Circuit Breaker** - Opens after 3 failures, auto-resets after 30s
 
 ### Application Integration
-Pre-configured support for 10+ professional applications:
-- **Ableton Live** - DAW automation
-- **TouchDesigner** - Visual programming
-- **VRChat** - Avatar and world control
-- **Max/MSP** - Audio/visual programming
-- **SuperCollider** - Audio synthesis
-- **Pure Data** - Visual programming
-- **VCV Rack** - Modular synthesis
-- **Resolume Arena** - VJ software
-- **QLab** - Show control
-- **OSCQuery** - Service discovery
+**High-level tools for popular applications:**
+- **Ableton Live** (3 tools) - Transport control, tempo, track parameters
+- **VRChat** (2 tools) - Avatar parameters, input simulation
+- **TouchDesigner** (1 tool) - Operator parameter control
+
+**Low-level OSC support for 10+ applications:**
+- Max/MSP, SuperCollider, Pure Data, VCV Rack
+- Resolume Arena, QLab, OSCQuery
+- Any OSC-enabled application
 
 ## 📦 Installation
 
@@ -143,41 +145,141 @@ await send_osc("127.0.0.1", 9000, "/avatar/parameters/Voice", [0.5])
 
 ### MCP Tools Available
 
-#### 1. `send_osc` / `send_osc_message`
-Send OSC messages to any application.
+OSC-MCP now provides **13 MCP tools** organized into categories:
+
+#### Core OSC Tools (3)
+
+**1. `send_osc` / `send_osc_message`**
+Send OSC messages to any application. Now includes circuit breaker protection!
 
 **Parameters:**
-- `host` (str): Target IP/hostname (e.g., "127.0.0.1")
+- `host` (str): Target IP/hostname
 - `port` (int): Target UDP port (1-65535)
 - `address` (str): OSC address pattern (must start with "/")
 - `values` (List[Any]): Optional values to send
 
-**Example:**
 ```python
 await send_osc("localhost", 8000, "/volume", [0.8])
 ```
 
-#### 2. `start_osc_server` / `start_osc_listener`
-Start receiving OSC messages.
+**2. `start_osc_server` / `start_osc_listener`**
+Start receiving OSC messages. Messages are automatically buffered!
 
 **Parameters:**
-- `port` (int): Port to listen on (1-65535)
-- `address` (str): Interface to bind ("0.0.0.0" for all, "127.0.0.1" for localhost)
+- `port` (int): Port to listen on
+- `address` (str): Interface to bind
 
-**Example:**
 ```python
 await start_osc_server(9000, "127.0.0.1")
 ```
 
-#### 3. `stop_osc_server`
+**3. `stop_osc_server`**
 Stop a running OSC receiver.
 
-**Parameters:**
-- `port` (int): Port of server to stop
-
-**Example:**
 ```python
 await stop_osc_server(9000)
+```
+
+#### Message Management Tools (2)
+
+**4. `get_received_messages`**
+Retrieve buffered OSC messages from a port.
+
+**Parameters:**
+- `port` (int): Port to get messages from
+- `limit` (int): Max messages to return (default: 100)
+- `clear` (bool): Clear buffer after retrieval (default: False)
+
+```python
+# Get last 10 messages
+await get_received_messages(9000, limit=10)
+
+# Get all and clear
+await get_received_messages(9000, limit=1000, clear=True)
+```
+
+**5. `clear_message_buffer`**
+Clear message buffer for a port or all ports.
+
+```python
+# Clear specific port
+await clear_message_buffer(9000)
+
+# Clear all ports
+await clear_message_buffer()
+```
+
+#### Monitoring Tools (2)
+
+**6. `get_connection_health`**
+View health status and circuit breaker state for all connections.
+
+```python
+await get_connection_health()
+# Returns: failure counts, circuit status, last success/failure times
+```
+
+**7. `get_metrics`**
+Get server statistics and performance metrics.
+
+```python
+await get_metrics()
+# Returns: messages sent/received, uptime, active servers/clients
+```
+
+#### Application-Specific Tools (6)
+
+**Ableton Live (3 tools)**
+
+**8. `ableton_transport_control`**
+Control playback (play, stop, continue, record).
+
+```python
+await ableton_transport_control("play")
+await ableton_transport_control("stop")
+```
+
+**9. `ableton_set_tempo`**
+Set tempo in BPM (20-999).
+
+```python
+await ableton_set_tempo(120.0)
+```
+
+**10. `ableton_track_control`**
+Control track parameters (volume, pan, mute, solo, arm).
+
+```python
+await ableton_track_control(1, "volume", 0.8)
+await ableton_track_control(2, "mute", 1)
+```
+
+**VRChat (2 tools)**
+
+**11. `vrchat_avatar_parameter`**
+Set avatar parameters (Voice, Viseme, gestures, etc).
+
+```python
+await vrchat_avatar_parameter("Voice", 0.8)
+await vrchat_avatar_parameter("GestureLeft", 1.0)
+```
+
+**12. `vrchat_input`**
+Simulate VR inputs (Jump, Run, movement, etc).
+
+```python
+await vrchat_input("Jump", 1)
+await vrchat_input("MoveForward", 0.5)
+```
+
+**TouchDesigner (1 tool)**
+
+**13. `touchdesigner_parameter`**
+Set operator parameters (position, opacity, etc).
+
+```python
+await touchdesigner_parameter("/project/geo1", "tx", 100.0)
+await touchdesigner_parameter("/project/comp1", "opacity", 0.75)
 ```
 
 ## 🎵 Application-Specific Usage

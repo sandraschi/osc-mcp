@@ -14,11 +14,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Command-line arguments for host/port configuration
   - Eliminates code duplication across 3 separate server files
 
+- **Message Buffer System** - Store and retrieve received OSC messages
+  - `get_received_messages()` - Retrieve buffered messages from a port
+  - `clear_message_buffer()` - Clear message buffer for port(s)
+  - Circular buffer with 1000 message capacity per port
+  - Timestamp and metadata for each received message
+
+- **Connection Health Monitoring** - Track OSC connection reliability
+  - `get_connection_health()` - View health status of all connections
+  - Circuit breaker pattern (opens after 3 failures, auto-resets after 30s)
+  - Failure count and last success/failure tracking per connection
+  - Prevents repeated attempts to unreachable hosts
+
+- **Metrics and Telemetry** - Server performance monitoring
+  - `get_metrics()` - View server statistics
+  - Messages sent/received counters
+  - Server start/stop counters
+  - Uptime tracking
+  - Active clients/servers count
+
+- **Application-Specific Tools** - High-level control for popular applications
+  - **Ableton Live** (3 tools):
+    - `ableton_transport_control()` - Play, stop, continue, record
+    - `ableton_set_tempo()` - Set BPM (20-999)
+    - `ableton_track_control()` - Volume, pan, mute, solo, arm
+  - **VRChat** (2 tools):
+    - `vrchat_avatar_parameter()` - Set avatar parameters
+    - `vrchat_input()` - Simulate VR inputs
+  - **TouchDesigner** (1 tool):
+    - `touchdesigner_parameter()` - Set operator parameters
+
 ### Changed
 - **Consolidated server.py** - Now the primary server implementation
   - All comprehensive docstrings from mcp_server.py preserved
   - Backward compatibility aliases (send_osc_message, start_osc_listener)
   - Transport selection via command-line arguments
+
+- **Enhanced send_osc()** - Now includes circuit breaker and health tracking
+  - Automatic failure detection and circuit opening
+  - Metrics tracking for all send operations
+  - Better error messages with circuit breaker status
+
+- **Enhanced start_osc_server()** - Now buffers all received messages
+  - Messages stored with timestamp and metadata
+  - Automatic metrics tracking
+  - Messages available via get_received_messages()
 
 ### Deprecated
 - **mcp_server.py** - Use `oscmcp.server` instead (will be removed in v0.3.0)
@@ -29,12 +69,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated project structure section
 - Added Windows path for Claude Desktop configuration
 
+### Summary
+**Total MCP Tools: 13** (was 3)
+- Core OSC: 3 tools (send_osc, start_osc_server, stop_osc_server)
+- Message Management: 2 tools (get_received_messages, clear_message_buffer)
+- Monitoring: 2 tools (get_connection_health, get_metrics)
+- Ableton Live: 3 tools
+- VRChat: 2 tools
+- TouchDesigner: 1 tool
+
 ### Planned
 - Persistent storage for OSC client/server state
-- Message buffer with `get_received_messages()` tool
-- OSC connection health monitoring
-- Application-specific MCP tools (Ableton, VRChat, TouchDesigner)
 - OSCQuery service discovery
+- MIDI bridge tools
 
 ## [0.2.0] - 2025-11-25
 
