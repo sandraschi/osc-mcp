@@ -38,9 +38,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `ableton_transport_control()` - Play, stop, continue, record
     - `ableton_set_tempo()` - Set BPM (20-999)
     - `ableton_track_control()` - Volume, pan, mute, solo, arm
-  - **VRChat** (2 tools):
-    - `vrchat_avatar_parameter()` - Set avatar parameters
-    - `vrchat_input()` - Simulate VR inputs
+  - **VRChat** (5 tools - comprehensive OSC support):
+    - `vrchat_avatar_parameter()` - Control avatar parameters (float/int/bool)
+    - `vrchat_input()` - Simulate movement, actions, VR controller inputs
+    - `vrchat_chatbox_message()` - Send chatbox messages with typing indicator
+    - `vrchat_tracking_control()` - Enable/disable body trackers
+    - `vrchat_afk_toggle()` - Toggle AFK status
   - **TouchDesigner** (1 tool):
     - `touchdesigner_parameter()` - Set operator parameters
 
@@ -70,12 +73,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added Windows path for Claude Desktop configuration
 
 ### Summary
-**Total MCP Tools: 13** (was 3)
+**Total MCP Tools: 16** (was 3)
 - Core OSC: 3 tools (send_osc, start_osc_server, stop_osc_server)
 - Message Management: 2 tools (get_received_messages, clear_message_buffer)
 - Monitoring: 2 tools (get_connection_health, get_metrics)
 - Ableton Live: 3 tools
-- VRChat: 2 tools
+- VRChat: 5 tools (comprehensive OSC support)
 - TouchDesigner: 1 tool
 
 ### Planned

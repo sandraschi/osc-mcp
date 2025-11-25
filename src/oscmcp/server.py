@@ -862,27 +862,65 @@ async def ableton_track_control(
 @server.tool()
 async def vrchat_avatar_parameter(
     parameter: str,
-    value: float,
+    value: Any,
     host: str = "127.0.0.1",
     port: int = 9000
 ) -> Dict[str, Any]:
-    """Set VRChat avatar parameter.
+    """Set VRChat avatar parameter (float, int, or bool).
+
+    VRChat avatars support custom parameters for animations, effects, and behaviors.
+    Common built-in parameters include Voice, Viseme, GestureLeft, GestureRight,
+    GestureLeftWeight, GestureRightWeight, AngularY, VelocityX, VelocityY, VelocityZ,
+    Upright, Grounded, Seated, AFK, TrackingType, VRMode, MuteSelf, InStation.
 
     Args:
-        parameter: Avatar parameter name (e.g., "Voice", "Viseme", "GestureLeft")
-        value: Parameter value (typically 0.0-1.0)
+        parameter: Avatar parameter name (case-sensitive)
+            Built-in: "Voice", "Viseme", "GestureLeft", "GestureRight", "VelocityX", etc.
+            Custom: Any parameter defined in your avatar (e.g., "EarsUp", "TailWag")
+        value: Parameter value (type depends on avatar parameter)
+            Float: 0.0-1.0 for analog controls (Voice, GestureWeight)
+            Int: 0-7 for gestures, 0-15 for visemes
+            Bool: True/False or 1/0 for toggles
         host: VRChat OSC host (default: 127.0.0.1)
-        port: VRChat OSC port (default: 9000)
+        port: VRChat OSC port (default: 9000 for sending, 9001 for receiving)
 
     Returns:
-        Dictionary with status
+        Dictionary with status and sent parameter info
 
     Examples:
+        # Voice activity (float 0.0-1.0)
         >>> await vrchat_avatar_parameter("Voice", 0.8)
-        >>> await vrchat_avatar_parameter("GestureLeft", 1.0)
+
+        # Viseme (mouth shapes, int 0-15)
+        >>> await vrchat_avatar_parameter("Viseme", 3)  # "O" sound
+
+        # Hand gesture (int 0-7: Neutral, Fist, Open, Point, Peace, RockNRoll, Gun, ThumbsUp)
+        >>> await vrchat_avatar_parameter("GestureLeft", 2)  # Open hand
+        >>> await vrchat_avatar_parameter("GestureRight", 5)  # RockNRoll
+
+        # Gesture weight (float 0.0-1.0)
+        >>> await vrchat_avatar_parameter("GestureLeftWeight", 1.0)
+
+        # Custom parameters (defined in your avatar)
+        >>> await vrchat_avatar_parameter("EarsUp", True)
+        >>> await vrchat_avatar_parameter("TailWag", 0.75)
+        >>> await vrchat_avatar_parameter("EmoteIndex", 5)
+
+    Notes:
+        - VRChat sends on port 9000, receives on port 9001 by default
+        - Parameter names are case-sensitive
+        - Float values are typically 0.0-1.0
+        - Int values depend on the parameter (gestures: 0-7, visemes: 0-15)
+        - Changes may not persist across avatar changes
+        - OSC must be enabled in VRChat settings (Settings > OSC > Enabled)
     """
     address = f"/avatar/parameters/{parameter}"
-    return await send_osc(host, port, address, [float(value)])
+
+    # Handle bool conversion for VRChat
+    if isinstance(value, bool):
+        value = 1 if value else 0
+
+    return await send_osc(host, port, address, [value])
 
 @server.tool()
 async def vrchat_input(
@@ -891,11 +929,150 @@ async def vrchat_input(
     host: str = "127.0.0.1",
     port: int = 9000
 ) -> Dict[str, Any]:
-    """Simulate VRChat input.
+    """Simulate VRChat movement and action inputs.
+
+    Send virtual controller/keyboard inputs to VRChat for movement, jumping,
+    and other actions. Useful for automation, testing, or accessibility tools.
 
     Args:
-        input_name: Input name - "Jump", "Run", "MoveForward", "MoveBackward", etc.
-        value: Input value (0.0-1.0, or 0/1 for buttons)
+        input_name: Input control name (case-sensitive)
+            Movement: "MoveForward", "MoveBackward", "MoveLeft", "MoveRight"
+            Vertical: "LookLeft", "LookRight", "LookUp", "LookDown"
+            Actions: "Jump", "Run", "ComfortLeft", "ComfortRight", "DropRight",
+                    "UseRight", "GrabRight", "DropLeft", "UseLeft", "GrabLeft",
+                    "PanicButton", "QuickMenuToggleLeft", "QuickMenuToggleRight",
+                    "Voice"
+        value: Input magnitude (0.0-1.0 for analog, 0 or 1 for digital buttons)
+            Movement/Look: 0.0 = no input, 1.0 = full input
+            Buttons: 0 = released, 1 = pressed
+        host: VRChat OSC host (default: 127.0.0.1)
+        port: VRChat OSC port (default: 9000)
+
+    Returns:
+        Dictionary with status and input info
+
+    Examples:
+        # Movement inputs (analog, 0.0-1.0)
+        >>> await vrchat_input("MoveForward", 1.0)  # Walk forward at full speed
+        >>> await vrchat_input("MoveForward", 0.5)  # Walk forward at half speed
+        >>> await vrchat_input("MoveLeft", 0.75)    # Strafe left
+        >>> await vrchat_input("MoveForward", 0.0)  # Stop moving forward
+
+        # Look/camera rotation (analog, 0.0-1.0)
+        >>> await vrchat_input("LookLeft", 0.5)     # Turn camera left
+        >>> await vrchat_input("LookUp", 0.3)       # Tilt camera up
+
+        # Action buttons (digital, 0 or 1)
+        >>> await vrchat_input("Jump", 1)           # Press jump
+        >>> await vrchat_input("Jump", 0)           # Release jump
+        >>> await vrchat_input("Run", 1)            # Start running
+        >>> await vrchat_input("Run", 0)            # Stop running
+
+        # VR controller inputs
+        >>> await vrchat_input("GrabRight", 1)      # Grab with right hand
+        >>> await vrchat_input("UseRight", 1)       # Use right hand
+        >>> await vrchat_input("DropRight", 1)      # Drop from right hand
+
+        # Comfort/quick menu
+        >>> await vrchat_input("ComfortLeft", 1)    # Activate comfort turn left
+        >>> await vrchat_input("QuickMenuToggleLeft", 1)  # Open quick menu
+
+    Notes:
+        - Inputs are sent as /input/{input_name} with value 0.0-1.0
+        - Most movement inputs are analog (can be partial values)
+        - Button inputs are typically 0 (released) or 1 (pressed)
+        - Inputs persist until changed (send 0 to stop movement)
+        - Some inputs only work in VR mode
+        - Voice input mirrors the Voice avatar parameter
+    """
+    address = f"/input/{input_name}"
+    return await send_osc(host, port, address, [float(value)])
+
+@server.tool()
+async def vrchat_chatbox_message(
+    message: str,
+    send_immediately: bool = True,
+    show_notification: bool = True,
+    host: str = "127.0.0.1",
+    port: int = 9000
+) -> Dict[str, Any]:
+    """Send a message to VRChat chatbox.
+
+    Display text in the VRChat chatbox as if you typed it. Supports two modes:
+    typing mode (shows "..." indicator) and immediate send.
+
+    Args:
+        message: Text to display in chatbox (max 144 characters recommended)
+        send_immediately: If True, sends message immediately. If False, shows typing indicator
+        show_notification: If True, shows notification sound when sent (default: True)
+        host: VRChat OSC host (default: 127.0.0.1)
+        port: VRChat OSC port (default: 9000)
+
+    Returns:
+        Dictionary with status and message info
+
+    Examples:
+        # Send a simple message
+        >>> await vrchat_chatbox_message("Hello world!")
+
+        # Send without notification sound
+        >>> await vrchat_chatbox_message("Quiet message", show_notification=False)
+
+        # Show typing indicator (doesn't send yet)
+        >>> await vrchat_chatbox_message("Typing...", send_immediately=False)
+
+        # Automation: status updates
+        >>> await vrchat_chatbox_message("[AFK] Be back in 5 minutes")
+        >>> await vrchat_chatbox_message("🎵 Now playing: Song Name")
+
+        # Interactive bot responses
+        >>> await vrchat_chatbox_message("🤖 AI: How can I help you?")
+
+    Notes:
+        - Maximum recommended length: 144 characters
+        - Supports unicode/emoji: 🎵 🤖 ❤️ ✨
+        - send_immediately=True: /chatbox/input with immediate send
+        - send_immediately=False: /chatbox/typing shows "..." indicator
+        - Chatbox must be enabled in VRChat settings
+        - Messages appear as if you typed them
+        - Can be used for status updates, automation, bot responses
+    """
+    if send_immediately:
+        address = "/chatbox/input"
+        # Format: (message, send_immediately, notification)
+        result = await send_osc(host, port, address, [message, True, show_notification])
+    else:
+        address = "/chatbox/typing"
+        # Typing indicator: just the message
+        result = await send_osc(host, port, address, [message])
+
+    return result
+
+@server.tool()
+async def vrchat_tracking_control(
+    tracking_type: str,
+    enabled: bool = True,
+    host: str = "127.0.0.1",
+    port: int = 9000
+) -> Dict[str, Any]:
+    """Control VRChat tracking features.
+
+    Enable/disable specific tracking points or features in VRChat.
+
+    Args:
+        tracking_type: Type of tracking to control
+            "Head": Head/HMD tracking
+            "LeftHand": Left controller tracking
+            "RightHand": Right controller tracking
+            "Hip": Hip tracker
+            "LeftFoot": Left foot tracker
+            "RightFoot": Right foot tracker
+            "LeftElbow": Left elbow tracker
+            "RightElbow": Right elbow tracker
+            "LeftKnee": Left knee tracker
+            "RightKnee": Right knee tracker
+            "Chest": Chest tracker
+        enabled: True to enable, False to disable
         host: VRChat OSC host (default: 127.0.0.1)
         port: VRChat OSC port (default: 9000)
 
@@ -903,11 +1080,43 @@ async def vrchat_input(
         Dictionary with status
 
     Examples:
-        >>> await vrchat_input("Jump", 1)
-        >>> await vrchat_input("MoveForward", 0.5)
+        # Disable specific trackers
+        >>> await vrchat_tracking_control("LeftFoot", False)
+        >>> await vrchat_tracking_control("RightFoot", False)
+
+        # Re-enable trackers
+        >>> await vrchat_tracking_control("LeftFoot", True)
+        >>> await vrchat_tracking_control("Hip", True)
+
+    Notes:
+        - Only affects active tracking points
+        - Useful for troubleshooting tracker issues
+        - Changes persist for current session only
     """
-    address = f"/input/{input_name}"
-    return await send_osc(host, port, address, [float(value)])
+    address = f"/tracking/{tracking_type}/enabled"
+    return await send_osc(host, port, address, [1 if enabled else 0])
+
+@server.tool()
+async def vrchat_afk_toggle(
+    afk: bool,
+    host: str = "127.0.0.1",
+    port: int = 9000
+) -> Dict[str, Any]:
+    """Toggle VRChat AFK status.
+
+    Args:
+        afk: True to enable AFK, False to disable
+        host: VRChat OSC host (default: 127.0.0.1)
+        port: VRChat OSC port (default: 9000)
+
+    Returns:
+        Dictionary with status
+
+    Examples:
+        >>> await vrchat_afk_toggle(True)   # Go AFK
+        >>> await vrchat_afk_toggle(False)  # Return from AFK
+    """
+    return await vrchat_avatar_parameter("AFK", afk, host, port)
 
 @server.tool()
 async def touchdesigner_parameter(

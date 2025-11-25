@@ -43,7 +43,7 @@ OSC-MCP bridges the gap between AI language models and professional creative too
 ### Application Integration
 **High-level tools for popular applications:**
 - **Ableton Live** (3 tools) - Transport control, tempo, track parameters
-- **VRChat** (2 tools) - Avatar parameters, input simulation
+- **VRChat** (5 tools) - Avatar parameters, inputs, chatbox, tracking, AFK
 - **TouchDesigner** (1 tool) - Operator parameter control
 
 **Low-level OSC support for 10+ applications:**
@@ -145,7 +145,7 @@ await send_osc("127.0.0.1", 9000, "/avatar/parameters/Voice", [0.5])
 
 ### MCP Tools Available
 
-OSC-MCP now provides **13 MCP tools** organized into categories:
+OSC-MCP now provides **16 MCP tools** organized into categories:
 
 #### Core OSC Tools (3)
 
@@ -227,7 +227,7 @@ await get_metrics()
 # Returns: messages sent/received, uptime, active servers/clients
 ```
 
-#### Application-Specific Tools (6)
+#### Application-Specific Tools (9)
 
 **Ableton Live (3 tools)**
 
@@ -254,27 +254,67 @@ await ableton_track_control(1, "volume", 0.8)
 await ableton_track_control(2, "mute", 1)
 ```
 
-**VRChat (2 tools)**
+**VRChat (5 tools - comprehensive OSC support)**
 
 **11. `vrchat_avatar_parameter`**
-Set avatar parameters (Voice, Viseme, gestures, etc).
+Control avatar parameters (float, int, bool). Built-in and custom parameters.
 
 ```python
+# Voice, gestures, visemes
 await vrchat_avatar_parameter("Voice", 0.8)
-await vrchat_avatar_parameter("GestureLeft", 1.0)
+await vrchat_avatar_parameter("GestureLeft", 2)  # Open hand
+await vrchat_avatar_parameter("Viseme", 3)  # "O" sound
+
+# Custom avatar parameters
+await vrchat_avatar_parameter("EarsUp", True)
+await vrchat_avatar_parameter("TailWag", 0.75)
 ```
 
 **12. `vrchat_input`**
-Simulate VR inputs (Jump, Run, movement, etc).
+Simulate movement, actions, and VR controller inputs.
 
 ```python
+# Movement
+await vrchat_input("MoveForward", 1.0)
+await vrchat_input("MoveLeft", 0.5)
+
+# Actions
 await vrchat_input("Jump", 1)
-await vrchat_input("MoveForward", 0.5)
+await vrchat_input("Run", 1)
+
+# VR controllers
+await vrchat_input("GrabRight", 1)
+await vrchat_input("UseLeft", 1)
+```
+
+**13. `vrchat_chatbox_message`**
+Send messages to VRChat chatbox with typing indicator support.
+
+```python
+await vrchat_chatbox_message("Hello world!")
+await vrchat_chatbox_message("🤖 AI: How can I help?")
+await vrchat_chatbox_message("Typing...", send_immediately=False)
+```
+
+**14. `vrchat_tracking_control`**
+Enable/disable body trackers (feet, hip, chest, etc).
+
+```python
+await vrchat_tracking_control("LeftFoot", False)
+await vrchat_tracking_control("Hip", True)
+```
+
+**15. `vrchat_afk_toggle`**
+Toggle AFK status.
+
+```python
+await vrchat_afk_toggle(True)   # Go AFK
+await vrchat_afk_toggle(False)  # Return
 ```
 
 **TouchDesigner (1 tool)**
 
-**13. `touchdesigner_parameter`**
+**16. `touchdesigner_parameter`**
 Set operator parameters (position, opacity, etc).
 
 ```python
