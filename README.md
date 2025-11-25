@@ -1,146 +1,387 @@
-# OSCMCP - Open Source Content Management Platform MCP Server
+# OSC-MCP - Open Sound Control MCP Server
 
 [![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![FastMCP](https://img.shields.io/badge/FastMCP-2.13.1-green.svg)](https://github.com/jlowin/fastmcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-A FastMCP 2.10 compliant MCP server for managing Open Source Content Management Platforms through a standardized interface.
+A **FastMCP 2.13 compliant** MCP server that enables natural language control of professional audio/visual applications through the **Open Sound Control (OSC)** protocol. Control Ableton Live, TouchDesigner, VRChat, Max/MSP, and other OSC-enabled applications directly from Claude Desktop or any MCP client.
 
-## Features
+## 🎯 What is OSC-MCP?
 
-- FastMCP 2.10 compliant API
-- Asynchronous architecture using FastAPI
-- Plugin system for extending functionality
-- Comprehensive test suite
-- DXT packaging support
-- Docker container support
+OSC-MCP bridges the gap between AI language models and professional creative tools by translating natural language commands into OSC messages. It enables:
 
-## Installation
+- 🎵 **DAW Control**: Automate Ableton Live, Logic Pro, and other music production software
+- 🎨 **Visual Programming**: Control TouchDesigner, Resolume Arena, and VJ software
+- 🎮 **VR/Gaming**: Manipulate VRChat avatars and game parameters
+- 🔊 **Audio Synthesis**: Program SuperCollider, Max/MSP, and Pure Data
+- 🎛️ **Hardware Control**: Interface with MIDI controllers and modular synths (VCV Rack)
+- 🌐 **Creative Coding**: Integrate with Processing, openFrameworks, and other platforms
+
+## ✨ Features
+
+### Core Capabilities
+- ✅ **FastMCP 2.13 Compliant** - Latest protocol support with server lifespans and caching
+- ✅ **Bidirectional Communication** - Send and receive OSC messages
+- ✅ **Response Caching** - 60-second TTL for improved performance
+- ✅ **Input Validation** - Pydantic models with port range and address pattern validation
+- ✅ **Resource Management** - Automatic cleanup with server lifespan hooks
+- ✅ **Multiple Transports** - Stdio (primary) and HTTP options
+- ✅ **Extensive Documentation** - Comprehensive docstrings with examples
+
+### Protocol Support
+- 🔌 **OSC 1.0 Protocol** - Full Open Sound Control specification support
+- 📡 **UDP Transport** - Low-latency, fire-and-forget messaging
+- 🔀 **Multiple Receivers** - Send to multiple applications simultaneously
+- 📥 **OSC Server** - Receive messages from applications
+- 🏷️ **Type Support** - Int, float, string, bool values
+
+### Application Integration
+Pre-configured support for 10+ professional applications:
+- **Ableton Live** - DAW automation
+- **TouchDesigner** - Visual programming
+- **VRChat** - Avatar and world control
+- **Max/MSP** - Audio/visual programming
+- **SuperCollider** - Audio synthesis
+- **Pure Data** - Visual programming
+- **VCV Rack** - Modular synthesis
+- **Resolume Arena** - VJ software
+- **QLab** - Show control
+- **OSCQuery** - Service discovery
+
+## 📦 Installation
 
 ### Prerequisites
+- **Python 3.8+** (Python 3.11 recommended)
+- **pip** package manager
+- **Claude Desktop** (for MCP client integration) or any MCP-compatible client
 
-- Python 3.8 or higher
-- pip (Python package manager)
+### Quick Install
 
-### From Source
+```bash
+# Clone the repository
+git clone https://github.com/sandraschi/osc-mcp.git
+cd osc-mcp
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/oscmcp.git
-   cd oscmcp
-   ```
+# Create virtual environment (recommended)
+python -m venv venv
 
-2. Create and activate a virtual environment (recommended):
-   ```bash
-   python -m venv venv
-   .\venv\Scripts\activate
-   ```
+# Activate virtual environment
+# Windows:
+.\venv\Scripts\activate
+# macOS/Linux:
+source venv/bin/activate
 
-3. Install the package in development mode with all dependencies:
-   ```bash
-   pip install -e ".[dev]"
-   ```
+# Install with all dependencies
+pip install -e ".[dev]"
+```
 
-## Usage
+### Claude Desktop Integration
+
+Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+
+```json
+{
+  "mcpServers": {
+    "osc": {
+      "command": "python",
+      "args": ["-m", "oscmcp.mcp_server"],
+      "env": {}
+    }
+  }
+}
+```
+
+## 🚀 Usage
 
 ### Starting the Server
 
 ```bash
-# Start the server with default settings
-oscmcp
+# Stdio transport (for Claude Desktop)
+python -m oscmcp.mcp_server
 
-# Start on a specific host and port
-oscmcp --host 127.0.0.1 --port 8080
+# HTTP transport (alternative)
+python -m oscmcp.server
 
-# Enable development mode with auto-reload
-oscmcp --reload
+# Alternative stdio server with extras
+python -m oscmcp.stdio_server
 ```
 
-### API Documentation
+### Basic Examples
 
-Once the server is running, you can access the following endpoints:
+#### Send OSC Message
+```python
+# From Claude Desktop, natural language:
+"Send OSC message to Ableton Live to set volume to 80%"
 
-- `GET /health` - Health check endpoint
-- `POST /mcp/execute` - Execute MCP commands
-- `GET /docs` - Interactive API documentation (Swagger UI)
-- `GET /redoc` - Alternative API documentation (ReDoc)
+# Translates to:
+await send_osc("127.0.0.1", 11000, "/live/volume", [0.8])
+```
 
-## Development
+#### Start Receiving Messages
+```python
+# Natural language:
+"Start OSC server on port 9000 to receive messages from TouchDesigner"
 
-### Setting Up Development Environment
+# Translates to:
+await start_osc_server(9000, "0.0.0.0")
+```
 
-1. Install development dependencies:
-   ```bash
-   pip install -e ".[dev]"
-   ```
+#### Control VRChat Avatar
+```python
+# Natural language:
+"Set my VRChat avatar voice parameter to 0.5"
 
-2. Install pre-commit hooks:
-   ```bash
-   pre-commit install
-   ```
+# Translates to:
+await send_osc("127.0.0.1", 9000, "/avatar/parameters/Voice", [0.5])
+```
+
+### MCP Tools Available
+
+#### 1. `send_osc` / `send_osc_message`
+Send OSC messages to any application.
+
+**Parameters:**
+- `host` (str): Target IP/hostname (e.g., "127.0.0.1")
+- `port` (int): Target UDP port (1-65535)
+- `address` (str): OSC address pattern (must start with "/")
+- `values` (List[Any]): Optional values to send
+
+**Example:**
+```python
+await send_osc("localhost", 8000, "/volume", [0.8])
+```
+
+#### 2. `start_osc_server` / `start_osc_listener`
+Start receiving OSC messages.
+
+**Parameters:**
+- `port` (int): Port to listen on (1-65535)
+- `address` (str): Interface to bind ("0.0.0.0" for all, "127.0.0.1" for localhost)
+
+**Example:**
+```python
+await start_osc_server(9000, "127.0.0.1")
+```
+
+#### 3. `stop_osc_server`
+Stop a running OSC receiver.
+
+**Parameters:**
+- `port` (int): Port of server to stop
+
+**Example:**
+```python
+await stop_osc_server(9000)
+```
+
+## 🎵 Application-Specific Usage
+
+### Ableton Live (port 11000)
+```python
+# Control playback
+await send_osc("127.0.0.1", 11000, "/live/play", [])
+await send_osc("127.0.0.1", 11000, "/live/stop", [])
+
+# Set tempo
+await send_osc("127.0.0.1", 11000, "/live/tempo", [120.0])
+
+# Track control
+await send_osc("127.0.0.1", 11000, "/live/track/1/volume", [0.8])
+await send_osc("127.0.0.1", 11000, "/live/track/1/mute", [1])
+```
+
+### TouchDesigner (port 9000)
+```python
+# Control parameters
+await send_osc("localhost", 9000, "/project/comp1/opacity", [0.75])
+await send_osc("localhost", 9000, "/project/comp1/tx", [100.0])
+```
+
+### VRChat (port 9000)
+```python
+# Avatar parameters
+await send_osc("127.0.0.1", 9000, "/avatar/parameters/Voice", [0.8])
+await send_osc("127.0.0.1", 9000, "/avatar/parameters/Viseme", [3])
+
+# Input simulation
+await send_osc("127.0.0.1", 9000, "/input/Jump", [1])
+```
+
+### SuperCollider (port 57120)
+```python
+# Create synth
+await send_osc("localhost", 57120, "/s_new", ["sine", 1000, 0, 0])
+
+# Free synth
+await send_osc("localhost", 57120, "/n_free", [1000])
+```
+
+## 🔧 Development
+
+### Project Structure
+```
+osc-mcp/
+├── src/oscmcp/
+│   ├── mcp_server.py        # Primary stdio server (3 tools)
+│   ├── stdio_server.py      # Alternative stdio server
+│   ├── server.py            # HTTP server variant
+│   ├── osc/                 # OSC protocol implementation
+│   │   ├── client.py        # OSC client for sending
+│   │   └── server.py        # OSC server for receiving
+│   ├── apps/                # Application integrations
+│   │   ├── ableton.py
+│   │   ├── touchdesigner.py
+│   │   ├── vrchat.py
+│   │   └── ... (8 more)
+│   └── midi/                # MIDI integration
+├── tests/                   # Test suite
+├── docs/                    # Documentation
+├── pyproject.toml          # Project configuration
+├── UPGRADE_NOTES.md        # FastMCP 2.13 migration guide
+└── README.md               # This file
+```
 
 ### Running Tests
-
 ```bash
 # Run all tests
 pytest
 
-# Run tests with coverage report
+# Run with coverage
 pytest --cov=oscmcp --cov-report=term-missing
 
-# Run a specific test file
-pytest tests/test_module.py
+# Run specific test
+pytest tests/test_stdio_server.py -v
 ```
 
 ### Code Style
-
-This project uses:
-- [Black](https://github.com/psf/black) for code formatting
-- [isort](https://github.com/timothycrosley/isort) for import sorting
-- [Flake8](https://flake8.py.org/) for linting
-
-To automatically format and check your code:
-
 ```bash
-# Format code with Black
+# Format with Black
 black src tests
 
-# Sort imports with isort
+# Sort imports
 isort src tests
 
-# Run linter
+# Lint
 flake8 src tests
+
+# Type check
+mypy src
 ```
 
-## DXT Packaging
+## 📚 Documentation
 
-This project supports DXT packaging for easy distribution and deployment.
+- **[UPGRADE_NOTES.md](UPGRADE_NOTES.md)** - FastMCP 2.10 → 2.13 migration guide
+- **[.claude/REPO_STATUS_AND_ROADMAP.md](.claude/REPO_STATUS_AND_ROADMAP.md)** - Repository status and improvement roadmap
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Contribution guidelines
+- **[docs/CRITICAL_ANALYSIS.md](docs/CRITICAL_ANALYSIS.md)** - Domain analysis and recommendations
 
-### Creating a DXT Package
+### Tool Documentation
+All MCP tools have comprehensive docstrings including:
+- Protocol explanations
+- Parameter details with examples
+- Common port numbers
+- Application-specific usage tips
+- Performance characteristics
+- Security considerations
+- Troubleshooting guides
 
+## 🔄 What's New in FastMCP 2.13
+
+OSC-MCP has been upgraded to FastMCP 2.13 with:
+
+✅ **Server Lifespan Hooks** - Proper resource cleanup on shutdown
+✅ **Response Caching** - 60s TTL for improved performance
+✅ **Pydantic Validation** - Port ranges (1-65535) and address patterns
+✅ **Enhanced Documentation** - 400+ lines of comprehensive docstrings
+✅ **Production Ready** - Resource management and error handling
+
+See [UPGRADE_NOTES.md](UPGRADE_NOTES.md) for full migration details.
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**"Port already in use"**
 ```bash
-# Build the package
-python -m build
+# Check what's using the port
+netstat -an | grep 8000  # Replace with your port
 
-# The package will be created in the dist/ directory
+# Use a different port or stop the conflicting application
 ```
 
-### Installing from DXT Package
-
+**"Permission denied" (ports < 1024)**
 ```bash
-pip install dist/oscmcp-*.whl
+# Use port >= 1024, or run with elevated privileges
+# Better: Use port 8000+ for safety
 ```
 
-## License
+**"No messages received"**
+- Check firewall settings (allow UDP traffic)
+- Verify sender is targeting correct IP:port
+- Check server logs for "Received OSC" messages
+- Use Wireshark to debug UDP traffic
+
+**FastMCP import errors**
+```bash
+# Upgrade to FastMCP 2.13.1
+pip install --upgrade "fastmcp[all]>=2.13.1"
+```
+
+## 🗺️ Roadmap
+
+See [.claude/REPO_STATUS_AND_ROADMAP.md](.claude/REPO_STATUS_AND_ROADMAP.md) for detailed roadmap.
+
+### Phase 1: Critical Fixes (In Progress)
+- ✅ FastMCP 2.13 compliance
+- ✅ Server lifespan hooks
+- ✅ Response caching
+- ✅ Comprehensive docstrings
+- 🎯 Consolidate server implementations
+- 🎯 Migrate to persistent storage
+
+### Phase 2: Enhanced Functionality
+- 🎯 Message buffer with `get_received_messages()`
+- 🎯 OSC connection health monitoring
+- 🎯 Circuit breaker for unreachable hosts
+- 🎯 Metrics and telemetry
+
+### Phase 3: Application Integration
+- 🎯 Expose app-specific tools (Ableton, VRChat, etc.)
+- 🎯 OSCQuery service discovery
+- 🎯 MIDI bridge tools
+
+## 🤝 Contributing
+
+Contributions welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Contributing
+## 🙏 Acknowledgments
 
-Contributions are welcome! Please read our [contributing guidelines](CONTRIBUTING.md) to get started.
+- **[FastMCP](https://github.com/jlowin/fastmcp)** - MCP protocol framework by @jlowin
+- **[python-osc](https://github.com/attwad/python-osc)** - OSC protocol implementation
+- **[python-rtmidi](https://github.com/SpotlightKid/python-rtmidi)** - MIDI integration
+- **OSC Community** - For the amazing Open Sound Control protocol
 
-## Acknowledgments
+## 📞 Support
 
-- [FastAPI](https://fastapi.tiangolo.com/) - The web framework used
-- [uvicorn](https://www.uvicorn.org/) - ASGI server
-- [pydantic](https://pydantic-docs.helpmanual.io/) - Data validation and settings management
+- **GitHub Issues**: https://github.com/sandraschi/osc-mcp/issues
+- **FastMCP Docs**: https://gofastmcp.com
+- **OSC Specification**: http://opensoundcontrol.org/spec-1_0
+
+---
+
+**Made with ❤️ for the creative technology community**
+
+*Control your creative tools with natural language through OSC-MCP*
