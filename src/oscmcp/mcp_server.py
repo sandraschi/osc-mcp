@@ -1,14 +1,17 @@
 """OSC-MCP Server with stdio transport for MCP clients.
 
-This module implements a FastMCP 2.10 compliant server that provides OSC functionality
+This module implements a FastMCP 2.13 compliant server that provides OSC functionality
 through the MCP protocol over stdio, making it compatible with MCP clients like Claude or Windsurf.
 """
 
 import asyncio
 import logging
+from contextlib import asynccontextmanager
 from typing import Any, Dict, List, Optional
 
 from fastmcp import FastMCP
+from fastmcp.middleware import ResponseCachingMiddleware
+from pydantic import BaseModel, Field
 from pythonosc import dispatcher, osc_server, udp_client
 from pythonosc.udp_client import SimpleUDPClient
 
@@ -22,9 +25,60 @@ logger = logging.getLogger(__name__)
 # Create FastMCP instance with stdio transport
 server = FastMCP("OSC-MCP")
 
+# Add response caching middleware for improved performance
+# Cache responses for 60 seconds to reduce redundant OSC operations
+server.middleware(ResponseCachingMiddleware(ttl=60))
+
 # Store OSC clients and servers
 osc_clients: Dict[str, SimpleUDPClient] = {}
 osc_servers: Dict[int, asyncio.Task] = {}
+
+# Pydantic models for input validation (FastMCP 2.13)
+class OSCMessageInput(BaseModel):
+    """Input model for OSC message sending."""
+    host: str = Field(..., description="Target hostname or IP address")
+    port: int = Field(..., gt=0, le=65535, description="Target UDP port (1-65535)")
+    address: str = Field(..., pattern=r"^/.*", description="OSC address pattern starting with /")
+    values: List[Any] = Field(default_factory=list, description="List of values to send")
+
+class OSCServerInput(BaseModel):
+    """Input model for starting OSC server."""
+    port: int = Field(..., gt=0, le=65535, description="UDP port to listen on (1-65535)")
+    address: str = Field(default="0.0.0.0", description="Network interface to bind to")
+
+class OSCServerStopInput(BaseModel):
+    """Input model for stopping OSC server."""
+    port: int = Field(..., gt=0, le=65535, description="Port of the server to stop (1-65535)")
+
+@server.lifespan
+@asynccontextmanager
+async def server_lifespan():
+    """Manage server-level OSC resources.
+
+    This lifespan hook ensures proper initialization and cleanup of OSC resources
+    at the server level (not per-client session), following FastMCP 2.13 semantics.
+    """
+    # Startup
+    logger.info("OSC-MCP server starting up - initializing resources")
+
+    try:
+        yield  # Server runs here
+    finally:
+        # Shutdown - cleanup all OSC resources
+        logger.info("OSC-MCP server shutting down - cleaning up resources")
+
+        # Close all OSC servers
+        for port, transport in list(osc_servers.items()):
+            try:
+                transport.close()
+                logger.info(f"Closed OSC server on port {port}")
+            except Exception as e:
+                logger.error(f"Error closing OSC server on port {port}: {e}")
+
+        # Clear all resources
+        osc_clients.clear()
+        osc_servers.clear()
+        logger.info("OSC-MCP server cleanup complete")
 
 @server.tool()
 async def send_osc(

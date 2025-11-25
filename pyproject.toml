@@ -23,7 +23,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
 ]
 dependencies = [
-    "fastmcp[all]>=2.10.0",
+    "fastmcp[all]>=2.13.1",
     "python-osc>=1.8.0",
     "python-rtmidi>=1.5.0",
     "numpy>=1.21.0",
