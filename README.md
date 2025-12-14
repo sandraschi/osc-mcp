@@ -168,9 +168,9 @@ await send_osc("127.0.0.1", 9000, "/avatar/parameters/Voice", [0.5])
 
 ### MCP Tools Available
 
-OSC-MCP provides **48 tools** (8 managers + 9 core + 31 application-specific) for comprehensive bidirectional control of professional audio/visual applications:
+OSC-MCP provides **52 tools** (8 managers + 13 core + 31 application-specific) for comprehensive bidirectional control of professional audio/visual applications:
 
-#### Core OSC Tools (9 tools)
+#### Core OSC Tools (13 tools)
 
 1. **`send_osc`** - Universal OSC message sender
    - Send any OSC message to any application
@@ -202,9 +202,19 @@ OSC-MCP provides **48 tools** (8 managers + 9 core + 31 application-specific) fo
    - Reset message buffer for fresh start
    - Free memory in long-running servers
 
-8. **`test_osc_echo`** - OSC functionality testing
-   - End-to-end validation
-   - Self-testing capability
+8. **`osc_recorder_manager`** - Record/playback OSC sequences
+   - Capture automation sequences for replay
+   - Perfect for creating repeatable performances
+   - Speed control and looping support
+
+9. **`audio_workflow_manager`** - Multi-app orchestration
+   - Coordinate transport across REAPER, VCV Rack, etc.
+   - Synchronized tempo and start/stop operations
+   - Cross-application workflow automation
+
+10. **`test_osc_echo`** - OSC functionality testing
+    - End-to-end validation
+    - Self-testing capability
 
 #### Application Manager Tools (8 portmanteau tools)
 

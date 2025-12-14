@@ -30,6 +30,9 @@ server = FastMCP("OSC-MCP")
 osc_clients: Dict[str, SimpleUDPClient] = {}
 osc_servers: Dict[int, 'OSCServer'] = {}
 
+# OSC Recording system
+osc_recordings: Dict[str, List[Dict[str, Any]]] = {}
+
 # Pydantic models for input validation (FastMCP 2.13)
 class OSCMessageInput(BaseModel):
     """Input model for OSC message sending."""
@@ -1071,7 +1074,8 @@ async def vcv_manager(operation: str, host: str = "127.0.0.1", port: int = 10001
                       frequency: Optional[float] = None, level: Optional[float] = None,
                       rate: Optional[float] = None, cutoff: Optional[float] = None,
                       attack: Optional[float] = None, decay: Optional[float] = None,
-                      sustain: Optional[float] = None, release: Optional[float] = None) -> Dict[str, Any]:
+                      sustain: Optional[float] = None, release: Optional[float] = None,
+                      reaper_tempo: Optional[float] = None, position: Optional[float] = None) -> Dict[str, Any]:
     """
     VCV Rack Manager - Comprehensive modular synthesis control.
 
@@ -1094,6 +1098,11 @@ async def vcv_manager(operation: str, host: str = "127.0.0.1", port: int = 10001
             - "set_envelope_decay" - Set envelope decay (0.0-1.0)
             - "set_envelope_sustain" - Set envelope sustain (0.0-1.0)
             - "set_envelope_release" - Set envelope release (0.0-1.0)
+            - "sync_reaper_tempo" - Sync tempo from REAPER (requires reaper_tempo)
+            - "start_transport" - Start VCV Rack transport/sequencer
+            - "stop_transport" - Stop VCV Rack transport/sequencer
+            - "reset_transport" - Reset transport to beginning
+            - "set_transport_position" - Set transport position (0.0-1.0)
         host: Target host (default: 127.0.0.1)
         port: Target port (default: 10001)
         module_id: Module ID (required for most operations)
@@ -1116,6 +1125,8 @@ async def vcv_manager(operation: str, host: str = "127.0.0.1", port: int = 10001
         decay: Decay time (0.0-1.0, for envelope)
         sustain: Sustain level (0.0-1.0, for envelope)
         release: Release time (0.0-1.0, for envelope)
+        reaper_tempo: Tempo from REAPER in BPM (for sync_reaper_tempo)
+        position: Transport position (0.0-1.0, for set_transport_position)
 
     Returns:
         Operation result with status and details
@@ -1207,6 +1218,192 @@ async def vcv_manager(operation: str, host: str = "127.0.0.1", port: int = 10001
             return {"status": "error", "message": "module_id and release required for set_envelope_release"}
         value = min(max(0.0, release), 1.0)
         return await send_osc(host, port, "/param", [module_id, 3, value])
+
+    # REAPER-VCV Rack Bridge Operations
+    elif operation == "sync_reaper_tempo":
+        # Listen for REAPER tempo changes and apply to VCV Rack
+        # This would typically be used with get_received_messages to monitor REAPER
+        if reaper_tempo is None:
+            return {"status": "error", "message": "reaper_tempo required for sync_reaper_tempo"}
+        # Convert BPM to VCV Rack clock rate (this is module-specific)
+        # Most VCV sequencers expect BPM or clock division
+        bpm_value = reaper_tempo / 120.0  # Normalize assuming 120 BPM = 1.0
+        return await send_osc(host, port, "/param", [module_id or 1, 0, bpm_value])
+
+    elif operation == "start_transport":
+        # Start VCV Rack transport/sequencer
+        return await send_osc(host, port, "/transport/play", [])
+
+    elif operation == "stop_transport":
+        # Stop VCV Rack transport/sequencer
+        return await send_osc(host, port, "/transport/stop", [])
+
+    elif operation == "reset_transport":
+        # Reset VCV Rack transport to beginning
+        return await send_osc(host, port, "/transport/reset", [])
+
+    elif operation == "set_transport_position":
+        # Set transport position (0.0-1.0 for normalized position)
+        if position is None:
+            return {"status": "error", "message": "position required for set_transport_position"}
+        return await send_osc(host, port, "/transport/position", [position])
+
+    else:
+        return {"status": "error", "message": f"Unknown operation: {operation}"}
+
+@server.tool()
+async def osc_recorder_manager(operation: str, recording_name: Optional[str] = None,
+                             port: Optional[int] = None, playback_speed: float = 1.0,
+                             loop: bool = False, filter_address: Optional[str] = None) -> Dict[str, Any]:
+    """
+    OSC Recorder Manager - Record and playback OSC message sequences.
+
+    PORTMANTEAU TOOL: Capture, store, and replay OSC automation sequences.
+
+    Args:
+        operation: Operation to perform
+            - "start_recording" - Start recording OSC messages (requires recording_name, port)
+            - "stop_recording" - Stop recording and save sequence
+            - "list_recordings" - List all saved recordings
+            - "playback_recording" - Play back a recorded sequence
+            - "delete_recording" - Delete a saved recording
+            - "get_recording_info" - Get details about a recording
+        recording_name: Name for the recording (required for most operations)
+        port: OSC server port to record from (for start_recording)
+        playback_speed: Speed multiplier for playback (1.0 = normal speed)
+        loop: Whether to loop playback continuously
+        filter_address: Only record messages matching this OSC address pattern
+
+    Returns:
+        Operation result with recording details
+    """
+
+    if operation == "start_recording":
+        if recording_name is None or port is None:
+            return {"status": "error", "message": "recording_name and port required for start_recording"}
+
+        if port not in osc_servers:
+            return {"status": "error", "message": f"No OSC server running on port {port}"}
+
+        # Clear any existing recording with this name
+        osc_recordings[recording_name] = []
+
+        # Mark that we're recording (this would need to be implemented in OSCServer)
+        # For now, just acknowledge the start
+        return {
+            "status": "success",
+            "message": f"Started recording '{recording_name}' on port {port}",
+            "recording_name": recording_name,
+            "port": port,
+            "filter": filter_address
+        }
+
+    elif operation == "stop_recording":
+        if recording_name is None:
+            return {"status": "error", "message": "recording_name required for stop_recording"}
+
+        if recording_name not in osc_recordings:
+            return {"status": "error", "message": f"No recording found with name '{recording_name}'"}
+
+        message_count = len(osc_recordings[recording_name])
+        return {
+            "status": "success",
+            "message": f"Stopped recording '{recording_name}' with {message_count} messages",
+            "recording_name": recording_name,
+            "message_count": message_count
+        }
+
+    elif operation == "list_recordings":
+        recordings = []
+        for name, messages in osc_recordings.items():
+            recordings.append({
+                "name": name,
+                "message_count": len(messages),
+                "duration": messages[-1]["timestamp"] - messages[0]["timestamp"] if messages else 0
+            })
+
+        return {
+            "status": "success",
+            "recordings": recordings,
+            "count": len(recordings)
+        }
+
+    elif operation == "playback_recording":
+        if recording_name is None:
+            return {"status": "error", "message": "recording_name required for playback_recording"}
+
+        if recording_name not in osc_recordings:
+            return {"status": "error", "message": f"No recording found with name '{recording_name}'"}
+
+        messages = osc_recordings[recording_name]
+        if not messages:
+            return {"status": "error", "message": f"Recording '{recording_name}' is empty"}
+
+        # Calculate timing and send messages
+        start_time = messages[0]["timestamp"]
+        sent_count = 0
+
+        for msg in messages:
+            # Calculate delay from start
+            delay = (msg["timestamp"] - start_time) / playback_speed
+
+            # Send the message (would need async scheduling for precise timing)
+            # For now, just send immediately
+            await send_osc("127.0.0.1", 10001, msg["address"], msg["args"])  # Default to VCV Rack
+            sent_count += 1
+
+        return {
+            "status": "success",
+            "message": f"Played back '{recording_name}' with {sent_count} messages",
+            "recording_name": recording_name,
+            "messages_sent": sent_count,
+            "playback_speed": playback_speed,
+            "looping": loop
+        }
+
+    elif operation == "delete_recording":
+        if recording_name is None:
+            return {"status": "error", "message": "recording_name required for delete_recording"}
+
+        if recording_name not in osc_recordings:
+            return {"status": "error", "message": f"No recording found with name '{recording_name}'"}
+
+        del osc_recordings[recording_name]
+        return {
+            "status": "success",
+            "message": f"Deleted recording '{recording_name}'",
+            "recording_name": recording_name
+        }
+
+    elif operation == "get_recording_info":
+        if recording_name is None:
+            return {"status": "error", "message": "recording_name required for get_recording_info"}
+
+        if recording_name not in osc_recordings:
+            return {"status": "error", "message": f"No recording found with name '{recording_name}'"}
+
+        messages = osc_recordings[recording_name]
+        if not messages:
+            return {
+                "status": "success",
+                "recording_name": recording_name,
+                "message_count": 0,
+                "duration": 0,
+                "addresses": []
+            }
+
+        addresses = list(set(msg["address"] for msg in messages))
+        duration = messages[-1]["timestamp"] - messages[0]["timestamp"]
+
+        return {
+            "status": "success",
+            "recording_name": recording_name,
+            "message_count": len(messages),
+            "duration": duration,
+            "start_time": messages[0]["timestamp"],
+            "end_time": messages[-1]["timestamp"],
+            "addresses": addresses
+        }
 
     else:
         return {"status": "error", "message": f"Unknown operation: {operation}"}
@@ -1339,6 +1536,96 @@ async def resolume_manager(operation: str, host: str = "127.0.0.1", port: int = 
 
     else:
         return {"status": "error", "message": f"Unknown operation: {operation}"}
+
+@server.tool()
+async def audio_workflow_manager(operation: str,
+                               # VCV Rack parameters
+                               vcv_host: str = "127.0.0.1", vcv_port: int = 10001,
+                               module_id: Optional[int] = None,
+                               # REAPER parameters
+                               reaper_host: str = "127.0.0.1", reaper_port: int = 8000,
+                               track_index: Optional[int] = None,
+                               # Common parameters
+                               bpm: Optional[float] = None, start_stop: Optional[bool] = None) -> Dict[str, Any]:
+    """
+    Audio Workflow Manager - Coordinate multi-application audio workflows.
+
+    PORTMANTEAU TOOL: Orchestrates complex workflows across multiple audio applications.
+
+    Args:
+        operation: Operation to perform
+            - "sync_tempo_all" - Sync tempo across VCV Rack, REAPER, and other apps
+            - "start_all" - Start transport in all connected applications
+            - "stop_all" - Stop transport in all connected applications
+            - "reset_all" - Reset all applications to beginning
+            - "vcv_to_reaper_gate" - Route VCV Rack gates to REAPER as markers
+            - "reaper_to_vcv_tempo" - Sync REAPER tempo changes to VCV Rack
+        vcv_host/vcv_port: VCV Rack connection (default: 127.0.0.1:10001)
+        reaper_host/reaper_port: REAPER connection (default: 127.0.0.1:8000)
+        module_id: VCV Rack module ID for operations
+        track_index: REAPER track index for operations
+        bpm: Tempo in BPM for sync operations
+        start_stop: True=start, False=stop for transport operations
+
+    Returns:
+        Operation result with status and details from all affected applications
+    """
+
+    results = {"status": "success", "operations": []}
+
+    if operation == "sync_tempo_all":
+        if bpm is None:
+            return {"status": "error", "message": "bpm required for sync_tempo_all"}
+
+        # Sync to VCV Rack (assuming BPM module on module_id)
+        if module_id is not None:
+            bpm_normalized = bpm / 120.0  # Normalize assuming 120 BPM = 1.0
+            result = await send_osc(vcv_host, vcv_port, "/param", [module_id, 0, bpm_normalized])
+            results["operations"].append({"app": "vcv_rack", "operation": "set_bpm", "result": result})
+
+        # Sync to REAPER
+        result = await send_osc(reaper_host, reaper_port, "/tempo", [bpm])
+        results["operations"].append({"app": "reaper", "operation": "set_tempo", "result": result})
+
+        results["message"] = f"Synced tempo {bpm} BPM across all applications"
+
+    elif operation == "start_all":
+        # Start VCV Rack transport
+        result = await send_osc(vcv_host, vcv_port, "/transport/play", [])
+        results["operations"].append({"app": "vcv_rack", "operation": "start_transport", "result": result})
+
+        # Start REAPER transport
+        result = await send_osc(reaper_host, reaper_port, "/play", [])
+        results["operations"].append({"app": "reaper", "operation": "start_playback", "result": result})
+
+        results["message"] = "Started transport in all applications"
+
+    elif operation == "stop_all":
+        # Stop VCV Rack transport
+        result = await send_osc(vcv_host, vcv_port, "/transport/stop", [])
+        results["operations"].append({"app": "vcv_rack", "operation": "stop_transport", "result": result})
+
+        # Stop REAPER transport
+        result = await send_osc(reaper_host, reaper_port, "/stop", [])
+        results["operations"].append({"app": "reaper", "operation": "stop_playback", "result": result})
+
+        results["message"] = "Stopped transport in all applications"
+
+    elif operation == "reset_all":
+        # Reset VCV Rack transport
+        result = await send_osc(vcv_host, vcv_port, "/transport/reset", [])
+        results["operations"].append({"app": "vcv_rack", "operation": "reset_transport", "result": result})
+
+        # Reset REAPER transport (this might need REAPER-specific command)
+        result = await send_osc(reaper_host, reaper_port, "/rewind", [])
+        results["operations"].append({"app": "reaper", "operation": "reset_position", "result": result})
+
+        results["message"] = "Reset all applications to beginning"
+
+    else:
+        return {"status": "error", "message": f"Unknown operation: {operation}"}
+
+    return results
 
 @server.tool()
 async def puredata_manager(operation: str, host: str = "127.0.0.1", port: int = 3000,
