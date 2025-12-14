@@ -12,8 +12,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Persistent storage for OSC client/server state
 - Message buffer with `get_received_messages()` tool
 - OSC connection health monitoring
-- Application-specific MCP tools (Ableton, VRChat, TouchDesigner)
+- Expand application-specific tool coverage
 - OSCQuery service discovery
+- Enhanced docstrings with examples for all tools
+
+## [0.2.1] - 2025-11-26
+
+### Added
+- **27+ Application-Specific Tools** - High-level interfaces for 8 professional applications
+  - **Ableton Live (6 tools):** `ableton_play`, `ableton_stop`, `ableton_set_tempo`, `ableton_play_clip`, `ableton_set_volume`, `ableton_set_pan`
+  - **VRChat (3 tools):** `vrchat_set_parameter`, `vrchat_send_chat`, `vrchat_trigger_haptic`
+  - **TouchDesigner (3 tools):** `touchdesigner_set_parameter`, `touchdesigner_set_constant`, `touchdesigner_trigger_button`
+  - **SuperCollider (3 tools):** `supercollider_create_synth`, `supercollider_free_node`, `supercollider_set_control`
+  - **Max/MSP (3 tools):** `maxmsp_send_bang`, `maxmsp_send_float`, `maxmsp_toggle_dsp`
+  - **VCV Rack (2 tools):** `vcvrack_set_parameter`, `vcvrack_trigger`
+  - **Resolume Arena (3 tools):** `resolume_play_clip`, `resolume_set_layer_opacity`, `resolume_set_bpm`
+  - **Pure Data (3 tools):** `puredata_send_bang`, `puredata_send_float`, `puredata_toggle_dsp`
+
+- **Test Tool:** `test_osc_echo` - End-to-end OSC functionality testing
+
+### Documentation
+- **docs/APPLICATION_TOOLS_ANALYSIS.md** - Comprehensive 400+ line analysis document
+  - Tool inventory and coverage analysis
+  - Architecture and design pattern documentation
+  - User experience improvements
+  - Migration guide
+  - Roadmap and metrics
+
+### Changed
+- **FastMCP 2.13.1 Compatibility Fixes**
+  - Removed `ResponseCachingMiddleware` import (not available in 2.13.1)
+  - Removed `@server.lifespan` decorator (not supported in 2.13.1)
+  - Server now starts successfully without errors
+
+- **README.md Updates**
+  - Updated tool count from 3 to 27+ tools
+  - Added comprehensive application-specific tools section
+  - Updated project structure documentation
+  - Added reference to analysis document
+
+### Fixed
+- **Server Startup Issues**
+  - Fixed import errors preventing server from starting
+  - Resolved worktree path issues
+  - Corrected MCP configuration to use `oscmcp.mcp_server`
+
+### Impact
+- **User Experience:** Natural language control now possible without OSC address knowledge
+- **Developer Experience:** Type-safe, IDE-autocompleteable tool names
+- **Adoption:** Significant reduction in barrier to entry for OSC control
+
+### Statistics
+- **Tool Count:** Increased from 3 to 27+ (800% increase)
+- **Applications Covered:** 8 professional applications
+- **Code Addition:** ~160 lines of application tool wrappers
+- **Documentation:** 400+ lines of comprehensive analysis
 
 ## [0.2.0] - 2025-11-25
 

@@ -1,0 +1,96 @@
+{
+  "manifest_version": "0.2",
+  "name": "oscmcp",
+  "version": "1.0.0",
+  "description": "Open Source Content Management Platform MCP server for managing CMS platforms through a standardized interface with Austrian precision",
+  "author": {
+    "name": "Sandra",
+    "email": "dev@oscmcp.example.com"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/sandraschi/oscmcp",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sandraschi/oscmcp"
+  },
+  "server": {
+    "type": "python",
+    "entry_point": "server/server.py",
+    "mcp_config": {
+      "command": "python",
+      "args": ["server/server.py"],
+      "env": {
+        "PYTHONPATH": "${PWD}",
+        "PYTHONUNBUFFERED": "1",
+        "CMS_API_URL": "${user_config.cms_api_url}",
+        "CMS_API_KEY": "${user_config.cms_api_key}"
+      }
+    }
+  },
+  "user_config": {
+    "cms_api_url": {
+      "type": "string",
+      "title": "CMS API URL",
+      "description": "Base URL for the CMS platform API",
+      "required": true,
+      "default": ""
+    },
+    "cms_api_key": {
+      "type": "string",
+      "title": "CMS API Key",
+      "description": "API key for CMS platform authentication",
+      "required": true,
+      "sensitive": true,
+      "default": ""
+    }
+  },
+  "tools": [
+    {
+      "name": "content_create",
+      "description": "Create new content in the CMS"
+    },
+    {
+      "name": "content_update",
+      "description": "Update existing content in the CMS"
+    },
+    {
+      "name": "content_publish",
+      "description": "Publish content in the CMS"
+    },
+    {
+      "name": "content_delete",
+      "description": "Delete content from the CMS"
+    },
+    {
+      "name": "user_create",
+      "description": "Create new users in the CMS"
+    },
+    {
+      "name": "user_update_permissions",
+      "description": "Update user permissions in the CMS"
+    },
+    {
+      "name": "workflow_status",
+      "description": "Check workflow status of content"
+    },
+    {
+      "name": "platform_sync",
+      "description": "Synchronize content across platforms"
+    }
+  ],
+  "compatibility": {
+    "platforms": ["win32", "darwin", "linux"],
+    "python": ">=3.8"
+  },
+  "keywords": [
+    "cms",
+    "content-management",
+    "wordpress",
+    "drupal",
+    "automation",
+    "fastapi",
+    "mcp",
+    "austria"
+  ]
+}
+

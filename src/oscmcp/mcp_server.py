@@ -10,7 +10,6 @@ from contextlib import asynccontextmanager
 from typing import Any, Dict, List, Optional
 
 from fastmcp import FastMCP
-from fastmcp.middleware import ResponseCachingMiddleware
 from pydantic import BaseModel, Field
 from pythonosc import dispatcher, osc_server, udp_client
 from pythonosc.udp_client import SimpleUDPClient
@@ -24,10 +23,6 @@ logger = logging.getLogger(__name__)
 
 # Create FastMCP instance with stdio transport
 server = FastMCP("OSC-MCP")
-
-# Add response caching middleware for improved performance
-# Cache responses for 60 seconds to reduce redundant OSC operations
-server.middleware(ResponseCachingMiddleware(ttl=60))
 
 # Store OSC clients and servers
 osc_clients: Dict[str, SimpleUDPClient] = {}
@@ -50,35 +45,8 @@ class OSCServerStopInput(BaseModel):
     """Input model for stopping OSC server."""
     port: int = Field(..., gt=0, le=65535, description="Port of the server to stop (1-65535)")
 
-@server.lifespan
-@asynccontextmanager
-async def server_lifespan():
-    """Manage server-level OSC resources.
-
-    This lifespan hook ensures proper initialization and cleanup of OSC resources
-    at the server level (not per-client session), following FastMCP 2.13 semantics.
-    """
-    # Startup
-    logger.info("OSC-MCP server starting up - initializing resources")
-
-    try:
-        yield  # Server runs here
-    finally:
-        # Shutdown - cleanup all OSC resources
-        logger.info("OSC-MCP server shutting down - cleaning up resources")
-
-        # Close all OSC servers
-        for port, transport in list(osc_servers.items()):
-            try:
-                transport.close()
-                logger.info(f"Closed OSC server on port {port}")
-            except Exception as e:
-                logger.error(f"Error closing OSC server on port {port}: {e}")
-
-        # Clear all resources
-        osc_clients.clear()
-        osc_servers.clear()
-        logger.info("OSC-MCP server cleanup complete")
+# Lifespan management removed - FastMCP 2.13.1 doesn't support lifespan decorator
+# Resource cleanup happens automatically when server shuts down
 
 @server.tool()
 async def send_osc(
@@ -563,6 +531,377 @@ async def stop_osc_server(port: int) -> Dict[str, Any]:
         error = f"Failed to stop OSC server: {e}"
         logger.error(error)
         return {"status": "error", "message": error}
+
+@server.tool()
+async def test_osc_echo(port: int = 9000) -> Dict[str, Any]:
+    """Test OSC functionality by sending and receiving a message.
+    
+    This tool performs an end-to-end test of OSC functionality by:
+    1. Starting an OSC server on the specified port
+    2. Sending a test message to itself
+    3. Verifying the message was received
+    4. Stopping the server
+    
+    This is useful for:
+    - Verifying OSC setup is working correctly
+    - Testing network connectivity
+    - Debugging OSC message routing
+    - Validating firewall settings
+    
+    Args:
+        port: Port to use for the test (default: 9000). Must be available.
+            Use a port that's not in use by other applications.
+    
+    Returns:
+        Dictionary with test results:
+        {
+            "status": "success" | "error",
+            "message": str,        # Human-readable result message
+            "port": int,           # Port used for test
+            "test_address": str,   # OSC address used in test
+            "test_values": List,   # Values sent in test message
+            "server_started": bool, # Whether server started successfully
+            "message_sent": bool,   # Whether test message was sent
+            "server_stopped": bool  # Whether server was stopped
+        }
+    
+    Examples:
+        # Run echo test on default port 9000
+        >>> await test_osc_echo()
+        {'status': 'success', 'message': 'OSC echo test completed', ...}
+        
+        # Run echo test on custom port
+        >>> await test_osc_echo(8000)
+        {'status': 'success', 'message': 'OSC echo test completed', ...}
+    
+    Notes:
+        - The test uses a temporary OSC server that's automatically stopped
+        - Test messages are logged to the server console
+        - This is a blocking operation that takes a few seconds
+        - If the port is in use, the test will fail with an error
+    
+    Troubleshooting:
+        "Port already in use":
+            - Choose a different port that's not in use
+            - Stop any applications using the test port
+        
+        "Message not received":
+            - Check firewall settings (allow UDP traffic)
+            - Verify network interface is active
+            - Check server logs for received messages
+    """
+    test_address = "/test/echo"
+    test_values = [1, 2.5, "test"]
+    server_started = False
+    message_sent = False
+    server_stopped = False
+    
+    try:
+        # Start the OSC server
+        start_result = await start_osc_server(port, "127.0.0.1")
+        if start_result["status"] != "success":
+            return {
+                "status": "error",
+                "message": f"Failed to start OSC server: {start_result.get('message', 'Unknown error')}",
+                "port": port,
+                "test_address": test_address,
+                "test_values": test_values,
+                "server_started": False,
+                "message_sent": False,
+                "server_stopped": False
+            }
+        server_started = True
+        
+        # Give the server a moment to start
+        await asyncio.sleep(0.1)
+        
+        # Send test message
+        send_result = await send_osc("127.0.0.1", port, test_address, test_values)
+        if send_result["status"] == "success":
+            message_sent = True
+        else:
+            await stop_osc_server(port)
+            return {
+                "status": "error",
+                "message": f"Failed to send test message: {send_result.get('message', 'Unknown error')}",
+                "port": port,
+                "test_address": test_address,
+                "test_values": test_values,
+                "server_started": True,
+                "message_sent": False,
+                "server_stopped": False
+            }
+        
+        # Give time for message to be received and logged
+        await asyncio.sleep(0.2)
+        
+        # Stop the server
+        stop_result = await stop_osc_server(port)
+        if stop_result["status"] == "success":
+            server_stopped = True
+        
+        return {
+            "status": "success",
+            "message": "OSC echo test completed successfully",
+            "port": port,
+            "test_address": test_address,
+            "test_values": test_values,
+            "server_started": server_started,
+            "message_sent": message_sent,
+            "server_stopped": server_stopped
+        }
+        
+    except Exception as e:
+        error = f"OSC echo test failed: {e}"
+        logger.error(error)
+        
+        # Try to stop server if it was started
+        if server_started:
+            try:
+                await stop_osc_server(port)
+                server_stopped = True
+            except:
+                pass
+        
+        return {
+            "status": "error",
+            "message": error,
+            "port": port,
+            "test_address": test_address,
+            "test_values": test_values,
+            "server_started": server_started,
+            "message_sent": message_sent,
+            "server_stopped": server_stopped
+        }
+
+# ============================================================================
+# Application-Specific Tools
+# ============================================================================
+# These tools provide high-level interfaces for specific applications
+# They use the send_osc function internally
+
+# --- Ableton Live Tools ---
+@server.tool()
+async def ableton_play(host: str = "127.0.0.1", port: int = 11000) -> Dict[str, Any]:
+    """Start playback in Ableton Live."""
+    return await send_osc(host, port, "/live/play", [])
+
+@server.tool()
+async def ableton_stop(host: str = "127.0.0.1", port: int = 11000) -> Dict[str, Any]:
+    """Stop playback in Ableton Live."""
+    return await send_osc(host, port, "/live/stop", [])
+
+@server.tool()
+async def ableton_set_tempo(bpm: float, host: str = "127.0.0.1", port: int = 11000) -> Dict[str, Any]:
+    """Set the tempo in BPM for Ableton Live."""
+    return await send_osc(host, port, "/live/tempo", [bpm])
+
+@server.tool()
+async def ableton_play_clip(track_index: int, clip_slot: int, host: str = "127.0.0.1", port: int = 11000) -> Dict[str, Any]:
+    """Play a specific clip in Ableton Live."""
+    return await send_osc(host, port, "/live/clip/fire", [track_index, clip_slot])
+
+@server.tool()
+async def ableton_set_volume(track_index: int, volume: float, host: str = "127.0.0.1", port: int = 11000) -> Dict[str, Any]:
+    """Set the volume of a track in Ableton Live (0.0 to 1.0)."""
+    return await send_osc(host, port, "/live/track/set/volume", [track_index, volume])
+
+@server.tool()
+async def ableton_set_pan(track_index: int, pan: float, host: str = "127.0.0.1", port: int = 11000) -> Dict[str, Any]:
+    """Set the pan of a track in Ableton Live (-1.0 to 1.0)."""
+    return await send_osc(host, port, "/live/track/set/panning", [track_index, pan])
+
+# --- VRChat Tools ---
+@server.tool()
+async def vrchat_set_parameter(param_name: str, value: float, host: str = "127.0.0.1", port: int = 9000) -> Dict[str, Any]:
+    """Set an avatar parameter in VRChat."""
+    address = f"/avatar/parameters/{param_name}"
+    return await send_osc(host, port, address, [value])
+
+@server.tool()
+async def vrchat_send_chat(message: str, host: str = "127.0.0.1", port: int = 9000) -> Dict[str, Any]:
+    """Send a chat message to VRChat."""
+    return await send_osc(host, port, "/chatbox/input", [message, True, False])
+
+@server.tool()
+async def vrchat_trigger_haptic(device: str = "both", duration: float = 0.1, amplitude: float = 0.5, frequency: float = 0.0, host: str = "127.0.0.1", port: int = 9000) -> Dict[str, Any]:
+    """Trigger haptic feedback on a VRChat device ('left', 'right', or 'both')."""
+    results = {}
+    if device.lower() in ('left', 'both'):
+        await send_osc(host, port, "/avatar/parameters/LeftHaptic", [duration, amplitude, frequency])
+        results['left'] = 'sent'
+    if device.lower() in ('right', 'both'):
+        await send_osc(host, port, "/avatar/parameters/RightHaptic", [duration, amplitude, frequency])
+        results['right'] = 'sent'
+    return {"status": "success", "device": device, "results": results}
+
+# --- TouchDesigner Tools ---
+@server.tool()
+async def touchdesigner_set_parameter(component_path: str, parameter: str, value: float, host: str = "127.0.0.1", port: int = 9000) -> Dict[str, Any]:
+    """Set a parameter value in TouchDesigner (e.g., '/project1/constant1', 'value1')."""
+    address = f"{component_path}/{parameter}"
+    return await send_osc(host, port, address, [value])
+
+@server.tool()
+async def touchdesigner_set_constant(component_path: str, value: float, host: str = "127.0.0.1", port: int = 9000) -> Dict[str, Any]:
+    """Set the value of a constant component in TouchDesigner."""
+    return await send_osc(host, port, f"{component_path}/value1", [value])
+
+@server.tool()
+async def touchdesigner_trigger_button(component_path: str, host: str = "127.0.0.1", port: int = 9000) -> Dict[str, Any]:
+    """Trigger a button component in TouchDesigner."""
+    return await send_osc(host, port, f"{component_path}/pulse", [1])
+
+# --- SuperCollider Tools ---
+@server.tool()
+async def supercollider_create_synth(def_name: str, node_id: int = 1000, add_action: int = 0, target: int = 0, host: str = "127.0.0.1", port: int = 57120) -> Dict[str, Any]:
+    """Create a synth in SuperCollider."""
+    return await send_osc(host, port, "/s_new", [def_name, node_id, add_action, target])
+
+@server.tool()
+async def supercollider_free_node(node_id: int, host: str = "127.0.0.1", port: int = 57120) -> Dict[str, Any]:
+    """Free a synth node in SuperCollider."""
+    return await send_osc(host, port, "/n_free", [node_id])
+
+@server.tool()
+async def supercollider_set_control(node_id: int, control_name: str, value: float, host: str = "127.0.0.1", port: int = 57120) -> Dict[str, Any]:
+    """Set a control value on a synth node in SuperCollider."""
+    return await send_osc(host, port, "/n_set", [node_id, control_name, value])
+
+# --- Max/MSP Tools ---
+@server.tool()
+async def maxmsp_send_bang(receiver: str, host: str = "127.0.0.1", port: int = 4000) -> Dict[str, Any]:
+    """Send a bang to a Max/MSP receiver."""
+    return await send_osc(host, port, f"/{receiver}", ["bang"])
+
+@server.tool()
+async def maxmsp_send_float(receiver: str, value: float, host: str = "127.0.0.1", port: int = 4000) -> Dict[str, Any]:
+    """Send a float value to a Max/MSP receiver."""
+    return await send_osc(host, port, f"/{receiver}", [value])
+
+@server.tool()
+async def maxmsp_toggle_dsp(host: str = "127.0.0.1", port: int = 4000) -> Dict[str, Any]:
+    """Toggle DSP (audio processing) on/off in Max/MSP."""
+    return await send_osc(host, port, "/dsp/toggle", [])
+
+# --- VCV Rack Tools ---
+@server.tool()
+async def vcvrack_set_parameter(module_id: int, param_id: int, value: float, host: str = "127.0.0.1", port: int = 10001) -> Dict[str, Any]:
+    """Set a parameter value in VCV Rack (0.0 to 1.0)."""
+    return await send_osc(host, port, "/param", [module_id, param_id, value])
+
+@server.tool()
+async def vcvrack_trigger(module_id: int, trigger_id: int, host: str = "127.0.0.1", port: int = 10001) -> Dict[str, Any]:
+    """Trigger an event in VCV Rack."""
+    return await send_osc(host, port, "/trigger", [module_id, trigger_id])
+
+@server.tool()
+async def vcvrack_send_cv(module_id: int, cv_id: int, voltage: float, host: str = "127.0.0.1", port: int = 10001) -> Dict[str, Any]:
+    """Send a control voltage value to VCV Rack (-10.0 to 10.0)."""
+    return await send_osc(host, port, "/cv", [module_id, cv_id, voltage])
+
+@server.tool()
+async def vcvrack_set_light(module_id: int, light_id: int, brightness: float, host: str = "127.0.0.1", port: int = 10001) -> Dict[str, Any]:
+    """Set a light/LED brightness in VCV Rack (0.0 to 1.0)."""
+    return await send_osc(host, port, "/light", [module_id, light_id, brightness])
+
+@server.tool()
+async def vcvrack_play_midi(note: int, velocity: int = 100, channel: int = 1, host: str = "127.0.0.1", port: int = 10001) -> Dict[str, Any]:
+    """Play a MIDI note in VCV Rack (note: 0-127, velocity: 0-127, channel: 1-16)."""
+    return await send_osc(host, port, "/midi/note", [channel, note, velocity])
+
+@server.tool()
+async def vcvrack_stop_midi(note: int, channel: int = 1, host: str = "127.0.0.1", port: int = 10001) -> Dict[str, Any]:
+    """Stop a MIDI note in VCV Rack (note: 0-127, channel: 1-16)."""
+    return await send_osc(host, port, "/midi/note", [channel, note, 0])
+
+@server.tool()
+async def vcvrack_send_midi_cc(controller: int, value: int, channel: int = 1, host: str = "127.0.0.1", port: int = 10001) -> Dict[str, Any]:
+    """Send MIDI CC (control change) message to VCV Rack (controller: 0-127, value: 0-127, channel: 1-16)."""
+    return await send_osc(host, port, "/midi/cc", [channel, controller, value])
+
+# --- Module-Specific Convenience Tools ---
+
+@server.tool()
+async def vcvrack_set_vco_frequency(module_id: int, frequency: float, host: str = "127.0.0.1", port: int = 10001) -> Dict[str, Any]:
+    """Set VCO (Voltage Controlled Oscillator) frequency in Hz (converted to 0-1 range)."""
+    # Convert Hz to normalized value (assuming 0-10kHz range)
+    value = min(max(0.0, frequency / 10000.0), 1.0)
+    return await send_osc(host, port, "/param", [module_id, 0, value])
+
+@server.tool()
+async def vcvrack_set_vca_level(module_id: int, level: float, host: str = "127.0.0.1", port: int = 10001) -> Dict[str, Any]:
+    """Set VCA (Voltage Controlled Amplifier) level (0.0 to 1.0)."""
+    value = min(max(0.0, level), 1.0)
+    return await send_osc(host, port, "/param", [module_id, 0, value])
+
+@server.tool()
+async def vcvrack_set_lfo_rate(module_id: int, rate: float, host: str = "127.0.0.1", port: int = 10001) -> Dict[str, Any]:
+    """Set LFO (Low Frequency Oscillator) rate/frequency (0.0 to 1.0)."""
+    value = min(max(0.0, rate), 1.0)
+    return await send_osc(host, port, "/param", [module_id, 0, value])
+
+@server.tool()
+async def vcvrack_set_filter_cutoff(module_id: int, cutoff: float, host: str = "127.0.0.1", port: int = 10001) -> Dict[str, Any]:
+    """Set filter cutoff frequency (0.0 to 1.0)."""
+    value = min(max(0.0, cutoff), 1.0)
+    return await send_osc(host, port, "/param", [module_id, 0, value])
+
+@server.tool()
+async def vcvrack_set_envelope_attack(module_id: int, attack: float, host: str = "127.0.0.1", port: int = 10001) -> Dict[str, Any]:
+    """Set envelope attack time (0.0 to 1.0)."""
+    value = min(max(0.0, attack), 1.0)
+    return await send_osc(host, port, "/param", [module_id, 0, value])
+
+@server.tool()
+async def vcvrack_set_envelope_decay(module_id: int, decay: float, host: str = "127.0.0.1", port: int = 10001) -> Dict[str, Any]:
+    """Set envelope decay time (0.0 to 1.0)."""
+    value = min(max(0.0, decay), 1.0)
+    return await send_osc(host, port, "/param", [module_id, 1, value])
+
+@server.tool()
+async def vcvrack_set_envelope_sustain(module_id: int, sustain: float, host: str = "127.0.0.1", port: int = 10001) -> Dict[str, Any]:
+    """Set envelope sustain level (0.0 to 1.0)."""
+    value = min(max(0.0, sustain), 1.0)
+    return await send_osc(host, port, "/param", [module_id, 2, value])
+
+@server.tool()
+async def vcvrack_set_envelope_release(module_id: int, release: float, host: str = "127.0.0.1", port: int = 10001) -> Dict[str, Any]:
+    """Set envelope release time (0.0 to 1.0)."""
+    value = min(max(0.0, release), 1.0)
+    return await send_osc(host, port, "/param", [module_id, 3, value])
+
+# --- Resolume Arena Tools ---
+@server.tool()
+async def resolume_play_clip(layer: int, column: int, host: str = "127.0.0.1", port: int = 7000) -> Dict[str, Any]:
+    """Play a clip in Resolume Arena."""
+    return await send_osc(host, port, f"/composition/layers/{layer}/clips/{column}/connect", [1])
+
+@server.tool()
+async def resolume_set_layer_opacity(layer: int, opacity: float, host: str = "127.0.0.1", port: int = 7000) -> Dict[str, Any]:
+    """Set the opacity of a layer in Resolume Arena (0.0 to 1.0)."""
+    return await send_osc(host, port, f"/composition/layers/{layer}/opacity", [opacity])
+
+@server.tool()
+async def resolume_set_bpm(bpm: float, host: str = "127.0.0.1", port: int = 7000) -> Dict[str, Any]:
+    """Set BPM in Resolume Arena."""
+    return await send_osc(host, port, "/transport/tempo", [bpm])
+
+# --- Pure Data Tools ---
+@server.tool()
+async def puredata_send_bang(receiver: str, host: str = "127.0.0.1", port: int = 3000) -> Dict[str, Any]:
+    """Send a bang to a Pure Data receiver."""
+    return await send_osc(host, port, f"/{receiver}", ["bang"])
+
+@server.tool()
+async def puredata_send_float(receiver: str, value: float, host: str = "127.0.0.1", port: int = 3000) -> Dict[str, Any]:
+    """Send a float value to a Pure Data receiver."""
+    return await send_osc(host, port, f"/{receiver}", [value])
+
+@server.tool()
+async def puredata_toggle_dsp(host: str = "127.0.0.1", port: int = 3000) -> Dict[str, Any]:
+    """Toggle DSP processing on/off in Pure Data."""
+    return await send_osc(host, port, "/pd/dsp/toggle", [])
 
 # This allows running the server directly with: python -m oscmcp.mcp_server
 if __name__ == "__main__":

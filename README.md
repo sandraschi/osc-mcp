@@ -138,42 +138,86 @@ await send_osc("127.0.0.1", 9000, "/avatar/parameters/Voice", [0.5])
 
 ### MCP Tools Available
 
-#### 1. `send_osc` / `send_osc_message`
-Send OSC messages to any application.
+OSC-MCP provides **43+ tools** for controlling professional audio/visual applications via OSC:
 
-**Parameters:**
-- `host` (str): Target IP/hostname (e.g., "127.0.0.1")
-- `port` (int): Target UDP port (1-65535)
-- `address` (str): OSC address pattern (must start with "/")
-- `values` (List[Any]): Optional values to send
+#### Core OSC Tools (4 tools)
 
-**Example:**
-```python
-await send_osc("localhost", 8000, "/volume", [0.8])
-```
+1. **`send_osc`** - Universal OSC message sender
+   - Send any OSC message to any application
+   - Most flexible tool for custom OSC messaging
+   - Used internally by all application-specific tools
 
-#### 2. `start_osc_server` / `start_osc_listener`
-Start receiving OSC messages.
+2. **`start_osc_server`** - Start receiving OSC messages
+   - Bidirectional communication support
+   - Background message processing
+   - Multiple concurrent servers
 
-**Parameters:**
-- `port` (int): Port to listen on (1-65535)
-- `address` (str): Interface to bind ("0.0.0.0" for all, "127.0.0.1" for localhost)
+3. **`stop_osc_server`** - Stop OSC message receiver
+   - Clean resource cleanup
+   - Port management
 
-**Example:**
-```python
-await start_osc_server(9000, "127.0.0.1")
-```
+4. **`test_osc_echo`** - OSC functionality testing
+   - End-to-end validation
+   - Self-testing capability
 
-#### 3. `stop_osc_server`
-Stop a running OSC receiver.
+#### Application-Specific Tools (23 tools)
 
-**Parameters:**
-- `port` (int): Port of server to stop
+**Ableton Live (6 tools):**
+- `ableton_play` - Start playback
+- `ableton_stop` - Stop playback
+- `ableton_set_tempo` - Set BPM
+- `ableton_play_clip` - Play specific clip
+- `ableton_set_volume` - Set track volume
+- `ableton_set_pan` - Set track panning
 
-**Example:**
-```python
-await stop_osc_server(9000)
-```
+**VRChat (3 tools):**
+- `vrchat_set_parameter` - Set avatar parameter
+- `vrchat_send_chat` - Send chat message
+- `vrchat_trigger_haptic` - Trigger haptic feedback
+
+**TouchDesigner (3 tools):**
+- `touchdesigner_set_parameter` - Set component parameter
+- `touchdesigner_set_constant` - Set constant value
+- `touchdesigner_trigger_button` - Trigger button
+
+**SuperCollider (3 tools):**
+- `supercollider_create_synth` - Create synth
+- `supercollider_free_node` - Free synth node
+- `supercollider_set_control` - Set control value
+
+**Max/MSP (3 tools):**
+- `maxmsp_send_bang` - Send bang
+- `maxmsp_send_float` - Send float value
+- `maxmsp_toggle_dsp` - Toggle DSP processing
+
+**VCV Rack (18+ tools):**
+- `vcvrack_set_parameter` - Set module parameter (0.0-1.0)
+- `vcvrack_trigger` - Trigger event
+- `vcvrack_send_cv` - Send control voltage (-10.0 to 10.0)
+- `vcvrack_set_light` - Set light/LED brightness (0.0-1.0)
+- `vcvrack_play_midi` - Play MIDI note (note: 0-127, velocity: 0-127, channel: 1-16)
+- `vcvrack_stop_midi` - Stop MIDI note
+- `vcvrack_send_midi_cc` - Send MIDI CC message
+- `vcvrack_set_vco_frequency` - Set VCO frequency in Hz
+- `vcvrack_set_vca_level` - Set VCA level (0.0-1.0)
+- `vcvrack_set_lfo_rate` - Set LFO rate (0.0-1.0)
+- `vcvrack_set_filter_cutoff` - Set filter cutoff (0.0-1.0)
+- `vcvrack_set_envelope_attack` - Set envelope attack (0.0-1.0)
+- `vcvrack_set_envelope_decay` - Set envelope decay (0.0-1.0)
+- `vcvrack_set_envelope_sustain` - Set envelope sustain (0.0-1.0)
+- `vcvrack_set_envelope_release` - Set envelope release (0.0-1.0)
+
+**Resolume Arena (3 tools):**
+- `resolume_play_clip` - Play clip
+- `resolume_set_layer_opacity` - Set layer opacity
+- `resolume_set_bpm` - Set BPM
+
+**Pure Data (3 tools):**
+- `puredata_send_bang` - Send bang
+- `puredata_send_float` - Send float value
+- `puredata_toggle_dsp` - Toggle DSP processing
+
+**See [Application Tools Analysis](docs/APPLICATION_TOOLS_ANALYSIS.md) for complete documentation.**
 
 ## 🎵 Application-Specific Usage
 
@@ -223,7 +267,7 @@ await send_osc("localhost", 57120, "/n_free", [1000])
 ```
 osc-mcp/
 ├── src/oscmcp/
-│   ├── mcp_server.py        # Primary stdio server (3 tools)
+│   ├── mcp_server.py        # Primary stdio server (43+ tools)
 │   ├── stdio_server.py      # Alternative stdio server
 │   ├── server.py            # HTTP server variant
 │   ├── osc/                 # OSC protocol implementation
@@ -237,6 +281,7 @@ osc-mcp/
 │   └── midi/                # MIDI integration
 ├── tests/                   # Test suite
 ├── docs/                    # Documentation
+│   └── APPLICATION_TOOLS_ANALYSIS.md  # Tool analysis
 ├── pyproject.toml          # Project configuration
 ├── UPGRADE_NOTES.md        # FastMCP 2.13 migration guide
 └── README.md               # This file
@@ -272,6 +317,7 @@ mypy src
 ## 📚 Documentation
 
 - **[UPGRADE_NOTES.md](UPGRADE_NOTES.md)** - FastMCP 2.10 → 2.13 migration guide
+- **[docs/APPLICATION_TOOLS_ANALYSIS.md](docs/APPLICATION_TOOLS_ANALYSIS.md)** - Comprehensive analysis of application-specific tools
 - **[.claude/REPO_STATUS_AND_ROADMAP.md](.claude/REPO_STATUS_AND_ROADMAP.md)** - Repository status and improvement roadmap
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - Contribution guidelines
 - **[docs/CRITICAL_ANALYSIS.md](docs/CRITICAL_ANALYSIS.md)** - Domain analysis and recommendations
@@ -347,7 +393,8 @@ See [.claude/REPO_STATUS_AND_ROADMAP.md](.claude/REPO_STATUS_AND_ROADMAP.md) for
 - 🎯 Metrics and telemetry
 
 ### Phase 3: Application Integration
-- 🎯 Expose app-specific tools (Ableton, VRChat, etc.)
+- ✅ Expose app-specific tools (Ableton, VRChat, etc.) - **43+ tools added!**
+- 🎯 Expand tool coverage for existing applications
 - 🎯 OSCQuery service discovery
 - 🎯 MIDI bridge tools
 

@@ -162,14 +162,45 @@ class VCVController:
     
     def send_cv(self, module_id: int, cv_id: int, voltage: float) -> None:
         """Send a CV value to VCV Rack.
-        
+
         Args:
             module_id: ID of the module
             cv_id: ID of the CV input
             voltage: Voltage value (-10.0 to 10.0)
         """
         self.client.send("/cv", module_id, cv_id, float(voltage))
-    
+
+    # MIDI methods
+
+    def play_midi_note(self, note: int, velocity: int = 100, channel: int = 1) -> None:
+        """Play a MIDI note in VCV Rack.
+
+        Args:
+            note: MIDI note number (0-127)
+            velocity: Note velocity (0-127)
+            channel: MIDI channel (1-16)
+        """
+        self.client.send("/midi/note", channel, note, velocity)
+
+    def stop_midi_note(self, note: int, channel: int = 1) -> None:
+        """Stop a MIDI note in VCV Rack.
+
+        Args:
+            note: MIDI note number (0-127)
+            channel: MIDI channel (1-16)
+        """
+        self.client.send("/midi/note", channel, note, 0)
+
+    def send_midi_cc(self, controller: int, value: int, channel: int = 1) -> None:
+        """Send a MIDI CC (control change) message to VCV Rack.
+
+        Args:
+            controller: CC controller number (0-127)
+            value: CC value (0-127)
+            channel: MIDI channel (1-16)
+        """
+        self.client.send("/midi/cc", channel, controller, value)
+
     # Convenience methods for common modules
     
     def set_vco_frequency(self, module_id: int, frequency: float) -> None:

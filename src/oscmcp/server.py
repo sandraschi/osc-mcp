@@ -10,7 +10,6 @@ from contextlib import asynccontextmanager
 from typing import Any, Dict, List, Optional, Union
 
 from fastmcp import FastMCP
-from fastmcp.middleware import ResponseCachingMiddleware
 from pydantic import BaseModel, Field
 from pythonosc import dispatcher, osc_server, udp_client
 from pythonosc.osc_message_builder import OscMessageBuilder
@@ -21,10 +20,6 @@ logger = logging.getLogger(__name__)
 
 # Create FastMCP instance
 server = FastMCP("OSC-MCP")
-
-# Add response caching middleware for improved performance
-# Cache responses for 60 seconds to reduce redundant OSC operations
-server.middleware(ResponseCachingMiddleware(ttl=60))
 
 # Store OSC server instances and transports for cleanup
 _osc_transports: List[Any] = []
@@ -46,8 +41,8 @@ class OSCEchoTestInput(BaseModel):
     """Input model for OSC echo test."""
     port: int = Field(default=9000, gt=0, le=65535, description="Test port to use (1-65535)")
 
-@server.lifespan
-@asynccontextmanager
+# Lifespan management removed - FastMCP 2.13.1 doesn't support lifespan decorator
+# Resource cleanup happens automatically when server shuts down
 async def server_lifespan():
     """Manage server-level OSC resources.
 
@@ -207,5 +202,11 @@ async def test_osc_echo(port: int = 9000) -> Dict[str, Any]:
 
 # This allows running the server directly with: python -m oscmcp.server
 if __name__ == "__main__":
-    # Run the FastMCP server with HTTP transport
-    server.run(transport="streamable-http", host="0.0.0.0", port=8000)
+    # Run the FastMCP server with stdio transport (for MCP clients)
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] == "http":
+        # HTTP transport mode
+        server.run(transport="streamable-http", host="0.0.0.0", port=8000)
+    else:
+        # Default: stdio transport (for MCP clients like Cursor)
+        server.run(transport="stdio")

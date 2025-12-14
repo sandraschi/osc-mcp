@@ -1,0 +1,64 @@
+{
+  "name": "oscmcp",
+  "version": "1.0.0",
+  "description": "Open Source Content Management Platform MCP server for managing CMS platforms through a standardized interface with Austrian precision",
+  "author": "Sandra",
+  "license": "MIT",
+  "homepage": "https://github.com/sandraschi/oscmcp",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sandraschi/oscmcp"
+  },
+  "main": "server/server.py",
+  "mcp": {
+    "version": "1.0",
+    "capabilities": ["tools"],
+    "prompts": {
+      "system": "assets/prompts/system.md",
+      "content_management": "assets/prompts/content_management.md",
+      "workflow_automation": "assets/prompts/workflow_automation.md",
+      "platform_integration": "assets/prompts/platform_integration.md",
+      "troubleshooting": "assets/prompts/troubleshooting.md"
+    }
+  },
+  "runtime": {
+    "python": ">=3.8"
+  },
+  "dependencies": {
+    "fastmcp": ">=2.10.0",
+    "fastapi": ">=0.109.0",
+    "pydantic": ">=2.0.0",
+    "httpx": ">=0.27.0"
+  },
+  "features": [
+    "Multi-platform CMS management",
+    "Content creation and editing",
+    "User and permission management",
+    "Workflow automation",
+    "Plugin system for extensibility",
+    "Async architecture with FastAPI",
+    "Comprehensive test suite",
+    "Docker container support",
+    "DXT packaging",
+    "Austrian engineering quality"
+  ],
+  "supported_platforms": [
+    "WordPress",
+    "Drupal",
+    "Joomla",
+    "Ghost",
+    "Strapi",
+    "Custom CMS platforms"
+  ],
+  "keywords": [
+    "cms",
+    "content-management",
+    "wordpress",
+    "drupal",
+    "automation",
+    "fastapi",
+    "mcp",
+    "austria"
+  ]
+}
+
