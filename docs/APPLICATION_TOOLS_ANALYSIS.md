@@ -57,17 +57,20 @@ Port: 11000 (default)
 - Remote session control for productions
 - Real-time parameter manipulation during recording
 
-#### VRChat Manager (3 operations)
+#### VRChat Manager (3 basic operations)
 Port: 9000 (default input), 9001 (default output)
 
 **Manager Tool:** `vrchat_manager`
 **Operations:** set_parameter, send_chat, trigger_haptic
 
 **Use Cases:**
-- AI-powered avatar control and animation
-- Automated social interactions in VR worlds
-- Accessibility features for users with mobility impairments
-- Interactive VR installations and performances
+- Basic avatar parameter control
+- Simple chat automation
+- Basic haptic feedback triggering
+
+**Limitations:**
+- Only provides basic VRChat OSC functionality
+- For advanced VRChat features (avatar management, parameter monitoring, complex animations, OSC inspection), use the dedicated [vrchat-mcp](https://github.com/sandraschi/vrchat-mcp) repository
 
 #### TouchDesigner Manager (3 operations)
 Port: 9000 (default)

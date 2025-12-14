@@ -169,9 +169,10 @@ OSC-MCP provides **12 tools** organized as portmanteau managers for scalable con
 - Playback control, tempo, clip triggering, mixing
 - Operations: `play`, `stop`, `set_tempo`, `play_clip`, `set_volume`, `set_pan`
 
-**🎮 `vrchat_manager`** - VRChat avatar control (3 operations)
+**🎮 `vrchat_manager`** - VRChat avatar control (3 basic operations)
 - Parameter setting, chat, haptic feedback
 - Operations: `set_parameter`, `send_chat`, `trigger_haptic`
+- ⚠️ **Note:** For advanced VRChat features (avatar management, monitoring, complex animations), use the dedicated [vrchat-mcp](https://github.com/sandraschi/vrchat-mcp) repository
 
 **🎨 `touchdesigner_manager`** - TouchDesigner visual programming (3 operations)
 - Parameter control, constants, button triggering

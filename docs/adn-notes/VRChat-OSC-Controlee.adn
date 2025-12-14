@@ -132,13 +132,37 @@ vrchat_manager("trigger_haptic", device="left", duration=0.2, amplitude=1.0, fre
 - Check VRChat haptic settings
 - Some VR systems may have haptic disabled
 
+## Limitations in osc-mcp
+
+This ADN note covers only the basic VRChat OSC operations available in osc-mcp. VRChat has extensive OSC capabilities including:
+
+- **Advanced Avatar Management:** Loading, monitoring, parameter interpolation
+- **OSC Inspection:** Real-time message monitoring and debugging
+- **Complex Animations:** Multi-parameter animation sequences
+- **Plugin System:** Extensible tool architecture
+- **Web Interface:** Browser-based control and monitoring
+- **WebSocket Support:** Real-time bidirectional communication
+
+## Recommended Alternative
+
+For comprehensive VRChat control, use the dedicated [vrchat-mcp](https://github.com/sandraschi/vrchat-mcp) repository, which provides:
+
+- 20+ specialized tools for avatar control
+- OSC inspection and debugging tools
+- Plugin system for custom functionality
+- Web interface for remote control
+- Advanced parameter monitoring
+- Animation interpolation systems
+
 ## Related Notes
 - [[Virtual-Reality-Systems]]
 - [[Accessibility-Technology]]
 - [[OSC-Protocol-Fundamentals]]
+- [[Advanced-VRChat-Control]] (in vrchat-mcp repo)
 - [[Real-time-Interaction-Design]]
 
 ## References
 - VRChat OSC Documentation
 - VRChat Developer Resources
 - VRChat: https://vrchat.com
+- vrchat-mcp: https://github.com/sandraschi/vrchat-mcp
