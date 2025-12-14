@@ -680,228 +680,487 @@ async def test_osc_echo(port: int = 9000) -> Dict[str, Any]:
 # These tools provide high-level interfaces for specific applications
 # They use the send_osc function internally
 
-# --- Ableton Live Tools ---
 @server.tool()
-async def ableton_play(host: str = "127.0.0.1", port: int = 11000) -> Dict[str, Any]:
-    """Start playback in Ableton Live."""
-    return await send_osc(host, port, "/live/play", [])
+async def ableton_manager(operation: str, host: str = "127.0.0.1", port: int = 11000,
+                         track_index: Optional[int] = None, clip_slot: Optional[int] = None,
+                         bpm: Optional[float] = None, volume: Optional[float] = None,
+                         pan: Optional[float] = None) -> Dict[str, Any]:
+    """
+    Ableton Live Manager - Professional DAW control.
+
+    PORTMANTEAU TOOL: Consolidates all Ableton Live operations into one tool.
+
+    Args:
+        operation: Operation to perform
+            - "play" - Start playback
+            - "stop" - Stop playback
+            - "set_tempo" - Set BPM
+            - "play_clip" - Play specific clip
+            - "set_volume" - Set track volume (0.0-1.0)
+            - "set_pan" - Set track pan (-1.0 to 1.0)
+        host: Target host (default: 127.0.0.1)
+        port: Target port (default: 11000)
+        track_index: Track index (for clip, volume, pan operations)
+        clip_slot: Clip slot index (for play_clip)
+        bpm: Tempo in BPM (for set_tempo)
+        volume: Volume level (0.0-1.0, for set_volume)
+        pan: Pan position (-1.0 to 1.0, for set_pan)
+
+    Returns:
+        Operation result with status and details
+    """
+
+    if operation == "play":
+        return await send_osc(host, port, "/live/play", [])
+
+    elif operation == "stop":
+        return await send_osc(host, port, "/live/stop", [])
+
+    elif operation == "set_tempo":
+        if bpm is None:
+            return {"status": "error", "message": "bpm required for set_tempo"}
+        return await send_osc(host, port, "/live/tempo", [bpm])
+
+    elif operation == "play_clip":
+        if track_index is None or clip_slot is None:
+            return {"status": "error", "message": "track_index and clip_slot required for play_clip"}
+        return await send_osc(host, port, "/live/clip/fire", [track_index, clip_slot])
+
+    elif operation == "set_volume":
+        if track_index is None or volume is None:
+            return {"status": "error", "message": "track_index and volume required for set_volume"}
+        return await send_osc(host, port, "/live/track/set/volume", [track_index, volume])
+
+    elif operation == "set_pan":
+        if track_index is None or pan is None:
+            return {"status": "error", "message": "track_index and pan required for set_pan"}
+        return await send_osc(host, port, "/live/track/set/panning", [track_index, pan])
+
+    else:
+        return {"status": "error", "message": f"Unknown operation: {operation}"}
 
 @server.tool()
-async def ableton_stop(host: str = "127.0.0.1", port: int = 11000) -> Dict[str, Any]:
-    """Stop playback in Ableton Live."""
-    return await send_osc(host, port, "/live/stop", [])
+async def vrchat_manager(operation: str, host: str = "127.0.0.1", port: int = 9000,
+                        param_name: Optional[str] = None, value: Optional[float] = None,
+                        message: Optional[str] = None, device: Optional[str] = None,
+                        duration: Optional[float] = None, amplitude: Optional[float] = None,
+                        frequency: Optional[float] = None) -> Dict[str, Any]:
+    """
+    VRChat Manager - Avatar and world control.
+
+    PORTMANTEAU TOOL: Consolidates all VRChat operations into one tool.
+
+    Args:
+        operation: Operation to perform
+            - "set_parameter" - Set avatar parameter
+            - "send_chat" - Send chat message
+            - "trigger_haptic" - Trigger haptic feedback
+        host: Target host (default: 127.0.0.1)
+        port: Target port (default: 9000)
+        param_name: Parameter name (for set_parameter)
+        value: Parameter value (for set_parameter)
+        message: Chat message (for send_chat)
+        device: Haptic device ('left', 'right', or 'both', for trigger_haptic)
+        duration: Haptic duration (default: 0.1, for trigger_haptic)
+        amplitude: Haptic amplitude (default: 0.5, for trigger_haptic)
+        frequency: Haptic frequency (default: 0.0, for trigger_haptic)
+
+    Returns:
+        Operation result with status and details
+    """
+
+    if operation == "set_parameter":
+        if param_name is None or value is None:
+            return {"status": "error", "message": "param_name and value required for set_parameter"}
+        address = f"/avatar/parameters/{param_name}"
+        return await send_osc(host, port, address, [value])
+
+    elif operation == "send_chat":
+        if message is None:
+            return {"status": "error", "message": "message required for send_chat"}
+        return await send_osc(host, port, "/chatbox/input", [message, True, False])
+
+    elif operation == "trigger_haptic":
+        device = device or "both"
+        duration = duration or 0.1
+        amplitude = amplitude or 0.5
+        frequency = frequency or 0.0
+
+        results = {}
+        if device.lower() in ('left', 'both'):
+            await send_osc(host, port, "/avatar/parameters/LeftHaptic", [duration, amplitude, frequency])
+            results['left'] = 'sent'
+        if device.lower() in ('right', 'both'):
+            await send_osc(host, port, "/avatar/parameters/RightHaptic", [duration, amplitude, frequency])
+            results['right'] = 'sent'
+        return {"status": "success", "device": device, "results": results}
+
+    else:
+        return {"status": "error", "message": f"Unknown operation: {operation}"}
 
 @server.tool()
-async def ableton_set_tempo(bpm: float, host: str = "127.0.0.1", port: int = 11000) -> Dict[str, Any]:
-    """Set the tempo in BPM for Ableton Live."""
-    return await send_osc(host, port, "/live/tempo", [bpm])
+async def touchdesigner_manager(operation: str, host: str = "127.0.0.1", port: int = 9000,
+                               component_path: Optional[str] = None, parameter: Optional[str] = None,
+                               value: Optional[float] = None) -> Dict[str, Any]:
+    """
+    TouchDesigner Manager - Real-time visual programming control.
+
+    PORTMANTEAU TOOL: Consolidates all TouchDesigner operations into one tool.
+
+    Args:
+        operation: Operation to perform
+            - "set_parameter" - Set component parameter
+            - "set_constant" - Set constant component value
+            - "trigger_button" - Trigger button component
+        host: Target host (default: 127.0.0.1)
+        port: Target port (default: 9000)
+        component_path: Component path (e.g., '/project1/constant1')
+        parameter: Parameter name (for set_parameter)
+        value: Parameter/constant value
+
+    Returns:
+        Operation result with status and details
+    """
+
+    if operation == "set_parameter":
+        if component_path is None or parameter is None or value is None:
+            return {"status": "error", "message": "component_path, parameter, and value required for set_parameter"}
+        address = f"{component_path}/{parameter}"
+        return await send_osc(host, port, address, [value])
+
+    elif operation == "set_constant":
+        if component_path is None or value is None:
+            return {"status": "error", "message": "component_path and value required for set_constant"}
+        return await send_osc(host, port, f"{component_path}/value1", [value])
+
+    elif operation == "trigger_button":
+        if component_path is None:
+            return {"status": "error", "message": "component_path required for trigger_button"}
+        return await send_osc(host, port, f"{component_path}/pulse", [1])
+
+    else:
+        return {"status": "error", "message": f"Unknown operation: {operation}"}
+
+
+# --- Application Manager Tools ---
 
 @server.tool()
-async def ableton_play_clip(track_index: int, clip_slot: int, host: str = "127.0.0.1", port: int = 11000) -> Dict[str, Any]:
-    """Play a specific clip in Ableton Live."""
-    return await send_osc(host, port, "/live/clip/fire", [track_index, clip_slot])
+async def vcv_manager(operation: str, host: str = "127.0.0.1", port: int = 10001,
+                      module_id: Optional[int] = None, param_id: Optional[int] = None,
+                      value: Optional[float] = None, cv_id: Optional[int] = None,
+                      voltage: Optional[float] = None, light_id: Optional[int] = None,
+                      brightness: Optional[float] = None, trigger_id: Optional[int] = None,
+                      note: Optional[int] = None, velocity: Optional[int] = None,
+                      channel: Optional[int] = None, controller: Optional[int] = None,
+                      frequency: Optional[float] = None, level: Optional[float] = None,
+                      rate: Optional[float] = None, cutoff: Optional[float] = None,
+                      attack: Optional[float] = None, decay: Optional[float] = None,
+                      sustain: Optional[float] = None, release: Optional[float] = None) -> Dict[str, Any]:
+    """
+    VCV Rack Manager - Comprehensive modular synthesis control.
+
+    PORTMANTEAU TOOL: Consolidates all VCV Rack operations into one tool.
+
+    Args:
+        operation: Operation to perform
+            - "set_parameter" - Set module parameter (0.0-1.0)
+            - "trigger" - Trigger event
+            - "send_cv" - Send control voltage (-10.0 to 10.0)
+            - "set_light" - Set light brightness (0.0-1.0)
+            - "play_midi" - Play MIDI note (0-127)
+            - "stop_midi" - Stop MIDI note
+            - "send_midi_cc" - Send MIDI CC message
+            - "set_vco_frequency" - Set VCO frequency in Hz
+            - "set_vca_level" - Set VCA level (0.0-1.0)
+            - "set_lfo_rate" - Set LFO rate (0.0-1.0)
+            - "set_filter_cutoff" - Set filter cutoff (0.0-1.0)
+            - "set_envelope_attack" - Set envelope attack (0.0-1.0)
+            - "set_envelope_decay" - Set envelope decay (0.0-1.0)
+            - "set_envelope_sustain" - Set envelope sustain (0.0-1.0)
+            - "set_envelope_release" - Set envelope release (0.0-1.0)
+        host: Target host (default: 127.0.0.1)
+        port: Target port (default: 10001)
+        module_id: Module ID (required for most operations)
+        param_id: Parameter ID (for set_parameter)
+        value: Parameter value (0.0-1.0)
+        cv_id: CV input ID (for send_cv)
+        voltage: CV voltage (-10.0 to 10.0)
+        light_id: Light ID (for set_light)
+        brightness: Light brightness (0.0-1.0)
+        trigger_id: Trigger ID (for trigger)
+        note: MIDI note (0-127, for MIDI operations)
+        velocity: MIDI velocity (0-127, for play_midi)
+        channel: MIDI channel (1-16, for MIDI operations)
+        controller: MIDI CC controller (0-127, for send_midi_cc)
+        frequency: Frequency in Hz (for set_vco_frequency)
+        level: Level (0.0-1.0, for set_vca_level)
+        rate: Rate (0.0-1.0, for set_lfo_rate)
+        cutoff: Cutoff (0.0-1.0, for set_filter_cutoff)
+        attack: Attack time (0.0-1.0, for envelope)
+        decay: Decay time (0.0-1.0, for envelope)
+        sustain: Sustain level (0.0-1.0, for envelope)
+        release: Release time (0.0-1.0, for envelope)
+
+    Returns:
+        Operation result with status and details
+    """
+
+    if operation == "set_parameter":
+        if module_id is None or param_id is None or value is None:
+            return {"status": "error", "message": "module_id, param_id, and value required for set_parameter"}
+        return await send_osc(host, port, "/param", [module_id, param_id, value])
+
+    elif operation == "trigger":
+        if module_id is None or trigger_id is None:
+            return {"status": "error", "message": "module_id and trigger_id required for trigger"}
+        return await send_osc(host, port, "/trigger", [module_id, trigger_id])
+
+    elif operation == "send_cv":
+        if module_id is None or cv_id is None or voltage is None:
+            return {"status": "error", "message": "module_id, cv_id, and voltage required for send_cv"}
+        return await send_osc(host, port, "/cv", [module_id, cv_id, voltage])
+
+    elif operation == "set_light":
+        if module_id is None or light_id is None or brightness is None:
+            return {"status": "error", "message": "module_id, light_id, and brightness required for set_light"}
+        return await send_osc(host, port, "/light", [module_id, light_id, brightness])
+
+    elif operation == "play_midi":
+        if note is None:
+            return {"status": "error", "message": "note required for play_midi"}
+        velocity = velocity or 100
+        channel = channel or 1
+        return await send_osc(host, port, "/midi/note", [channel, note, velocity])
+
+    elif operation == "stop_midi":
+        if note is None:
+            return {"status": "error", "message": "note required for stop_midi"}
+        channel = channel or 1
+        return await send_osc(host, port, "/midi/note", [channel, note, 0])
+
+    elif operation == "send_midi_cc":
+        if controller is None or value is None:
+            return {"status": "error", "message": "controller and value required for send_midi_cc"}
+        channel = channel or 1
+        return await send_osc(host, port, "/midi/cc", [channel, controller, value])
+
+    elif operation == "set_vco_frequency":
+        if module_id is None or frequency is None:
+            return {"status": "error", "message": "module_id and frequency required for set_vco_frequency"}
+        value = min(max(0.0, frequency / 10000.0), 1.0)
+        return await send_osc(host, port, "/param", [module_id, 0, value])
+
+    elif operation == "set_vca_level":
+        if module_id is None or level is None:
+            return {"status": "error", "message": "module_id and level required for set_vca_level"}
+        value = min(max(0.0, level), 1.0)
+        return await send_osc(host, port, "/param", [module_id, 0, value])
+
+    elif operation == "set_lfo_rate":
+        if module_id is None or rate is None:
+            return {"status": "error", "message": "module_id and rate required for set_lfo_rate"}
+        value = min(max(0.0, rate), 1.0)
+        return await send_osc(host, port, "/param", [module_id, 0, value])
+
+    elif operation == "set_filter_cutoff":
+        if module_id is None or cutoff is None:
+            return {"status": "error", "message": "module_id and cutoff required for set_filter_cutoff"}
+        value = min(max(0.0, cutoff), 1.0)
+        return await send_osc(host, port, "/param", [module_id, 0, value])
+
+    elif operation == "set_envelope_attack":
+        if module_id is None or attack is None:
+            return {"status": "error", "message": "module_id and attack required for set_envelope_attack"}
+        value = min(max(0.0, attack), 1.0)
+        return await send_osc(host, port, "/param", [module_id, 0, value])
+
+    elif operation == "set_envelope_decay":
+        if module_id is None or decay is None:
+            return {"status": "error", "message": "module_id and decay required for set_envelope_decay"}
+        value = min(max(0.0, decay), 1.0)
+        return await send_osc(host, port, "/param", [module_id, 1, value])
+
+    elif operation == "set_envelope_sustain":
+        if module_id is None or sustain is None:
+            return {"status": "error", "message": "module_id and sustain required for set_envelope_sustain"}
+        value = min(max(0.0, sustain), 1.0)
+        return await send_osc(host, port, "/param", [module_id, 2, value])
+
+    elif operation == "set_envelope_release":
+        if module_id is None or release is None:
+            return {"status": "error", "message": "module_id and release required for set_envelope_release"}
+        value = min(max(0.0, release), 1.0)
+        return await send_osc(host, port, "/param", [module_id, 3, value])
+
+    else:
+        return {"status": "error", "message": f"Unknown operation: {operation}"}
 
 @server.tool()
-async def ableton_set_volume(track_index: int, volume: float, host: str = "127.0.0.1", port: int = 11000) -> Dict[str, Any]:
-    """Set the volume of a track in Ableton Live (0.0 to 1.0)."""
-    return await send_osc(host, port, "/live/track/set/volume", [track_index, volume])
+async def supercollider_manager(operation: str, host: str = "127.0.0.1", port: int = 57120,
+                               def_name: Optional[str] = None, node_id: Optional[int] = None,
+                               add_action: Optional[int] = None, target: Optional[int] = None,
+                               control_name: Optional[str] = None, value: Optional[float] = None) -> Dict[str, Any]:
+    """
+    SuperCollider Manager - Algorithmic composition and audio synthesis.
+
+    PORTMANTEAU TOOL: Consolidates all SuperCollider operations into one tool.
+
+    Args:
+        operation: Operation to perform
+            - "create_synth" - Create synth
+            - "free_node" - Free synth node
+            - "set_control" - Set control value
+        host: Target host (default: 127.0.0.1)
+        port: Target port (default: 57120)
+        def_name: Synth definition name (for create_synth)
+        node_id: Node ID (for all operations)
+        add_action: Add action (default: 0, for create_synth)
+        target: Target node (default: 0, for create_synth)
+        control_name: Control parameter name (for set_control)
+        value: Control value (for set_control)
+
+    Returns:
+        Operation result with status and details
+    """
+
+    if operation == "create_synth":
+        if def_name is None or node_id is None:
+            return {"status": "error", "message": "def_name and node_id required for create_synth"}
+        add_action = add_action or 0
+        target = target or 0
+        return await send_osc(host, port, "/s_new", [def_name, node_id, add_action, target])
+
+    elif operation == "free_node":
+        if node_id is None:
+            return {"status": "error", "message": "node_id required for free_node"}
+        return await send_osc(host, port, "/n_free", [node_id])
+
+    elif operation == "set_control":
+        if node_id is None or control_name is None or value is None:
+            return {"status": "error", "message": "node_id, control_name, and value required for set_control"}
+        return await send_osc(host, port, "/n_set", [node_id, control_name, value])
+
+    else:
+        return {"status": "error", "message": f"Unknown operation: {operation}"}
 
 @server.tool()
-async def ableton_set_pan(track_index: int, pan: float, host: str = "127.0.0.1", port: int = 11000) -> Dict[str, Any]:
-    """Set the pan of a track in Ableton Live (-1.0 to 1.0)."""
-    return await send_osc(host, port, "/live/track/set/panning", [track_index, pan])
+async def maxmsp_manager(operation: str, host: str = "127.0.0.1", port: int = 4000,
+                        receiver: Optional[str] = None, value: Optional[float] = None) -> Dict[str, Any]:
+    """
+    Max/MSP Manager - Audio/visual programming control.
 
-# --- VRChat Tools ---
-@server.tool()
-async def vrchat_set_parameter(param_name: str, value: float, host: str = "127.0.0.1", port: int = 9000) -> Dict[str, Any]:
-    """Set an avatar parameter in VRChat."""
-    address = f"/avatar/parameters/{param_name}"
-    return await send_osc(host, port, address, [value])
+    PORTMANTEAU TOOL: Consolidates all Max/MSP operations into one tool.
 
-@server.tool()
-async def vrchat_send_chat(message: str, host: str = "127.0.0.1", port: int = 9000) -> Dict[str, Any]:
-    """Send a chat message to VRChat."""
-    return await send_osc(host, port, "/chatbox/input", [message, True, False])
+    Args:
+        operation: Operation to perform
+            - "send_bang" - Send bang message
+            - "send_float" - Send float value
+            - "toggle_dsp" - Toggle DSP processing
+        host: Target host (default: 127.0.0.1)
+        port: Target port (default: 4000)
+        receiver: Receiver name (for send_bang, send_float)
+        value: Float value (for send_float)
 
-@server.tool()
-async def vrchat_trigger_haptic(device: str = "both", duration: float = 0.1, amplitude: float = 0.5, frequency: float = 0.0, host: str = "127.0.0.1", port: int = 9000) -> Dict[str, Any]:
-    """Trigger haptic feedback on a VRChat device ('left', 'right', or 'both')."""
-    results = {}
-    if device.lower() in ('left', 'both'):
-        await send_osc(host, port, "/avatar/parameters/LeftHaptic", [duration, amplitude, frequency])
-        results['left'] = 'sent'
-    if device.lower() in ('right', 'both'):
-        await send_osc(host, port, "/avatar/parameters/RightHaptic", [duration, amplitude, frequency])
-        results['right'] = 'sent'
-    return {"status": "success", "device": device, "results": results}
+    Returns:
+        Operation result with status and details
+    """
 
-# --- TouchDesigner Tools ---
-@server.tool()
-async def touchdesigner_set_parameter(component_path: str, parameter: str, value: float, host: str = "127.0.0.1", port: int = 9000) -> Dict[str, Any]:
-    """Set a parameter value in TouchDesigner (e.g., '/project1/constant1', 'value1')."""
-    address = f"{component_path}/{parameter}"
-    return await send_osc(host, port, address, [value])
+    if operation == "send_bang":
+        if receiver is None:
+            return {"status": "error", "message": "receiver required for send_bang"}
+        return await send_osc(host, port, f"/{receiver}", ["bang"])
 
-@server.tool()
-async def touchdesigner_set_constant(component_path: str, value: float, host: str = "127.0.0.1", port: int = 9000) -> Dict[str, Any]:
-    """Set the value of a constant component in TouchDesigner."""
-    return await send_osc(host, port, f"{component_path}/value1", [value])
+    elif operation == "send_float":
+        if receiver is None or value is None:
+            return {"status": "error", "message": "receiver and value required for send_float"}
+        return await send_osc(host, port, f"/{receiver}", [value])
+
+    elif operation == "toggle_dsp":
+        return await send_osc(host, port, "/dsp/toggle", [])
+
+    else:
+        return {"status": "error", "message": f"Unknown operation: {operation}"}
 
 @server.tool()
-async def touchdesigner_trigger_button(component_path: str, host: str = "127.0.0.1", port: int = 9000) -> Dict[str, Any]:
-    """Trigger a button component in TouchDesigner."""
-    return await send_osc(host, port, f"{component_path}/pulse", [1])
+async def resolume_manager(operation: str, host: str = "127.0.0.1", port: int = 7000,
+                          layer: Optional[int] = None, column: Optional[int] = None,
+                          opacity: Optional[float] = None, bpm: Optional[float] = None) -> Dict[str, Any]:
+    """
+    Resolume Arena Manager - VJ software and live video mixing.
 
-# --- SuperCollider Tools ---
-@server.tool()
-async def supercollider_create_synth(def_name: str, node_id: int = 1000, add_action: int = 0, target: int = 0, host: str = "127.0.0.1", port: int = 57120) -> Dict[str, Any]:
-    """Create a synth in SuperCollider."""
-    return await send_osc(host, port, "/s_new", [def_name, node_id, add_action, target])
+    PORTMANTEAU TOOL: Consolidates all Resolume Arena operations into one tool.
 
-@server.tool()
-async def supercollider_free_node(node_id: int, host: str = "127.0.0.1", port: int = 57120) -> Dict[str, Any]:
-    """Free a synth node in SuperCollider."""
-    return await send_osc(host, port, "/n_free", [node_id])
+    Args:
+        operation: Operation to perform
+            - "play_clip" - Play clip in layer
+            - "set_layer_opacity" - Set layer opacity (0.0-1.0)
+            - "set_bpm" - Set transport BPM
+        host: Target host (default: 127.0.0.1)
+        port: Target port (default: 7000)
+        layer: Layer index (for play_clip, set_layer_opacity)
+        column: Column index (for play_clip)
+        opacity: Opacity value (0.0-1.0, for set_layer_opacity)
+        bpm: BPM value (for set_bpm)
 
-@server.tool()
-async def supercollider_set_control(node_id: int, control_name: str, value: float, host: str = "127.0.0.1", port: int = 57120) -> Dict[str, Any]:
-    """Set a control value on a synth node in SuperCollider."""
-    return await send_osc(host, port, "/n_set", [node_id, control_name, value])
+    Returns:
+        Operation result with status and details
+    """
 
-# --- Max/MSP Tools ---
-@server.tool()
-async def maxmsp_send_bang(receiver: str, host: str = "127.0.0.1", port: int = 4000) -> Dict[str, Any]:
-    """Send a bang to a Max/MSP receiver."""
-    return await send_osc(host, port, f"/{receiver}", ["bang"])
+    if operation == "play_clip":
+        if layer is None or column is None:
+            return {"status": "error", "message": "layer and column required for play_clip"}
+        return await send_osc(host, port, f"/composition/layers/{layer}/clips/{column}/connect", [1])
 
-@server.tool()
-async def maxmsp_send_float(receiver: str, value: float, host: str = "127.0.0.1", port: int = 4000) -> Dict[str, Any]:
-    """Send a float value to a Max/MSP receiver."""
-    return await send_osc(host, port, f"/{receiver}", [value])
+    elif operation == "set_layer_opacity":
+        if layer is None or opacity is None:
+            return {"status": "error", "message": "layer and opacity required for set_layer_opacity"}
+        return await send_osc(host, port, f"/composition/layers/{layer}/opacity", [opacity])
 
-@server.tool()
-async def maxmsp_toggle_dsp(host: str = "127.0.0.1", port: int = 4000) -> Dict[str, Any]:
-    """Toggle DSP (audio processing) on/off in Max/MSP."""
-    return await send_osc(host, port, "/dsp/toggle", [])
+    elif operation == "set_bpm":
+        if bpm is None:
+            return {"status": "error", "message": "bpm required for set_bpm"}
+        return await send_osc(host, port, "/transport/tempo", [bpm])
 
-# --- VCV Rack Tools ---
-@server.tool()
-async def vcvrack_set_parameter(module_id: int, param_id: int, value: float, host: str = "127.0.0.1", port: int = 10001) -> Dict[str, Any]:
-    """Set a parameter value in VCV Rack (0.0 to 1.0)."""
-    return await send_osc(host, port, "/param", [module_id, param_id, value])
-
-@server.tool()
-async def vcvrack_trigger(module_id: int, trigger_id: int, host: str = "127.0.0.1", port: int = 10001) -> Dict[str, Any]:
-    """Trigger an event in VCV Rack."""
-    return await send_osc(host, port, "/trigger", [module_id, trigger_id])
+    else:
+        return {"status": "error", "message": f"Unknown operation: {operation}"}
 
 @server.tool()
-async def vcvrack_send_cv(module_id: int, cv_id: int, voltage: float, host: str = "127.0.0.1", port: int = 10001) -> Dict[str, Any]:
-    """Send a control voltage value to VCV Rack (-10.0 to 10.0)."""
-    return await send_osc(host, port, "/cv", [module_id, cv_id, voltage])
+async def puredata_manager(operation: str, host: str = "127.0.0.1", port: int = 3000,
+                          receiver: Optional[str] = None, value: Optional[float] = None) -> Dict[str, Any]:
+    """
+    Pure Data Manager - Visual programming and audio processing.
 
-@server.tool()
-async def vcvrack_set_light(module_id: int, light_id: int, brightness: float, host: str = "127.0.0.1", port: int = 10001) -> Dict[str, Any]:
-    """Set a light/LED brightness in VCV Rack (0.0 to 1.0)."""
-    return await send_osc(host, port, "/light", [module_id, light_id, brightness])
+    PORTMANTEAU TOOL: Consolidates all Pure Data operations into one tool.
 
-@server.tool()
-async def vcvrack_play_midi(note: int, velocity: int = 100, channel: int = 1, host: str = "127.0.0.1", port: int = 10001) -> Dict[str, Any]:
-    """Play a MIDI note in VCV Rack (note: 0-127, velocity: 0-127, channel: 1-16)."""
-    return await send_osc(host, port, "/midi/note", [channel, note, velocity])
+    Args:
+        operation: Operation to perform
+            - "send_bang" - Send bang message
+            - "send_float" - Send float value
+            - "toggle_dsp" - Toggle DSP processing
+        host: Target host (default: 127.0.0.1)
+        port: Target port (default: 3000)
+        receiver: Receiver name (for send_bang, send_float)
+        value: Float value (for send_float)
 
-@server.tool()
-async def vcvrack_stop_midi(note: int, channel: int = 1, host: str = "127.0.0.1", port: int = 10001) -> Dict[str, Any]:
-    """Stop a MIDI note in VCV Rack (note: 0-127, channel: 1-16)."""
-    return await send_osc(host, port, "/midi/note", [channel, note, 0])
+    Returns:
+        Operation result with status and details
+    """
 
-@server.tool()
-async def vcvrack_send_midi_cc(controller: int, value: int, channel: int = 1, host: str = "127.0.0.1", port: int = 10001) -> Dict[str, Any]:
-    """Send MIDI CC (control change) message to VCV Rack (controller: 0-127, value: 0-127, channel: 1-16)."""
-    return await send_osc(host, port, "/midi/cc", [channel, controller, value])
+    if operation == "send_bang":
+        if receiver is None:
+            return {"status": "error", "message": "receiver required for send_bang"}
+        return await send_osc(host, port, f"/{receiver}", ["bang"])
 
-# --- Module-Specific Convenience Tools ---
+    elif operation == "send_float":
+        if receiver is None or value is None:
+            return {"status": "error", "message": "receiver and value required for send_float"}
+        return await send_osc(host, port, f"/{receiver}", [value])
 
-@server.tool()
-async def vcvrack_set_vco_frequency(module_id: int, frequency: float, host: str = "127.0.0.1", port: int = 10001) -> Dict[str, Any]:
-    """Set VCO (Voltage Controlled Oscillator) frequency in Hz (converted to 0-1 range)."""
-    # Convert Hz to normalized value (assuming 0-10kHz range)
-    value = min(max(0.0, frequency / 10000.0), 1.0)
-    return await send_osc(host, port, "/param", [module_id, 0, value])
+    elif operation == "toggle_dsp":
+        return await send_osc(host, port, "/pd/dsp/toggle", [])
 
-@server.tool()
-async def vcvrack_set_vca_level(module_id: int, level: float, host: str = "127.0.0.1", port: int = 10001) -> Dict[str, Any]:
-    """Set VCA (Voltage Controlled Amplifier) level (0.0 to 1.0)."""
-    value = min(max(0.0, level), 1.0)
-    return await send_osc(host, port, "/param", [module_id, 0, value])
-
-@server.tool()
-async def vcvrack_set_lfo_rate(module_id: int, rate: float, host: str = "127.0.0.1", port: int = 10001) -> Dict[str, Any]:
-    """Set LFO (Low Frequency Oscillator) rate/frequency (0.0 to 1.0)."""
-    value = min(max(0.0, rate), 1.0)
-    return await send_osc(host, port, "/param", [module_id, 0, value])
-
-@server.tool()
-async def vcvrack_set_filter_cutoff(module_id: int, cutoff: float, host: str = "127.0.0.1", port: int = 10001) -> Dict[str, Any]:
-    """Set filter cutoff frequency (0.0 to 1.0)."""
-    value = min(max(0.0, cutoff), 1.0)
-    return await send_osc(host, port, "/param", [module_id, 0, value])
-
-@server.tool()
-async def vcvrack_set_envelope_attack(module_id: int, attack: float, host: str = "127.0.0.1", port: int = 10001) -> Dict[str, Any]:
-    """Set envelope attack time (0.0 to 1.0)."""
-    value = min(max(0.0, attack), 1.0)
-    return await send_osc(host, port, "/param", [module_id, 0, value])
-
-@server.tool()
-async def vcvrack_set_envelope_decay(module_id: int, decay: float, host: str = "127.0.0.1", port: int = 10001) -> Dict[str, Any]:
-    """Set envelope decay time (0.0 to 1.0)."""
-    value = min(max(0.0, decay), 1.0)
-    return await send_osc(host, port, "/param", [module_id, 1, value])
-
-@server.tool()
-async def vcvrack_set_envelope_sustain(module_id: int, sustain: float, host: str = "127.0.0.1", port: int = 10001) -> Dict[str, Any]:
-    """Set envelope sustain level (0.0 to 1.0)."""
-    value = min(max(0.0, sustain), 1.0)
-    return await send_osc(host, port, "/param", [module_id, 2, value])
-
-@server.tool()
-async def vcvrack_set_envelope_release(module_id: int, release: float, host: str = "127.0.0.1", port: int = 10001) -> Dict[str, Any]:
-    """Set envelope release time (0.0 to 1.0)."""
-    value = min(max(0.0, release), 1.0)
-    return await send_osc(host, port, "/param", [module_id, 3, value])
-
-# --- Resolume Arena Tools ---
-@server.tool()
-async def resolume_play_clip(layer: int, column: int, host: str = "127.0.0.1", port: int = 7000) -> Dict[str, Any]:
-    """Play a clip in Resolume Arena."""
-    return await send_osc(host, port, f"/composition/layers/{layer}/clips/{column}/connect", [1])
-
-@server.tool()
-async def resolume_set_layer_opacity(layer: int, opacity: float, host: str = "127.0.0.1", port: int = 7000) -> Dict[str, Any]:
-    """Set the opacity of a layer in Resolume Arena (0.0 to 1.0)."""
-    return await send_osc(host, port, f"/composition/layers/{layer}/opacity", [opacity])
-
-@server.tool()
-async def resolume_set_bpm(bpm: float, host: str = "127.0.0.1", port: int = 7000) -> Dict[str, Any]:
-    """Set BPM in Resolume Arena."""
-    return await send_osc(host, port, "/transport/tempo", [bpm])
-
-# --- Pure Data Tools ---
-@server.tool()
-async def puredata_send_bang(receiver: str, host: str = "127.0.0.1", port: int = 3000) -> Dict[str, Any]:
-    """Send a bang to a Pure Data receiver."""
-    return await send_osc(host, port, f"/{receiver}", ["bang"])
-
-@server.tool()
-async def puredata_send_float(receiver: str, value: float, host: str = "127.0.0.1", port: int = 3000) -> Dict[str, Any]:
-    """Send a float value to a Pure Data receiver."""
-    return await send_osc(host, port, f"/{receiver}", [value])
-
-@server.tool()
-async def puredata_toggle_dsp(host: str = "127.0.0.1", port: int = 3000) -> Dict[str, Any]:
-    """Toggle DSP processing on/off in Pure Data."""
-    return await send_osc(host, port, "/pd/dsp/toggle", [])
+    else:
+        return {"status": "error", "message": f"Unknown operation: {operation}"}
 
 # This allows running the server directly with: python -m oscmcp.mcp_server
 if __name__ == "__main__":

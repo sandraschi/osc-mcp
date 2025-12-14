@@ -1,0 +1,123 @@
+# Ableton Live OSC Controlee
+
+**Type:** OSC Controlee
+**Category:** Digital Audio Workstation
+**Status:** Active
+**Last Updated:** 2025-12-14
+
+## Overview
+
+Ableton Live is a professional Digital Audio Workstation (DAW) with comprehensive OSC support for remote control and automation. It enables natural language control of playback, recording, mixing, and live performance features.
+
+## OSC Integration
+
+### Native Support
+- **Full native OSC support** built-in
+- **Port:** 11000 (default)
+- **Protocol:** OSC 1.0
+- **Documentation:** Extensive LiveOSC API
+
+### Setup
+- Enable OSC in Live → Preferences → Link/MIDI → OSC
+- Set incoming port to 11000
+- No additional modules required
+
+## Available Operations
+
+### Transport Control
+- `play` - Start playback
+- `stop` - Stop playback
+- `set_tempo` - Set BPM (20-999 BPM)
+
+### Clip Control
+- `play_clip` - Trigger specific clips by track/clip coordinates
+- Track indexing: 0-based (0 = first track)
+- Clip indexing: 0-based (0 = first clip slot)
+
+### Mixing Control
+- `set_volume` - Set track volume (0.0-1.0)
+- `set_pan` - Set track pan (-1.0 to 1.0, center = 0.0)
+
+## Usage Examples
+
+### Basic Transport
+```
+ableton_manager("play")                              # Start playback
+ableton_manager("stop")                              # Stop playback
+ableton_manager("set_tempo", bpm=128.0)             # Set tempo to 128 BPM
+```
+
+### Clip Triggering
+```
+ableton_manager("play_clip", track_index=0, clip_slot=0)  # Play first clip on track 1
+ableton_manager("play_clip", track_index=2, clip_slot=3)  # Play clip 4 on track 3
+```
+
+### Live Mixing
+```
+ableton_manager("set_volume", track_index=0, volume=0.8)  # Set track 1 volume to 80%
+ableton_manager("set_pan", track_index=1, pan=-0.5)      # Pan track 2 hard left
+```
+
+## Architecture Notes
+
+### LiveOSC API Structure
+- `/live/play` - Transport play
+- `/live/stop` - Transport stop
+- `/live/tempo` - Set/get tempo
+- `/live/clip/fire <track> <clip>` - Fire specific clip
+- `/live/track/set/volume <track> <level>` - Set track volume
+- `/live/track/set/panning <track> <pan>` - Set track pan
+
+### Coordinate System
+- **Tracks:** 0-based indexing (0 = first track in session view)
+- **Clips:** 0-based indexing within each track
+- **Scenes:** Can be controlled via clip coordinates
+
+## Common Workflows
+
+### Live Performance
+- Real-time clip triggering
+- Tempo adjustments during performance
+- Volume automation for mixing
+- Effect parameter control
+
+### Production Automation
+- Batch clip processing
+- Automated mixing workflows
+- Parameter recording automation
+- Template-based project setup
+
+### Educational Use
+- Interactive music theory demonstrations
+- Live coding performances
+- Algorithmic composition
+- Sound design tutorials
+
+## Integration Considerations
+
+### Session Layout
+- OSC commands depend on current session arrangement
+- Track/clip indices change when rearranging
+- Consider using named tracks for stability
+
+### Timing
+- OSC commands have low latency (< 5ms)
+- Suitable for real-time performance control
+- Can be used in live coding scenarios
+
+### Error Handling
+- Invalid track/clip indices are ignored
+- Out-of-range values are clamped
+- No confirmation messages (fire-and-forget)
+
+## Related Notes
+- [[DAW-Control-Systems]]
+- [[Live-Performance-Technology]]
+- [[OSC-Protocol-Fundamentals]]
+- [[Music-Production-Workflows]]
+
+## References
+- Ableton Live Manual: OSC Control
+- LiveOSC API Documentation
+- Ableton Live: https://www.ableton.com

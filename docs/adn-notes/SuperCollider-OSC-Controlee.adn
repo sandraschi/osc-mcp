@@ -1,0 +1,140 @@
+# SuperCollider OSC Controlee
+
+**Type:** OSC Controlee
+**Category:** Audio Synthesis
+**Status:** Active
+**Last Updated:** 2025-12-14
+
+## Overview
+
+SuperCollider is a real-time audio synthesis programming language with extensive OSC support. It enables algorithmic composition, live coding, and complex audio synthesis through natural language control.
+
+## OSC Integration
+
+### Native Support
+- **Full native OSC support** built-in
+- **Port:** 57120 (default server port)
+- **Protocol:** OSC 1.0
+- **Server-based:** Communicates with scsynth server
+
+### Setup
+- Start SuperCollider server: `Server.default.boot`
+- OSC communication through server's OSC interface
+- No additional configuration required
+
+## Available Operations
+
+### Synth Management
+- `create_synth` - Create new synthesizer instances
+- Parameters: def_name (SynthDef), node_id, add_action, target
+- Returns: Synth node ID for further control
+
+### Node Control
+- `free_node` - Free synthesizer nodes
+- `set_control` - Set control parameters on running synths
+
+## Usage Examples
+
+### Synth Creation
+```
+supercollider_manager("create_synth", def_name="sine", node_id=1000)
+supercollider_manager("create_synth", def_name="fm_bell", node_id=1001, add_action=1, target=0)
+```
+
+### Parameter Control
+```
+supercollider_manager("set_control", node_id=1000, control_name="freq", value=440.0)
+supercollider_manager("set_control", node_id=1000, control_name="amp", value=0.5)
+```
+
+### Node Management
+```
+supercollider_manager("free_node", node_id=1000)  # Stop and free synth
+```
+
+## SynthDef System
+
+### Common SynthDefs
+- **sine:** Basic sine wave oscillator
+- **saw:** Sawtooth wave
+- **pulse:** Pulse wave with duty cycle
+- **noise:** White/pink noise generators
+- **fm_bell:** FM synthesis bell sound
+- **reverb:** Reverb effects
+- **delay:** Delay effects
+
+### Control Parameters
+- **freq:** Frequency (20-20000 Hz)
+- **amp:** Amplitude (0.0-1.0)
+- **pan:** Stereo pan (-1.0 to 1.0)
+- **gate:** Note gate (0=off, 1=on)
+- **cutoff:** Filter cutoff frequency
+- **resonance:** Filter resonance
+
+## Integration Patterns
+
+### Algorithmic Composition
+- Live coding performances
+- Generative music systems
+- Interactive sound installations
+- Real-time composition
+
+### Live Coding
+- On-the-fly sound design
+- Performance programming
+- Interactive music systems
+- Experimental sound art
+
+### Audio Processing
+- Real-time effects processing
+- Spatial audio systems
+- Sound spatialization
+- Advanced synthesis techniques
+
+## Technical Notes
+
+### OSC Commands
+- `/s_new` - Create new synth node
+- `/n_free` - Free synth node
+- `/n_set` - Set node controls
+- `/s_dumpTree` - Query server state
+
+### Node Architecture
+- **Server:** scsynth (audio synthesis server)
+- **Language:** sclang (programming language)
+- **Nodes:** Synth instances in server tree
+- **Groups:** Node organization containers
+
+### Timing
+- Sample-accurate timing
+- Real-time audio processing
+- Low-latency control (< 1ms)
+
+## Common Workflows
+
+### Live Performance
+```
+# Create synth and control in real-time
+supercollider_manager("create_synth", def_name="fm_pad", node_id=2000)
+supercollider_manager("set_control", node_id=2000, control_name="freq", value=220.0)
+supercollider_manager("set_control", node_id=2000, control_name="mod_ratio", value=2.0)
+```
+
+### Generative Systems
+```
+# Automated composition
+for note in melody:
+    supercollider_manager("set_control", node_id=1000, control_name="freq", value=note_freq)
+    time.sleep(note_duration)
+```
+
+## Related Notes
+- [[Audio-Synthesis-Techniques]]
+- [[Algorithmic-Composition]]
+- [[Live-Coding-Systems]]
+- [[Real-time-Audio-Processing]]
+
+## References
+- SuperCollider Documentation: OSC
+- SuperCollider: https://supercollider.github.io
+- SuperCollider Server Architecture

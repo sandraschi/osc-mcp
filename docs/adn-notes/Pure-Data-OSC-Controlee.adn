@@ -1,0 +1,153 @@
+# Pure Data OSC Controlee
+
+**Type:** OSC Controlee
+**Category:** Visual Programming
+**Status:** Active
+**Last Updated:** 2025-12-14
+
+## Overview
+
+Pure Data (Pd) is a real-time visual programming language for audio, video, and graphical processing. It provides OSC support for interactive systems, sound design, and multimedia applications.
+
+## OSC Integration
+
+### Native Support
+- **Full native OSC support** via objects
+- **Port:** 3000 (default)
+- **Protocol:** OSC 1.0
+- **Object-based:** OSC routing through Pd objects
+
+### Setup
+- Add `oscparse` or `oscroute` objects to receive OSC
+- Add `oscformat` and `udpsend` for sending OSC
+- Configure UDP ports for communication
+
+## Available Operations
+
+### Message Routing
+- `send_bang` - Send bang messages to receivers
+- `send_float` - Send float values to receivers
+- `toggle_dsp` - Toggle audio processing on/off
+
+## Usage Examples
+
+### Bang Messages
+```
+puredata_manager("send_bang", receiver="trigger")     # Send trigger
+puredata_manager("send_bang", receiver="play")        # Start playback
+puredata_manager("send_bang", receiver="reset")       # Reset state
+```
+
+### Float Values
+```
+puredata_manager("send_float", receiver="frequency", value=440.0)  # Set frequency
+puredata_manager("send_float", receiver="volume", value=0.7)       # Set volume
+puredata_manager("send_float", receiver="pan", value=0.0)          # Center pan
+```
+
+### DSP Control
+```
+puredata_manager("toggle_dsp")  # Toggle audio processing
+```
+
+## Receiver System
+
+### Common Receivers
+- **Audio:** frequency, amplitude, pan, filter_cutoff
+- **Control:** trigger, play, stop, reset
+- **Visual:** position_x, position_y, size, color
+- **Custom:** User-defined receiver names
+
+### Message Routing
+- Receivers connect to various Pd objects
+- Route to audio synthesis, effects, GUI elements
+- Enable complex signal processing chains
+
+## Integration Patterns
+
+### Audio Processing
+- Real-time synthesis control
+- Interactive sound design
+- Algorithmic composition
+- Live coding environments
+
+### Interactive Systems
+- Sensor-driven audio responses
+- Multimedia installations
+- Real-time data processing
+- Generative art systems
+
+### Educational Tools
+- Audio programming tutorials
+- Signal processing demonstrations
+- Interactive learning environments
+- Sound design exploration
+
+## Technical Notes
+
+### OSC Addresses
+- Format: `/{receiver_name}`
+- Examples: `/frequency`, `/trigger`, `/volume`
+- Receivers defined in Pd patch
+
+### Message Types
+- **Bang:** Event triggers, no data payload
+- **Float:** Numeric values for parameters
+- **DSP Toggle:** Audio computation control
+
+### Timing
+- Real-time audio processing
+- Sample-accurate timing possible
+- Low-latency control (< 5ms)
+
+## Common Workflows
+
+### Synthesis Control
+```
+# Real-time synthesis parameters
+puredata_manager("send_float", receiver="osc_freq", value=220.0)
+puredata_manager("send_float", receiver="filter_q", value=0.8)
+puredata_manager("send_bang", receiver="note_on")
+```
+
+### Interactive Installations
+```
+# Sensor integration
+puredata_manager("send_float", receiver="proximity", value=sensor_value)
+puredata_manager("send_bang", receiver="motion_trigger")
+puredata_manager("send_float", receiver="light_level", value=light_sensor)
+```
+
+### Generative Systems
+```
+# Algorithmic composition
+for pitch in melody:
+    puredata_manager("send_float", receiver="pitch", value=pitch)
+    puredata_manager("send_bang", receiver="play_note")
+    time.sleep(note_duration)
+```
+
+## Pd Object Integration
+
+### Common OSC Objects
+- **oscparse:** Parse incoming OSC messages
+- **oscroute:** Route OSC messages by address
+- **oscformat:** Format outgoing OSC messages
+- **udpreceive/send:** UDP network communication
+
+### Signal Processing
+- Audio synthesis objects (osc~, saw~, etc.)
+- Effects processing (delread~, vd~, etc.)
+- Control objects (line~, vline~, etc.)
+- GUI objects (slider, toggle, etc.)
+
+## Related Notes
+- [[Visual-Programming-Systems]]
+- [[Audio-Synthesis-Techniques]]
+- [[Interactive-Multimedia-Systems]]
+- [[Real-time-Signal-Processing]]
+
+## References
+- Pure Data Documentation: OSC
+- Pure Data: https://puredata.info
+- Pd OSC Examples and Tutorials

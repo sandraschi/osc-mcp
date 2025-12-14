@@ -1,0 +1,149 @@
+# Resolume Arena OSC Controlee
+
+**Type:** OSC Controlee
+**Category:** VJ Software
+**Status:** Active
+**Last Updated:** 2025-12-14
+
+## Overview
+
+Resolume Arena is professional VJ software for live video mixing and performance. It provides comprehensive OSC support for clip control, layer management, and real-time visual performance.
+
+## OSC Integration
+
+### Native Support
+- **Full native OSC support** built-in
+- **Port:** 7000 (default)
+- **Protocol:** OSC 1.0
+- **Performance-oriented:** Optimized for live use
+
+### Setup
+- Enable OSC in Resolume → Preferences → OSC
+- Set port to 7000
+- Configure OSC routing as needed
+
+## Available Operations
+
+### Clip Control
+- `play_clip` - Play clips in specific layer/column positions
+- Layer indexing: 1-based (1 = first layer)
+- Column indexing: 1-based (1 = first column)
+
+### Layer Management
+- `set_layer_opacity` - Control layer transparency (0.0-1.0)
+- Layer indexing: 1-based
+
+### Transport
+- `set_bpm` - Set composition tempo
+- Range: Standard BPM values
+
+## Usage Examples
+
+### Clip Playback
+```
+resolume_manager("play_clip", layer=1, column=1)    # Play first clip on layer 1
+resolume_manager("play_clip", layer=2, column=3)    # Play third clip on layer 2
+resolume_manager("play_clip", layer=4, column=5)    # Play fifth clip on layer 4
+```
+
+### Layer Control
+```
+resolume_manager("set_layer_opacity", layer=1, opacity=0.8)  # 80% opacity layer 1
+resolume_manager("set_layer_opacity", layer=2, opacity=0.0)  # Hide layer 2
+resolume_manager("set_layer_opacity", layer=3, opacity=1.0)  # Full opacity layer 3
+```
+
+### Tempo Control
+```
+resolume_manager("set_bpm", bpm=128.0)  # Set tempo to 128 BPM
+resolume_manager("set_bpm", bpm=140.0)  # Set tempo to 140 BPM
+```
+
+## Composition Structure
+
+### Layer System
+- **Layers:** Vertical arrangement (1 = bottom, higher = top)
+- **Columns:** Horizontal clip arrangement
+- **Clips:** Individual video/media files
+- **Decks:** A/B deck system for seamless transitions
+
+### Coordinate System
+- **Layers:** 1-based indexing (1, 2, 3, ...)
+- **Columns:** 1-based indexing (1, 2, 3, ...)
+- **Clips:** Assigned to layer/column positions
+
+## Integration Patterns
+
+### Live VJ Performance
+- Real-time clip triggering
+- Layer opacity blending
+- Tempo-synchronized effects
+- Seamless transitions
+
+### Automated Shows
+- Pre-programmed sequences
+- Sensor-driven content changes
+- Interactive installations
+- Generative visual systems
+
+### Multi-Screen Control
+- Complex layer compositing
+- Multiple display coordination
+- Real-time mixing
+- Effect synchronization
+
+## Technical Notes
+
+### OSC Addresses
+- `/composition/layers/{layer}/clips/{column}/connect 1` - Play clip
+- `/composition/layers/{layer}/opacity {value}` - Set layer opacity
+- `/transport/tempo {bpm}` - Set composition tempo
+
+### Timing
+- Frame-accurate timing
+- Real-time performance capable
+- Low latency (< 5ms)
+- Video frame synchronization
+
+### Composition State
+- OSC commands affect current composition
+- Layer/column mappings depend on current setup
+- Changes when rearranging composition
+
+## Common Workflows
+
+### Live Performance
+```
+# Real-time VJ performance
+resolume_manager("play_clip", layer=1, column=2)     # Switch to clip 2
+resolume_manager("set_layer_opacity", layer=2, opacity=0.6)  # Blend layers
+resolume_manager("set_bpm", bpm=130.0)             # Adjust tempo
+```
+
+### Interactive Installations
+```
+# Sensor-driven visuals
+if proximity_sensor > threshold:
+    resolume_manager("play_clip", layer=3, column=1)
+    resolume_manager("set_layer_opacity", layer=3, opacity=1.0)
+```
+
+### Automated Sequences
+```
+# Pre-programmed show
+sequence = [(1,1), (1,2), (2,1), (2,3), (3,2)]
+for layer, column in sequence:
+    resolume_manager("play_clip", layer=layer, column=column)
+    time.sleep(clip_duration)
+```
+
+## Related Notes
+- [[VJ-Performance-Systems]]
+- [[Live-Visual-Performance]]
+- [[Multi-Screen-Coordination]]
+- [[Real-time-Media-Control]]
+
+## References
+- Resolume Arena Manual: OSC Control
+- Resolume: https://resolume.com
+- OSC Implementation Guide

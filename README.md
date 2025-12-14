@@ -138,14 +138,13 @@ await send_osc("127.0.0.1", 9000, "/avatar/parameters/Voice", [0.5])
 
 ### MCP Tools Available
 
-OSC-MCP provides **43+ tools** for controlling professional audio/visual applications via OSC:
+OSC-MCP provides **12 tools** organized as portmanteau managers for scalable control of professional audio/visual applications:
 
 #### Core OSC Tools (4 tools)
 
 1. **`send_osc`** - Universal OSC message sender
    - Send any OSC message to any application
    - Most flexible tool for custom OSC messaging
-   - Used internally by all application-specific tools
 
 2. **`start_osc_server`** - Start receiving OSC messages
    - Bidirectional communication support
@@ -160,62 +159,39 @@ OSC-MCP provides **43+ tools** for controlling professional audio/visual applica
    - End-to-end validation
    - Self-testing capability
 
-#### Application-Specific Tools (23 tools)
+#### Application Manager Tools (8 portmanteau tools)
 
-**Ableton Live (6 tools):**
-- `ableton_play` - Start playback
-- `ableton_stop` - Stop playback
-- `ableton_set_tempo` - Set BPM
-- `ableton_play_clip` - Play specific clip
-- `ableton_set_volume` - Set track volume
-- `ableton_set_pan` - Set track panning
+**🎛️ `vcv_manager`** - VCV Rack modular synthesis (18+ operations)
+- MIDI control, CV modulation, parameter automation, module-specific controls
+- Operations: `set_parameter`, `trigger`, `send_cv`, `set_light`, `play_midi`, `set_vco_frequency`, etc.
 
-**VRChat (3 tools):**
-- `vrchat_set_parameter` - Set avatar parameter
-- `vrchat_send_chat` - Send chat message
-- `vrchat_trigger_haptic` - Trigger haptic feedback
+**🎵 `ableton_manager`** - Ableton Live DAW (6 operations)
+- Playback control, tempo, clip triggering, mixing
+- Operations: `play`, `stop`, `set_tempo`, `play_clip`, `set_volume`, `set_pan`
 
-**TouchDesigner (3 tools):**
-- `touchdesigner_set_parameter` - Set component parameter
-- `touchdesigner_set_constant` - Set constant value
-- `touchdesigner_trigger_button` - Trigger button
+**🎮 `vrchat_manager`** - VRChat avatar control (3 operations)
+- Parameter setting, chat, haptic feedback
+- Operations: `set_parameter`, `send_chat`, `trigger_haptic`
 
-**SuperCollider (3 tools):**
-- `supercollider_create_synth` - Create synth
-- `supercollider_free_node` - Free synth node
-- `supercollider_set_control` - Set control value
+**🎨 `touchdesigner_manager`** - TouchDesigner visual programming (3 operations)
+- Parameter control, constants, button triggering
+- Operations: `set_parameter`, `set_constant`, `trigger_button`
 
-**Max/MSP (3 tools):**
-- `maxmsp_send_bang` - Send bang
-- `maxmsp_send_float` - Send float value
-- `maxmsp_toggle_dsp` - Toggle DSP processing
+**🔊 `supercollider_manager`** - SuperCollider audio synthesis (3 operations)
+- Synth creation, node management, control setting
+- Operations: `create_synth`, `free_node`, `set_control`
 
-**VCV Rack (18+ tools):**
-- `vcvrack_set_parameter` - Set module parameter (0.0-1.0)
-- `vcvrack_trigger` - Trigger event
-- `vcvrack_send_cv` - Send control voltage (-10.0 to 10.0)
-- `vcvrack_set_light` - Set light/LED brightness (0.0-1.0)
-- `vcvrack_play_midi` - Play MIDI note (note: 0-127, velocity: 0-127, channel: 1-16)
-- `vcvrack_stop_midi` - Stop MIDI note
-- `vcvrack_send_midi_cc` - Send MIDI CC message
-- `vcvrack_set_vco_frequency` - Set VCO frequency in Hz
-- `vcvrack_set_vca_level` - Set VCA level (0.0-1.0)
-- `vcvrack_set_lfo_rate` - Set LFO rate (0.0-1.0)
-- `vcvrack_set_filter_cutoff` - Set filter cutoff (0.0-1.0)
-- `vcvrack_set_envelope_attack` - Set envelope attack (0.0-1.0)
-- `vcvrack_set_envelope_decay` - Set envelope decay (0.0-1.0)
-- `vcvrack_set_envelope_sustain` - Set envelope sustain (0.0-1.0)
-- `vcvrack_set_envelope_release` - Set envelope release (0.0-1.0)
+**🎼 `maxmsp_manager`** - Max/MSP audio/visual programming (3 operations)
+- Message sending, DSP control
+- Operations: `send_bang`, `send_float`, `toggle_dsp`
 
-**Resolume Arena (3 tools):**
-- `resolume_play_clip` - Play clip
-- `resolume_set_layer_opacity` - Set layer opacity
-- `resolume_set_bpm` - Set BPM
+**📺 `resolume_manager`** - Resolume Arena VJ software (3 operations)
+- Clip playback, layer control, tempo
+- Operations: `play_clip`, `set_layer_opacity`, `set_bpm`
 
-**Pure Data (3 tools):**
-- `puredata_send_bang` - Send bang
-- `puredata_send_float` - Send float value
-- `puredata_toggle_dsp` - Toggle DSP processing
+**🎛️ `puredata_manager`** - Pure Data visual programming (3 operations)
+- Message routing, DSP control
+- Operations: `send_bang`, `send_float`, `toggle_dsp`
 
 **See [Application Tools Analysis](docs/APPLICATION_TOOLS_ANALYSIS.md) for complete documentation.**
 
@@ -261,24 +237,13 @@ await send_osc("localhost", 57120, "/s_new", ["sine", 1000, 0, 0])
 await send_osc("localhost", 57120, "/n_free", [1000])
 ```
 
-### VCV Rack (port 10001)
+### VCV Rack Manager (port 10001)
 ```python
-# MIDI control
-await send_osc("127.0.0.1", 10001, "/midi/note", [1, 60, 100])  # Note on (C4)
-await send_osc("127.0.0.1", 10001, "/midi/note", [1, 60, 0])    # Note off
-await send_osc("127.0.0.1", 10001, "/midi/cc", [1, 7, 64])      # CC 7 (volume)
-
-# Parameter control
-await send_osc("127.0.0.1", 10001, "/param", [1, 0, 0.7])  # Module 1, param 0
-
-# CV control
-await send_osc("127.0.0.1", 10001, "/cv", [2, 0, 5.0])     # 5V to module 2, input 0
-
-# Light control
-await send_osc("127.0.0.1", 10001, "/light", [1, 0, 0.5])  # Half brightness
-
-# Trigger events
-await send_osc("127.0.0.1", 10001, "/trigger", [3, 0])     # Trigger module 3
+# Using the portmanteau manager tool
+await vcv_manager("play_midi", note=60, velocity=100, channel=1)    # Play C4
+await vcv_manager("set_vco_frequency", module_id=1, frequency=440)  # 440Hz VCO
+await vcv_manager("send_cv", module_id=2, cv_id=0, voltage=5.0)     # Send 5V
+await vcv_manager("set_envelope_attack", module_id=3, attack=0.1)   # Fast attack
 ```
 
 ## 🔧 Development
