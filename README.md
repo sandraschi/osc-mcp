@@ -18,6 +18,36 @@ OSC-MCP bridges the gap between AI language models and professional creative too
 - 🎛️ **Hardware Control**: Interface with MIDI controllers and modular synths (VCV Rack)
 - 🌐 **Creative Coding**: Integrate with Processing, openFrameworks, and other platforms
 
+## 🔄 Bidirectional OSC Communication
+
+OSC-MCP now supports **true bidirectional OSC communication**:
+
+### Send Commands
+```python
+# Control applications
+await ableton_manager("play")
+await vcv_manager("set_vco_frequency", module_id=1, frequency=440)
+```
+
+### Receive Feedback
+```python
+# Start listening for messages
+await start_osc_server(9001)
+
+# Get parameter changes when users twiddle knobs
+messages = await get_received_messages(9001, address_pattern="/param")
+latest = await get_latest_message(9001)  # Most recent change
+
+# Monitor server health
+stats = await get_osc_server_stats(9001)
+```
+
+### Real-Time Interaction
+- **VCV Rack**: Detect knob twists and slider movements
+- **Ableton Live**: Monitor playback position and parameter changes
+- **TouchDesigner**: Receive operator value updates
+- **Any OSC app**: Capture and respond to user interactions
+
 ## ✨ Features
 
 ### Core Capabilities
@@ -138,9 +168,9 @@ await send_osc("127.0.0.1", 9000, "/avatar/parameters/Voice", [0.5])
 
 ### MCP Tools Available
 
-OSC-MCP provides **12 tools** organized as portmanteau managers for scalable control of professional audio/visual applications:
+OSC-MCP provides **48 tools** (8 managers + 9 core + 31 application-specific) for comprehensive bidirectional control of professional audio/visual applications:
 
-#### Core OSC Tools (4 tools)
+#### Core OSC Tools (9 tools)
 
 1. **`send_osc`** - Universal OSC message sender
    - Send any OSC message to any application
@@ -148,14 +178,31 @@ OSC-MCP provides **12 tools** organized as portmanteau managers for scalable con
 
 2. **`start_osc_server`** - Start receiving OSC messages
    - Bidirectional communication support
-   - Background message processing
+   - Background message processing with buffering
    - Multiple concurrent servers
 
 3. **`stop_osc_server`** - Stop OSC message receiver
    - Clean resource cleanup
    - Port management
 
-4. **`test_osc_echo`** - OSC functionality testing
+4. **`get_received_messages`** - Retrieve buffered OSC messages
+   - Query messages received by running servers
+   - Filter by address pattern and age
+   - Real-time bidirectional communication
+
+5. **`get_latest_message`** - Get most recent OSC message
+   - Quick access to latest parameter changes
+   - Useful for monitoring current state
+
+6. **`get_osc_server_stats`** - Server buffer statistics
+   - Monitor message traffic and buffer usage
+   - Debug OSC communication issues
+
+7. **`clear_osc_message_buffer`** - Clear message history
+   - Reset message buffer for fresh start
+   - Free memory in long-running servers
+
+8. **`test_osc_echo`** - OSC functionality testing
    - End-to-end validation
    - Self-testing capability
 
@@ -245,6 +292,11 @@ await vcv_manager("play_midi", note=60, velocity=100, channel=1)    # Play C4
 await vcv_manager("set_vco_frequency", module_id=1, frequency=440)  # 440Hz VCO
 await vcv_manager("send_cv", module_id=2, cv_id=0, voltage=5.0)     # Send 5V
 await vcv_manager("set_envelope_attack", module_id=3, attack=0.1)   # Fast attack
+
+# Bidirectional: Receive parameter changes when you twiddle knobs
+await start_osc_server(10002)                                      # Start listening
+messages = await get_received_messages(10002, address_pattern="/param")  # Get knob changes
+latest = await get_latest_message(10002)                           # Get most recent change
 ```
 
 ## 🔧 Development
@@ -253,12 +305,12 @@ await vcv_manager("set_envelope_attack", module_id=3, attack=0.1)   # Fast attac
 ```
 osc-mcp/
 ├── src/oscmcp/
-│   ├── mcp_server.py        # Primary stdio server (43+ tools)
+│   ├── mcp_server.py        # Primary stdio server (48 tools)
 │   ├── stdio_server.py      # Alternative stdio server
 │   ├── server.py            # HTTP server variant
 │   ├── osc/                 # OSC protocol implementation
 │   │   ├── client.py        # OSC client for sending
-│   │   └── server.py        # OSC server for receiving
+│   │   └── server.py        # OSC server with message buffering
 │   ├── apps/                # Application integrations
 │   │   ├── ableton.py
 │   │   ├── touchdesigner.py
@@ -267,7 +319,8 @@ osc-mcp/
 │   └── midi/                # MIDI integration
 ├── tests/                   # Test suite
 ├── docs/                    # Documentation
-│   └── APPLICATION_TOOLS_ANALYSIS.md  # Tool analysis
+│   ├── APPLICATION_TOOLS_ANALYSIS.md  # Tool analysis
+│   └── adn-notes/           # ADN documentation for each controlee
 ├── pyproject.toml          # Project configuration
 ├── UPGRADE_NOTES.md        # FastMCP 2.13 migration guide
 └── README.md               # This file

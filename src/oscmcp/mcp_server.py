@@ -14,6 +14,8 @@ from pydantic import BaseModel, Field
 from pythonosc import dispatcher, osc_server, udp_client
 from pythonosc.udp_client import SimpleUDPClient
 
+from .osc.server import OSCServer
+
 # Set up logging
 logging.basicConfig(
     level=logging.INFO,
@@ -26,7 +28,7 @@ server = FastMCP("OSC-MCP")
 
 # Store OSC clients and servers
 osc_clients: Dict[str, SimpleUDPClient] = {}
-osc_servers: Dict[int, asyncio.Task] = {}
+osc_servers: Dict[int, 'OSCServer'] = {}
 
 # Pydantic models for input validation (FastMCP 2.13)
 class OSCMessageInput(BaseModel):
@@ -336,36 +338,21 @@ async def start_osc_server(
             "status": "error",
             "message": f"OSC server already running on port {port}"
         }
-    
+
     try:
-        # Create dispatcher for OSC messages
-        osc_dispatcher = dispatcher.Dispatcher()
-        
-        # Default handler that logs received messages
-        def osc_handler(osc_addr: str, *args: Any) -> None:
-            logger.info(f"Received OSC: {osc_addr} {args}")
-        
-        # Register default handler for all addresses
-        osc_dispatcher.set_default_handler(osc_handler)
-        
-        # Create and start OSC server
-        loop = asyncio.get_event_loop()
-        server = osc_server.AsyncIOOSCUDPServer(
-            (address, port), 
-            osc_dispatcher, 
-            loop
-        )
-        
-        # Store the transport for later cleanup
-        transport, _ = await server.create_serve_endpoint()
-        
-        # Store server info
-        osc_servers[port] = transport
-        
-        logger.info(f"Started OSC server on {address}:{port}")
+        # Create OSCServer instance with message buffering
+        osc_server_instance = OSCServer(address, port)
+
+        # Start the server
+        await osc_server_instance.start()
+
+        # Store server instance for later access
+        osc_servers[port] = osc_server_instance
+
+        logger.info(f"Started OSC server with message buffering on {address}:{port}")
         return {
             "status": "success",
-            "message": f"OSC server started on {address}:{port}",
+            "message": f"OSC server started on {address}:{port} with message buffering",
             "port": port,
             "address": address
         }
@@ -512,15 +499,15 @@ async def stop_osc_server(port: int) -> Dict[str, Any]:
         - Stopping during message receive: Current message may be lost
         - System shutdown: Servers auto-cleanup (but explicit stop is better)
     """
-    transport = osc_servers.pop(port, None)
-    if not transport:
+    osc_server_instance = osc_servers.pop(port, None)
+    if not osc_server_instance:
         return {
             "status": "error",
             "message": f"No OSC server running on port {port}"
         }
-    
+
     try:
-        transport.close()
+        await osc_server_instance.stop()
         logger.info(f"Stopped OSC server on port {port}")
         return {
             "status": "success",
@@ -533,25 +520,254 @@ async def stop_osc_server(port: int) -> Dict[str, Any]:
         return {"status": "error", "message": error}
 
 @server.tool()
+async def get_received_messages(port: int, address_pattern: Optional[str] = None,
+                               max_age_seconds: Optional[float] = None, limit: int = 100) -> Dict[str, Any]:
+    """
+    Get OSC messages received by a running OSC server.
+
+    This tool retrieves messages that have been received by an OSC server started with start_osc_server().
+    Messages are buffered and can be filtered by address pattern, age, and limited in count.
+
+    Args:
+        port: Port of the OSC server to query (must be running)
+        address_pattern: Filter by OSC address pattern (substring match)
+        max_age_seconds: Only return messages newer than this age
+        limit: Maximum number of messages to return (default: 100)
+
+    Returns:
+        Dictionary with message data:
+        {
+            "status": "success" | "error",
+            "messages": List[Dict],  # Array of message objects
+            "count": int,           # Number of messages returned
+            "total_available": int  # Total messages in buffer
+        }
+
+    Message format:
+    {
+        "address": "/osc/path",
+        "args": [1.0, "hello", true],
+        "timestamp": 1234567890.123,
+        "age_seconds": 5.5
+    }
+
+    Examples:
+        # Get all recent messages from port 9000
+        >>> await get_received_messages(9000)
+        {"status": "success", "messages": [...], "count": 5}
+
+        # Get messages matching pattern
+        >>> await get_received_messages(9000, address_pattern="/param")
+        {"status": "success", "messages": [...], "count": 2}
+
+        # Get only messages from last 10 seconds
+        >>> await get_received_messages(9000, max_age_seconds=10.0)
+        {"status": "success", "messages": [...], "count": 3}
+
+    Use Cases:
+        - Monitor parameter changes from VCV Rack modules
+        - Receive feedback from interactive applications
+        - Debug OSC message flow
+        - React to user interactions in real-time
+
+    Notes:
+        - Messages are buffered with timestamps
+        - Buffer holds last 1000 messages by default
+        - Messages are returned newest-first
+        - Server must be running (use start_osc_server first)
+    """
+
+    if port not in osc_servers:
+        return {
+            "status": "error",
+            "message": f"No OSC server running on port {port}"
+        }
+
+    osc_server_instance = osc_servers[port]
+    messages = osc_server_instance.get_received_messages(
+        address_pattern=address_pattern,
+        max_age_seconds=max_age_seconds,
+        limit=limit
+    )
+
+    return {
+        "status": "success",
+        "messages": messages,
+        "count": len(messages),
+        "total_available": len(osc_server_instance._message_buffer)
+    }
+
+@server.tool()
+async def get_latest_message(port: int, address_pattern: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Get the most recent OSC message from a running server.
+
+    This is a convenience tool that returns only the latest message matching the criteria,
+    useful for checking the most recent parameter change or event.
+
+    Args:
+        port: Port of the OSC server to query
+        address_pattern: Filter by OSC address pattern (substring match)
+
+    Returns:
+        Dictionary with latest message or error:
+        {
+            "status": "success" | "error",
+            "message": Dict | None,  # Latest message object
+            "found": bool           # Whether a message was found
+        }
+
+    Examples:
+        # Get latest message from VCV Rack
+        >>> await get_latest_message(10001)
+        {"status": "success", "message": {"address": "/param", "args": [1, 0, 0.7]}, "found": true}
+
+        # Get latest parameter message
+        >>> await get_latest_message(10001, address_pattern="/param")
+        {"status": "success", "message": {...}, "found": true}
+
+    Use Cases:
+        - Check latest knob position in VCV Rack
+        - Monitor current application state
+        - Get immediate feedback on user interactions
+    """
+
+    if port not in osc_servers:
+        return {
+            "status": "error",
+            "message": f"No OSC server running on port {port}"
+        }
+
+    osc_server_instance = osc_servers[port]
+    message = osc_server_instance.get_latest_message(address_pattern)
+
+    return {
+        "status": "success",
+        "message": message,
+        "found": message is not None
+    }
+
+@server.tool()
+async def get_osc_server_stats(port: int) -> Dict[str, Any]:
+    """
+    Get statistics about a running OSC server's message buffer.
+
+    This tool provides insights into OSC message traffic and buffer usage,
+    useful for monitoring and debugging OSC communication.
+
+    Args:
+        port: Port of the OSC server to query
+
+    Returns:
+        Dictionary with server statistics:
+        {
+            "status": "success" | "error",
+            "stats": {
+                "total_messages": int,
+                "max_buffer_size": int,
+                "oldest_message_age": float,
+                "newest_message_age": float
+            } | None
+        }
+
+    Examples:
+        # Check server message statistics
+        >>> await get_osc_server_stats(10001)
+        {
+            "status": "success",
+            "stats": {
+                "total_messages": 150,
+                "max_buffer_size": 1000,
+                "oldest_message_age": 45.2,
+                "newest_message_age": 0.5
+            }
+        }
+
+    Use Cases:
+        - Monitor OSC message traffic
+        - Debug message buffer issues
+        - Check server health and activity
+        - Optimize buffer size settings
+    """
+
+    if port not in osc_servers:
+        return {
+            "status": "error",
+            "message": f"No OSC server running on port {port}"
+        }
+
+    osc_server_instance = osc_servers[port]
+    stats = osc_server_instance.get_buffer_stats()
+
+    return {
+        "status": "success",
+        "stats": stats
+    }
+
+@server.tool()
+async def clear_osc_message_buffer(port: int) -> Dict[str, Any]:
+    """
+    Clear all messages from an OSC server's buffer.
+
+    This tool removes all buffered OSC messages, useful for starting fresh
+    after debugging or when you want to ignore old messages.
+
+    Args:
+        port: Port of the OSC server to clear
+
+    Returns:
+        Dictionary with clear operation results:
+        {
+            "status": "success" | "error",
+            "messages_cleared": int  # Number of messages removed
+        }
+
+    Examples:
+        # Clear message buffer
+        >>> await clear_osc_message_buffer(10001)
+        {"status": "success", "messages_cleared": 150}
+
+    Use Cases:
+        - Start fresh after debugging
+        - Clear old messages before new operation
+        - Reset message history
+        - Free memory in long-running servers
+    """
+
+    if port not in osc_servers:
+        return {
+            "status": "error",
+            "message": f"No OSC server running on port {port}"
+        }
+
+    osc_server_instance = osc_servers[port]
+    cleared_count = osc_server_instance.clear_message_buffer()
+
+    return {
+        "status": "success",
+        "messages_cleared": cleared_count
+    }
+
+@server.tool()
 async def test_osc_echo(port: int = 9000) -> Dict[str, Any]:
     """Test OSC functionality by sending and receiving a message.
-    
+
     This tool performs an end-to-end test of OSC functionality by:
     1. Starting an OSC server on the specified port
     2. Sending a test message to itself
     3. Verifying the message was received
     4. Stopping the server
-    
+
     This is useful for:
     - Verifying OSC setup is working correctly
     - Testing network connectivity
     - Debugging OSC message routing
     - Validating firewall settings
-    
+
     Args:
         port: Port to use for the test (default: 9000). Must be available.
             Use a port that's not in use by other applications.
-    
+
     Returns:
         Dictionary with test results:
         {
@@ -564,27 +780,27 @@ async def test_osc_echo(port: int = 9000) -> Dict[str, Any]:
             "message_sent": bool,   # Whether test message was sent
             "server_stopped": bool  # Whether server was stopped
         }
-    
+
     Examples:
         # Run echo test on default port 9000
         >>> await test_osc_echo()
         {'status': 'success', 'message': 'OSC echo test completed', ...}
-        
+
         # Run echo test on custom port
         >>> await test_osc_echo(8000)
         {'status': 'success', 'message': 'OSC echo test completed', ...}
-    
+
     Notes:
         - The test uses a temporary OSC server that's automatically stopped
         - Test messages are logged to the server console
         - This is a blocking operation that takes a few seconds
         - If the port is in use, the test will fail with an error
-    
+
     Troubleshooting:
         "Port already in use":
             - Choose a different port that's not in use
             - Stop any applications using the test port
-        
+
         "Message not received":
             - Check firewall settings (allow UDP traffic)
             - Verify network interface is active

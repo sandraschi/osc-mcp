@@ -18,9 +18,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.2] - 2025-12-14
 
 ### Added
+- **Bidirectional OSC Communication** - True receive capabilities with message buffering
+  - **Message Buffer System** - OSCServer now buffers all received messages with timestamps
+  - **get_received_messages()** - Retrieve buffered OSC messages with filtering
+  - **get_latest_message()** - Quick access to most recent parameter changes
+  - **get_osc_server_stats()** - Monitor message traffic and buffer usage
+  - **clear_osc_message_buffer()** - Reset message history
+
+- **Portmanteau Manager Architecture** - Replaced 35+ individual tools with 8 scalable managers
+  - `vcv_manager` - VCV Rack modular synthesis (18 operations)
+  - `ableton_manager` - Ableton Live DAW (6 operations)
+  - `vrchat_manager` - VRChat avatar control (3 operations)
+  - `touchdesigner_manager` - TouchDesigner visual programming (3 operations)
+  - `supercollider_manager` - SuperCollider audio synthesis (3 operations)
+  - `maxmsp_manager` - Max/MSP audio/visual programming (3 operations)
+  - `resolume_manager` - Resolume Arena VJ software (3 operations)
+  - `puredata_manager` - Pure Data visual programming (3 operations)
+
 - **Comprehensive VCV Rack OSC Extensions** - 16 new tools (18+ total VCV Rack tools)
   - **MIDI Control (3 tools):**
-    - `vcvrack_play_midi` - Play MIDI notes (note: 0-127, velocity: 0-127, channel: 1-16)
+    - `vcvrack_play_midi` - Play MIDI notes (0-127) with velocity and channel
     - `vcvrack_stop_midi` - Stop MIDI notes
     - `vcvrack_send_midi_cc` - Send MIDI CC messages
   - **CV & Light Control (2 tools):**
@@ -38,32 +55,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **VCV Rack Controller Class Extensions** - Added MIDI methods to `vcvrack.py`
 - **Demo Script** - `examples/vcv_rack_demo.py` for testing all new functionality
+- **ADN Documentation** - Detailed controlee documentation for 8 applications
 
 ### Changed
-- **Tool Count** - Increased from 27+ to 43+ total tools (60% increase)
-- **README.md** - Added VCV Rack usage examples and updated tool inventory
-- **docs/APPLICATION_TOOLS_ANALYSIS.md** - Updated VCV Rack tool documentation
-- **VCV Rack Coverage** - Expanded from basic parameter/trigger control to comprehensive modular synthesis control
+- **Tool Count** - Reduced from 43+ to 48 total tools (8 managers + 9 core + 31 app-specific)
+- **Architecture** - Portmanteau design for better scalability and UX
+- **OSC Server** - Enhanced with message buffering for bidirectional communication
+- **README.md** - Added bidirectional OSC examples and updated tool inventory
+- **docs/APPLICATION_TOOLS_ANALYSIS.md** - Updated for portmanteau architecture
 
 ### Features
+- **True Bidirectional OSC** - Send commands AND receive feedback from applications
+- **Real-Time Monitoring** - Detect parameter changes, knob twists, user interactions
+- **Message Buffering** - Persistent storage of OSC messages with timestamps
+- **Advanced Filtering** - Query messages by address pattern, age, and limits
 - **MIDI Integration** - Full MIDI note and CC control via OSC
 - **CV Modulation** - Bidirectional control voltage sending
 - **Semantic Controls** - Human-readable module controls (frequency in Hz, not normalized values)
 - **ADSR Envelope Control** - Complete envelope shaping tools
 - **Light Control** - Visual feedback and LED control
 
+### Breaking Changes
+- **Individual Tools Deprecated** - 35+ individual application tools replaced with 8 managers
+- **OSC Server Storage** - Changed from transport objects to OSCServer instances
+- **API Changes** - Portmanteau tools use `operation` parameter instead of separate functions
+
 ### Use Cases Added
-- Live performance control of modular synthesizers
-- AI-assisted patch design and parameter automation
-- MIDI-to-CV conversion workflows
-- Complex modulation routing automation
-- Real-time sound design via natural language
+- **Live Performance Monitoring** - React to knob twists and parameter changes in real-time
+- **Interactive Installations** - Bidirectional communication with sensors and displays
+- **Generative Systems** - AI can respond to user interactions and system feedback
+- **Debugging & Monitoring** - Inspect OSC message traffic and application state
+- **Complex Workflows** - Chain commands and responses for sophisticated automation
 
 ### Impact
-- **VCV Rack Users:** Now have comprehensive AI control over modular synthesis
-- **Creative Workflow:** Enables natural language control of complex modular patches
-- **Performance:** Real-time parameter control for live performances
-- **Education:** AI-assisted learning of modular synthesis concepts
+- **True Bidirectional Control** - OSC-MCP now supports full send/receive communication
+- **Real-Time Responsiveness** - AI can react to user interactions immediately
+- **Scalable Architecture** - Portmanteau design supports future application additions
+- **Enhanced User Experience** - Natural operation selection instead of tool hunting
+- **Professional Workflows** - Enables complex interactive systems and performances
 
 ## [0.2.1] - 2025-11-26
 
