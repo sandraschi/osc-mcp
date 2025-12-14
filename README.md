@@ -168,9 +168,9 @@ await send_osc("127.0.0.1", 9000, "/avatar/parameters/Voice", [0.5])
 
 ### MCP Tools Available
 
-OSC-MCP provides **55 tools** (8 managers + 16 core + 31 application-specific) for comprehensive bidirectional control of professional audio/visual applications:
+OSC-MCP provides **19 tools** (10 managers + 9 core) for comprehensive bidirectional control of professional audio/visual applications:
 
-#### Core OSC Tools (16 tools)
+#### Core OSC Tools (9 tools)
 
 1. **`send_osc`** - Universal OSC message sender
    - Send any OSC message to any application
@@ -212,20 +212,31 @@ OSC-MCP provides **55 tools** (8 managers + 16 core + 31 application-specific) f
    - Synchronized tempo and start/stop operations
    - Cross-application workflow automation
 
-10. **`music_orchestrator`** - High-level music production workflows
-    - Complex multi-step orchestration (Bach organ setup, performance control)
-    - Cross-application coordination and synchronization
-    - Automated rig configuration and performance management
-
-11. **`test_osc_echo`** - OSC functionality testing
+9. **`test_osc_echo`** - OSC functionality testing
     - End-to-end validation
     - Self-testing capability
 
-#### Application Manager Tools (8 portmanteau tools)
+#### Application Manager Tools (10 portmanteau tools)
 
 **🎛️ `vcv_manager`** - VCV Rack modular synthesis (18+ operations)
 - MIDI control, CV modulation, parameter automation, module-specific controls
 - Operations: `set_parameter`, `trigger`, `send_cv`, `set_light`, `play_midi`, `set_vco_frequency`, etc.
+
+**🎚️ `osc_control_manager`** - Comprehensive OSC communication (11 operations)
+- Unified OSC sending, server management, message monitoring, recording
+- Operations: `send_message`, `start_server`, `get_messages`, `start_recording`, etc.
+
+**🎼 `osc_recorder_manager`** - OSC automation recording (6 operations)
+- Record and playback OSC message sequences
+- Operations: `start_recording`, `stop_recording`, `playback_recording`, etc.
+
+**🎵 `music_orchestrator`** - High-level music production workflows (6 operations)
+- Complex multi-step orchestration (Bach organ setup, performance control)
+- Operations: `bach_organ_setup`, `performance_start`, `organ_voice_setup`, etc.
+
+**🎵 `audio_workflow_manager`** - Multi-app orchestration (5 operations)
+- Coordinate transport across REAPER, VCV Rack, etc.
+- Operations: `sync_tempo_all`, `start_all`, `stop_all`, etc.
 
 **🎵 `ableton_manager`** - Ableton Live DAW (6 operations)
 - Playback control, tempo, clip triggering, mixing
