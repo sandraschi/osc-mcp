@@ -12,9 +12,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Persistent storage for OSC client/server state
 - Message buffer with `get_received_messages()` tool
 - OSC connection health monitoring
-- Expand application-specific tool coverage
 - OSCQuery service discovery
 - Enhanced docstrings with examples for all tools
+
+## [0.2.2] - 2025-12-14
+
+### Added
+- **Comprehensive VCV Rack OSC Extensions** - 16 new tools (18+ total VCV Rack tools)
+  - **MIDI Control (3 tools):**
+    - `vcvrack_play_midi` - Play MIDI notes (note: 0-127, velocity: 0-127, channel: 1-16)
+    - `vcvrack_stop_midi` - Stop MIDI notes
+    - `vcvrack_send_midi_cc` - Send MIDI CC messages
+  - **CV & Light Control (2 tools):**
+    - `vcvrack_send_cv` - Send control voltages (-10.0 to 10.0V)
+    - `vcvrack_set_light` - Control module lights/LEDs (0.0-1.0)
+  - **Module-Specific Controls (11 tools):**
+    - `vcvrack_set_vco_frequency` - Set VCO frequency in Hz (auto-conversion)
+    - `vcvrack_set_vca_level` - Set VCA amplitude level
+    - `vcvrack_set_lfo_rate` - Set LFO modulation rate
+    - `vcvrack_set_filter_cutoff` - Set filter cutoff frequency
+    - `vcvrack_set_envelope_attack` - Set ADSR envelope attack
+    - `vcvrack_set_envelope_decay` - Set ADSR envelope decay
+    - `vcvrack_set_envelope_sustain` - Set ADSR envelope sustain
+    - `vcvrack_set_envelope_release` - Set ADSR envelope release
+
+- **VCV Rack Controller Class Extensions** - Added MIDI methods to `vcvrack.py`
+- **Demo Script** - `examples/vcv_rack_demo.py` for testing all new functionality
+
+### Changed
+- **Tool Count** - Increased from 27+ to 43+ total tools (60% increase)
+- **README.md** - Added VCV Rack usage examples and updated tool inventory
+- **docs/APPLICATION_TOOLS_ANALYSIS.md** - Updated VCV Rack tool documentation
+- **VCV Rack Coverage** - Expanded from basic parameter/trigger control to comprehensive modular synthesis control
+
+### Features
+- **MIDI Integration** - Full MIDI note and CC control via OSC
+- **CV Modulation** - Bidirectional control voltage sending
+- **Semantic Controls** - Human-readable module controls (frequency in Hz, not normalized values)
+- **ADSR Envelope Control** - Complete envelope shaping tools
+- **Light Control** - Visual feedback and LED control
+
+### Use Cases Added
+- Live performance control of modular synthesizers
+- AI-assisted patch design and parameter automation
+- MIDI-to-CV conversion workflows
+- Complex modulation routing automation
+- Real-time sound design via natural language
+
+### Impact
+- **VCV Rack Users:** Now have comprehensive AI control over modular synthesis
+- **Creative Workflow:** Enables natural language control of complex modular patches
+- **Performance:** Real-time parameter control for live performances
+- **Education:** AI-assisted learning of modular synthesis concepts
 
 ## [0.2.1] - 2025-11-26
 

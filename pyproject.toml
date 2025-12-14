@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "oscmcp"
-version = "0.1.0"
+version = "0.2.2"
 description = "Open Sound Control MCP Server for audio/visual automation"
 readme = "README.md"
 requires-python = ">=3.8"

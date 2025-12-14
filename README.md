@@ -261,6 +261,26 @@ await send_osc("localhost", 57120, "/s_new", ["sine", 1000, 0, 0])
 await send_osc("localhost", 57120, "/n_free", [1000])
 ```
 
+### VCV Rack (port 10001)
+```python
+# MIDI control
+await send_osc("127.0.0.1", 10001, "/midi/note", [1, 60, 100])  # Note on (C4)
+await send_osc("127.0.0.1", 10001, "/midi/note", [1, 60, 0])    # Note off
+await send_osc("127.0.0.1", 10001, "/midi/cc", [1, 7, 64])      # CC 7 (volume)
+
+# Parameter control
+await send_osc("127.0.0.1", 10001, "/param", [1, 0, 0.7])  # Module 1, param 0
+
+# CV control
+await send_osc("127.0.0.1", 10001, "/cv", [2, 0, 5.0])     # 5V to module 2, input 0
+
+# Light control
+await send_osc("127.0.0.1", 10001, "/light", [1, 0, 0.5])  # Half brightness
+
+# Trigger events
+await send_osc("127.0.0.1", 10001, "/trigger", [3, 0])     # Trigger module 3
+```
+
 ## 🔧 Development
 
 ### Project Structure

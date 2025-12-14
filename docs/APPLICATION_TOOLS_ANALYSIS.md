@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-This document provides a comprehensive analysis of the application-specific tools added to OSC-MCP in version 0.2.1. The update transforms OSC-MCP from a basic OSC messaging server into a comprehensive application control platform, increasing the tool count from 3 to 27+ tools.
+This document provides a comprehensive analysis of the application-specific tools added to OSC-MCP in version 0.2.1. The update transforms OSC-MCP from a basic OSC messaging server into a comprehensive application control platform, increasing the tool count from 3 to 43+ tools.
 
 ## Background
 
@@ -16,7 +16,7 @@ This document provides a comprehensive analysis of the application-specific tool
 - **User Experience:** Required deep knowledge of OSC address patterns for each application
 
 ### Current State
-- **Total Tools:** 27+ tools across 8 applications plus core OSC functionality
+- **Total Tools:** 43+ tools across 8 applications plus core OSC functionality
 - **Enhancement:** High-level, application-specific tools with sensible defaults
 - **User Experience:** Natural language control of professional creative applications
 
@@ -239,7 +239,7 @@ AI: Must construct OSC address manually
     await send_osc("127.0.0.1", 11000, "/live/play", [])
 ```
 
-**After (27+ tools):**
+**After (43+ tools):**
 ```
 User: "Start Ableton Live playback"
 AI: Simple tool call
@@ -391,10 +391,10 @@ await ableton_play()
 ## Metrics
 
 ### Current Metrics
-- **Total Tools:** 27
+- **Total Tools:** 43
 - **Applications Covered:** 8
-- **Lines of Code:** ~160 lines (application tools)
-- **Average Tools per Application:** 2.9
+- **Lines of Code:** ~240 lines (application tools)
+- **Average Tools per Application:** 5.4
 
 ### Target Metrics (v0.3.0)
 - **Total Tools:** 50+
