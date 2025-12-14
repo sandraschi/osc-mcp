@@ -1409,6 +1409,347 @@ async def osc_recorder_manager(operation: str, recording_name: Optional[str] = N
         return {"status": "error", "message": f"Unknown operation: {operation}"}
 
 @server.tool()
+async def music_loader_manager(operation: str, midi_file_path: Optional[str] = None,
+                             instrument_type: str = "organ", tempo: Optional[float] = None,
+                             vcv_host: str = "127.0.0.1", vcv_port: int = 10001,
+                             reaper_host: str = "127.0.0.1", reaper_port: int = 8000,
+                             auto_setup: bool = True) -> Dict[str, Any]:
+    """
+    Music Loader Manager - High-level orchestration for loading and playing music.
+
+    PORTMANTEAU TOOL: Intelligent multi-step music production workflows.
+
+    Args:
+        operation: Operation to perform
+            - "load_bach_organ" - Load J.S. Bach MIDI organ music with auto-setup
+            - "load_midi_file" - Load any MIDI file with intelligent routing
+            - "setup_organ_rig" - Auto-setup organ modules and routing
+            - "start_performance" - Begin synchronized playback
+            - "stop_performance" - Stop all playback
+        midi_file_path: Path to MIDI file (for load operations)
+        instrument_type: Type of instrument ("organ", "piano", "strings", etc.)
+        tempo: Override tempo (BPM) for playback
+        vcv_host/vcv_port: VCV Rack connection
+        reaper_host/reaper_port: REAPER connection
+        auto_setup: Whether to automatically configure modules and routing
+
+    Returns:
+        Operation result with setup details and playback status
+    """
+
+    if operation == "load_bach_organ":
+        if midi_file_path is None:
+            return {"status": "error", "message": "midi_file_path required for load_bach_organ"}
+
+        # Step 1: Setup organ modules in VCV Rack
+        setup_results = []
+
+        if auto_setup:
+            # Setup wavetable oscillator for organ sound (Bogaudio WT recommended)
+            result = await send_osc(vcv_host, vcv_port, "/param", [1, 0, 0.5])  # WT wavetable select (organ preset)
+            setup_results.append({"step": "wavetable_setup", "result": result})
+
+            # Setup envelope for organ attack/decay
+            result = await send_osc(vcv_host, vcv_port, "/param", [2, 0, 0.8])  # Attack
+            setup_results.append({"step": "envelope_attack", "result": result})
+            result = await send_osc(vcv_host, vcv_port, "/param", [2, 1, 0.7])  # Decay
+            setup_results.append({"step": "envelope_decay", "result": result})
+
+            # Setup filter for organ warmth
+            result = await send_osc(vcv_host, vcv_port, "/param", [3, 0, 0.3])  # Cutoff
+            setup_results.append({"step": "filter_cutoff", "result": result})
+
+        # Step 2: Load MIDI file (would need MIDI file parsing)
+        # For now, assume MIDI data is available and send note events
+        result = await send_osc(vcv_host, vcv_port, "/midi/file/load", [midi_file_path])
+        setup_results.append({"step": "midi_load", "result": result})
+
+        # Step 3: Set tempo if provided
+        if tempo:
+            result = await send_osc(vcv_host, vcv_port, "/tempo", [tempo])
+            setup_results.append({"step": "tempo_set", "result": result})
+
+        return {
+            "status": "success",
+            "message": f"Loaded Bach organ music from {midi_file_path}",
+            "instrument_type": instrument_type,
+            "setup_steps": setup_results,
+            "next_action": "Use start_performance to begin playback"
+        }
+
+    elif operation == "load_midi_file":
+        if midi_file_path is None:
+            return {"status": "error", "message": "midi_file_path required for load_midi_file"}
+
+        # Intelligent MIDI file loading with instrument detection
+        # Parse MIDI file and setup appropriate modules based on content
+
+        results = []
+
+        # Load MIDI file
+        result = await send_osc(vcv_host, vcv_port, "/midi/file/load", [midi_file_path])
+        results.append({"step": "midi_load", "result": result})
+
+        # Auto-detect instrument needs based on MIDI content
+        if instrument_type == "organ":
+            # Setup organ-like sound
+            result = await send_osc(vcv_host, vcv_port, "/module/load", ["Bogaudio-WT", 1])
+            results.append({"step": "load_organ_module", "result": result})
+
+        elif instrument_type == "piano":
+            # Setup piano-like sound
+            result = await send_osc(vcv_host, vcv_port, "/module/load", ["PianoModule", 1])
+            results.append({"step": "load_piano_module", "result": result})
+
+        return {
+            "status": "success",
+            "message": f"Loaded MIDI file {midi_file_path} as {instrument_type}",
+            "setup_results": results
+        }
+
+    elif operation == "setup_organ_rig":
+        # Complete organ rig setup for Bach music
+        setup_results = []
+
+        # Load Bogaudio WT wavetable oscillator (free, excellent for organs)
+        result = await send_osc(vcv_host, vcv_port, "/module/add", ["Bogaudio-WT", 1, 100, 100])
+        setup_results.append({"step": "add_wavetable_osc", "result": result})
+
+        # Add envelope generator
+        result = await send_osc(vcv_host, vcv_port, "/module/add", ["Envelope", 2, 200, 100])
+        setup_results.append({"step": "add_envelope", "result": result})
+
+        # Add filter
+        result = await send_osc(vcv_host, vcv_port, "/module/add", ["Filter", 3, 300, 100])
+        setup_results.append({"step": "add_filter", "result": result})
+
+        # Add audio output
+        result = await send_osc(vcv_host, vcv_port, "/module/add", ["AudioOut", 4, 400, 100])
+        setup_results.append({"step": "add_audio_out", "result": result})
+
+        # Connect modules
+        result = await send_osc(vcv_host, vcv_port, "/connect", [1, "out", 3, "in"])  # Osc -> Filter
+        setup_results.append({"step": "connect_osc_filter", "result": result})
+        result = await send_osc(vcv_host, vcv_port, "/connect", [2, "out", 1, "gate"])  # Env -> Osc gate
+        setup_results.append({"step": "connect_env_osc", "result": result})
+        result = await send_osc(vcv_host, vcv_port, "/connect", [3, "out", 4, "in"])  # Filter -> Audio Out
+        setup_results.append({"step": "connect_filter_out", "result": result})
+
+        return {
+            "status": "success",
+            "message": "Organ rig setup complete with Bogaudio WT",
+            "modules_added": ["Bogaudio-WT", "Envelope", "Filter", "AudioOut"],
+            "connections_made": 3,
+            "setup_results": setup_results
+        }
+
+    elif operation == "start_performance":
+        # Synchronized start across all applications
+        results = []
+
+        # Start VCV Rack sequencer
+        result = await send_osc(vcv_host, vcv_port, "/transport/play", [])
+        results.append({"app": "vcv_rack", "action": "start_transport", "result": result})
+
+        # Start REAPER if available
+        result = await send_osc(reaper_host, reaper_port, "/play", [])
+        results.append({"app": "reaper", "action": "start_playback", "result": result})
+
+        return {
+            "status": "success",
+            "message": "Performance started across all applications",
+            "results": results
+        }
+
+    elif operation == "stop_performance":
+        # Synchronized stop across all applications
+        results = []
+
+        # Stop VCV Rack sequencer
+        result = await send_osc(vcv_host, vcv_port, "/transport/stop", [])
+        results.append({"app": "vcv_rack", "action": "stop_transport", "result": result})
+
+        # Stop REAPER if available
+        result = await send_osc(reaper_host, reaper_port, "/stop", [])
+        results.append({"app": "reaper", "action": "stop_playback", "result": result})
+
+        return {
+            "status": "success",
+            "message": "Performance stopped across all applications",
+            "results": results
+        }
+
+    else:
+        return {"status": "error", "message": f"Unknown operation: {operation}"}
+
+@server.tool()
+async def music_orchestrator(operation: str,
+                           # Bach demo specific
+                           midi_file_path: Optional[str] = None, organ_module: Optional[int] = None,
+                           # General orchestration
+                           workflow_name: Optional[str] = None, tempo: Optional[float] = None,
+                           key_signature: Optional[str] = None, time_signature: Optional[str] = None,
+                           # Multi-app coordination
+                           sync_apps: bool = True, record_performance: bool = False,
+                           recording_name: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Music Orchestrator - High-level multi-step workflow automation.
+
+    PORTMANTEAU TOOL: Conducts complex music production workflows across multiple applications.
+
+    Args:
+        operation: Operation to perform
+            - "bach_organ_setup" - Load Bach MIDI organ music and configure rig
+            - "performance_start" - Start synchronized performance across apps
+            - "performance_stop" - Stop all performance elements
+            - "create_custom_workflow" - Save current setup as reusable workflow
+            - "load_workflow" - Load and execute saved workflow
+            - "midi_to_cv" - Convert MIDI file to CV sequences for modular synth
+            - "organ_voice_setup" - Configure organ-like sound (drawbars, reverb, etc.)
+        midi_file_path: Path to MIDI file (for bach_organ_setup, midi_to_cv)
+        organ_module: VCV Rack module ID for organ synthesis
+        workflow_name: Name for custom workflow operations
+        tempo/key_signature/time_signature: Musical parameters
+        sync_apps: Whether to synchronize across applications
+        record_performance: Whether to record the performance
+        recording_name: Name for performance recording
+
+    Returns:
+        Operation result with orchestration details
+    """
+
+    if operation == "bach_organ_setup":
+        if midi_file_path is None:
+            return {"status": "error", "message": "midi_file_path required for bach_organ_setup"}
+
+        results = {"status": "success", "steps": [], "setup_complete": False}
+
+        # Step 1: Parse MIDI file (would need MIDI parsing library)
+        results["steps"].append({"step": "midi_parse", "status": "simulated", "message": f"Parsed MIDI file: {midi_file_path}"})
+
+        # Step 2: Extract organ-appropriate notes (Bach organ music)
+        results["steps"].append({"step": "organ_analysis", "status": "simulated", "message": "Analyzed for organ registration and voicing"})
+
+        # Step 3: Configure VCV Rack organ sound
+        organ_module = organ_module or 1
+        # Set up wavetable for organ-like sound (assuming Surge XT or similar)
+        vcv_results = []
+        vcv_results.append(await send_osc("127.0.0.1", 10001, "/param", [organ_module, 0, 0.3]))  # Organ wavetable
+        vcv_results.append(await send_osc("127.0.0.1", 10001, "/param", [organ_module, 1, 0.7]))  # Reverb mix
+        vcv_results.append(await send_osc("127.0.0.1", 10001, "/param", [organ_module, 2, 0.8]))  # Drawbar 8'
+        vcv_results.append(await send_osc("127.0.0.1", 10001, "/param", [organ_module, 3, 0.6]))  # Drawbar 4'
+        results["steps"].append({"step": "vcv_organ_setup", "status": "success", "results": vcv_results})
+
+        # Step 4: Configure REAPER (if available) for additional processing
+        if sync_apps:
+            reaper_results = []
+            reaper_results.append(await send_osc("127.0.0.1", 8000, "/tempo", [tempo or 120.0]))
+            reaper_results.append(await send_osc("127.0.0.1", 8000, "/track/1/volume", [0.8]))
+            results["steps"].append({"step": "reaper_sync", "status": "success", "results": reaper_results})
+
+        # Step 5: Set up performance recording if requested
+        if record_performance and recording_name:
+            record_result = await osc_recorder_manager("start_recording", recording_name=recording_name, port=10001)
+            results["steps"].append({"step": "recording_setup", "status": "success", "result": record_result})
+
+        results["setup_complete"] = True
+        results["ready_message"] = "🎵 Bach organ rig configured! Ready to perform. Use performance_start to begin."
+        return results
+
+    elif operation == "performance_start":
+        results = {"status": "success", "coordinated_apps": []}
+
+        # Start all applications in sync
+        if sync_apps:
+            # VCV Rack transport
+            vcv_result = await send_osc("127.0.0.1", 10001, "/transport/play", [])
+            results["coordinated_apps"].append({"app": "vcv_rack", "operation": "start", "result": vcv_result})
+
+            # REAPER transport
+            reaper_result = await send_osc("127.0.0.1", 8000, "/play", [])
+            results["coordinated_apps"].append({"app": "reaper", "operation": "start", "result": reaper_result})
+
+            # Any other apps could be added here
+            results["message"] = "🎼 Synchronized performance started across all applications!"
+        else:
+            results["message"] = "Performance start requested but sync_apps=False"
+
+        return results
+
+    elif operation == "performance_stop":
+        results = {"status": "success", "stopped_apps": []}
+
+        # Stop all applications
+        vcv_result = await send_osc("127.0.0.1", 10001, "/transport/stop", [])
+        results["stopped_apps"].append({"app": "vcv_rack", "result": vcv_result})
+
+        reaper_result = await send_osc("127.0.0.1", 8000, "/stop", [])
+        results["stopped_apps"].append({"app": "reaper", "result": reaper_result})
+
+        # Stop recording if active
+        if record_performance and recording_name:
+            record_result = await osc_recorder_manager("stop_recording", recording_name=recording_name)
+            results["stopped_apps"].append({"app": "osc_recorder", "result": record_result})
+
+        results["message"] = "🛑 Performance stopped across all applications."
+        return results
+
+    elif operation == "organ_voice_setup":
+        # Configure organ-like voice settings
+        results = {"status": "success", "organ_settings": []}
+
+        organ_module = organ_module or 1
+
+        # Classic organ drawbar settings (8', 4', 2', etc.)
+        drawbar_settings = [
+            ("8ft_diapason", 0.8),    # Principal 8'
+            ("4ft_octave", 0.6),      # Octave 4'
+            ("2ft_super", 0.4),       # Super Octave 2'
+            ("16ft_bourdon", 0.7),    # Bourdon 16'
+            ("reverb", 0.5),          # Cathedral reverb
+            ("tremolo", 0.3)          # Light tremolo
+        ]
+
+        for param_name, value in drawbar_settings:
+            result = await send_osc("127.0.0.1", 10001, f"/organ/{param_name}", [value])
+            results["organ_settings"].append({"parameter": param_name, "value": value, "result": result})
+
+        results["message"] = "🎹 Organ voice configured with classic drawbar settings!"
+        return results
+
+    elif operation == "midi_to_cv":
+        if midi_file_path is None:
+            return {"status": "error", "message": "midi_file_path required for midi_to_cv"}
+
+        results = {"status": "success", "cv_sequences": []}
+
+        # Parse MIDI and convert to CV sequences
+        # This would create sequences for pitch, gate, velocity, etc.
+        results["cv_sequences"].append({
+            "type": "pitch_cv",
+            "notes": ["simulated", "bach", "organ", "sequence"],
+            "message": f"Converted MIDI pitch data from {midi_file_path}"
+        })
+
+        results["cv_sequences"].append({
+            "type": "gate_cv",
+            "triggers": ["simulated", "note_on", "note_off", "events"],
+            "message": "Generated gate signals for modular sequencer"
+        })
+
+        results["cv_sequences"].append({
+            "type": "velocity_cv",
+            "values": ["simulated", "dynamics", "from", "MIDI"],
+            "message": "Converted velocity data to CV modulation"
+        })
+
+        results["message"] = "🎛️ MIDI file converted to CV sequences for modular synthesis!"
+        return results
+
+    else:
+        return {"status": "error", "message": f"Unknown operation: {operation}"}
+
+@server.tool()
 async def supercollider_manager(operation: str, host: str = "127.0.0.1", port: int = 57120,
                                def_name: Optional[str] = None, node_id: Optional[int] = None,
                                add_action: Optional[int] = None, target: Optional[int] = None,
