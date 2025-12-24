@@ -10,14 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Planned
 - Consolidate duplicate server implementations
 - Persistent storage for OSC client/server state
-- Message buffer with `get_received_messages()` tool
 - OSC connection health monitoring
 - OSCQuery service discovery
 - Enhanced docstrings with examples for all tools
 
 ## [0.2.2] - 2025-12-14
 
+### Changed
+- **Project Status**: Marked as **Beta** (Development Status :: 4 - Beta)
+  - Core functionality is stable and production-ready
+  - Advanced features may continue to evolve
+  - Ready for broader community testing and feedback
+
 ### Added
+- Beta status badge in README.md
+- Project analysis documentation (`docs/PROJECT_ANALYSIS.md`)
 - **Bidirectional OSC Communication** - True receive capabilities with message buffering
   - **Message Buffer System** - OSCServer now buffers all received messages with timestamps
   - **get_received_messages()** - Retrieve buffered OSC messages with filtering

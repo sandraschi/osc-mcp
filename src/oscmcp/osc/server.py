@@ -6,14 +6,16 @@ This module provides functionality to receive and handle OSC messages.
 import asyncio
 import logging
 import time
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional
 from pythonosc import dispatcher
 from pythonosc.osc_server import AsyncIOOSCUDPServer
 
 logger = logging.getLogger(__name__)
 
+
 class OSCMessage:
     """Represents a received OSC message."""
+
     def __init__(self, address: str, args: tuple, timestamp: float):
         self.address = address
         self.args = args
@@ -25,13 +27,16 @@ class OSCMessage:
             "address": self.address,
             "args": list(self.args),
             "timestamp": self.timestamp,
-            "age_seconds": time.time() - self.timestamp
+            "age_seconds": time.time() - self.timestamp,
         }
+
 
 class OSCServer:
     """Server for receiving and handling OSC messages."""
 
-    def __init__(self, host: str = "0.0.0.0", port: int = 9000, max_buffer_size: int = 1000):
+    def __init__(
+        self, host: str = "0.0.0.0", port: int = 9000, max_buffer_size: int = 1000
+    ):
         """Initialize the OSC server.
 
         Args:
@@ -47,17 +52,17 @@ class OSCServer:
         self._callbacks: Dict[str, Callable] = {}
         self._message_buffer: List[OSCMessage] = []
         self._max_buffer_size = max_buffer_size
-    
+
     def add_handler(self, address: str, callback: Callable) -> None:
         """Add a handler for a specific OSC address.
-        
+
         Args:
             address: The OSC address pattern to handle.
             callback: The function to call when a message is received at the address.
         """
         self._callbacks[address] = callback
         self.dispatcher.map(address, self._handle_osc_message, address)
-    
+
     def _handle_osc_message(self, address: str, *args: Any) -> None:
         """Handle an incoming OSC message.
 
@@ -83,20 +88,16 @@ class OSCServer:
                 self._callbacks[address](address, *args)
             except Exception as e:
                 logger.error(f"Error in OSC handler for {address}: {e}")
-    
+
     async def start(self) -> None:
         """Start the OSC server."""
         loop = asyncio.get_running_loop()
-        self.server = AsyncIOOSCUDPServer(
-            (self.host, self.port), 
-            self.dispatcher, 
-            loop
-        )
-        
+        self.server = AsyncIOOSCUDPServer((self.host, self.port), self.dispatcher, loop)
+
         transport, _ = await self.server.create_serve_endpoint()
         self._transport = transport
         logger.info(f"OSC server started on {self.host}:{self.port}")
-    
+
     async def stop(self) -> None:
         """Stop the OSC server."""
         if self._transport:
@@ -104,9 +105,12 @@ class OSCServer:
             self._transport = None
             logger.info("OSC server stopped")
 
-    def get_received_messages(self, address_pattern: Optional[str] = None,
-                            max_age_seconds: Optional[float] = None,
-                            limit: int = 100) -> List[Dict[str, Any]]:
+    def get_received_messages(
+        self,
+        address_pattern: Optional[str] = None,
+        max_age_seconds: Optional[float] = None,
+        limit: int = 100,
+    ) -> List[Dict[str, Any]]:
         """
         Get received OSC messages from the buffer.
 
@@ -138,7 +142,9 @@ class OSCServer:
 
         return messages
 
-    def get_latest_message(self, address_pattern: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    def get_latest_message(
+        self, address_pattern: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
         """
         Get the most recent OSC message matching the pattern.
 
@@ -174,7 +180,7 @@ class OSCServer:
             return {
                 "total_messages": 0,
                 "oldest_message_age": None,
-                "newest_message_age": None
+                "newest_message_age": None,
             }
 
         current_time = time.time()
@@ -185,5 +191,5 @@ class OSCServer:
             "total_messages": len(self._message_buffer),
             "max_buffer_size": self._max_buffer_size,
             "oldest_message_age": current_time - oldest,
-            "newest_message_age": current_time - newest
+            "newest_message_age": current_time - newest,
         }

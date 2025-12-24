@@ -17,45 +17,46 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
 class OSCMCPServer:
     """Main OSCMCP server class implementing FastMCP 2.10 protocol for OSC.
-    
+
     This server provides tools for sending and receiving OSC messages,
     with integration for audio/visual automation workflows.
     """
-    
+
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         """Initialize the OSCMCP server with optional configuration.
-        
+
         Args:
             config: Optional configuration dictionary with OSC settings
         """
         self.config = config or {}
         self._initialized = False
-        
+
     async def initialize(self) -> None:
         """Initialize the OSC server resources."""
         if self._initialized:
             return
-            
+
         logger.info("Initializing OSCMCP server...")
         # OSC server initialization will be added here
         self._initialized = True
         logger.info("OSCMCP server initialized successfully")
-        
+
     async def shutdown(self) -> None:
         """Shutdown the OSC server and release resources."""
         if not self._initialized:
             return
-            
+
         logger.info("Shutting down OSCMCP server...")
         # OSC server cleanup will be added here
         self._initialized = False
         logger.info("OSCMCP server shutdown complete")
-        
+
     async def get_info(self) -> Dict[str, Any]:
         """Get server information.
-        
+
         Returns:
             Dictionary containing server information
         """
@@ -65,6 +66,7 @@ class OSCMCPServer:
             "description": "Open Source Content Management Platform MCP Server",
             "capabilities": ["content_management", "user_management", "plugin_system"],
         }
+
 
 # Create a default instance for convenience
 server = OSCMCPServer()

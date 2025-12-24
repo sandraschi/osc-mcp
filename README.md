@@ -1,11 +1,16 @@
 # OSC-MCP - Open Sound Control MCP Server
 
+**By FlowEngineer sandraschi**
+
 [![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![FastMCP](https://img.shields.io/badge/FastMCP-2.13.1-green.svg)](https://github.com/jlowin/fastmcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Status: Beta](https://img.shields.io/badge/status-beta-orange.svg)](https://github.com/sandraschi/osc-mcp)
 
 A **FastMCP 2.13 compliant** MCP server that enables natural language control of professional audio/visual applications through the **Open Sound Control (OSC)** protocol. Control Ableton Live, TouchDesigner, VRChat, Max/MSP, and other OSC-enabled applications directly from Claude Desktop or any MCP client.
+
+> **⚠️ Beta Status:** This project is currently in **beta**. Core functionality is stable and production-ready, but some advanced features may change. We welcome feedback and contributions!
 
 ## 🎯 What is OSC-MCP?
 
@@ -168,9 +173,9 @@ await send_osc("127.0.0.1", 9000, "/avatar/parameters/Voice", [0.5])
 
 ### MCP Tools Available
 
-OSC-MCP provides **19 tools** (10 managers + 9 core) for comprehensive bidirectional control of professional audio/visual applications:
+OSC-MCP provides **19 tools** (11 managers + 8 core) for comprehensive bidirectional control of professional audio/visual applications:
 
-#### Core OSC Tools (9 tools)
+#### Core OSC Tools (8 tools)
 
 1. **`send_osc`** - Universal OSC message sender
    - Send any OSC message to any application
@@ -202,29 +207,15 @@ OSC-MCP provides **19 tools** (10 managers + 9 core) for comprehensive bidirecti
    - Reset message buffer for fresh start
    - Free memory in long-running servers
 
-8. **`osc_recorder_manager`** - Record/playback OSC sequences
-   - Capture automation sequences for replay
-   - Perfect for creating repeatable performances
-   - Speed control and looping support
+8. **`test_osc_echo`** - OSC functionality testing
+   - End-to-end validation
+   - Self-testing capability
 
-9. **`audio_workflow_manager`** - Multi-app orchestration
-   - Coordinate transport across REAPER, VCV Rack, etc.
-   - Synchronized tempo and start/stop operations
-   - Cross-application workflow automation
-
-9. **`test_osc_echo`** - OSC functionality testing
-    - End-to-end validation
-    - Self-testing capability
-
-#### Application Manager Tools (10 portmanteau tools)
+#### Application Manager Tools (11 portmanteau tools)
 
 **🎛️ `vcv_manager`** - VCV Rack modular synthesis (18+ operations)
 - MIDI control, CV modulation, parameter automation, module-specific controls
 - Operations: `set_parameter`, `trigger`, `send_cv`, `set_light`, `play_midi`, `set_vco_frequency`, etc.
-
-**🎚️ `osc_control_manager`** - Comprehensive OSC communication (11 operations)
-- Unified OSC sending, server management, message monitoring, recording
-- Operations: `send_message`, `start_server`, `get_messages`, `start_recording`, etc.
 
 **🎼 `osc_recorder_manager`** - OSC automation recording (6 operations)
 - Record and playback OSC message sequences
@@ -233,10 +224,6 @@ OSC-MCP provides **19 tools** (10 managers + 9 core) for comprehensive bidirecti
 **🎵 `music_orchestrator`** - High-level music production workflows (6 operations)
 - Complex multi-step orchestration (Bach organ setup, performance control)
 - Operations: `bach_organ_setup`, `performance_start`, `organ_voice_setup`, etc.
-
-**🎵 `audio_workflow_manager`** - Multi-app orchestration (5 operations)
-- Coordinate transport across REAPER, VCV Rack, etc.
-- Operations: `sync_tempo_all`, `start_all`, `stop_all`, etc.
 
 **🎵 `ableton_manager`** - Ableton Live DAW (6 operations)
 - Playback control, tempo, clip triggering, mixing
@@ -247,9 +234,15 @@ OSC-MCP provides **19 tools** (10 managers + 9 core) for comprehensive bidirecti
 - Operations: `set_parameter`, `send_chat`, `trigger_haptic`
 - ⚠️ **Note:** For advanced VRChat features (avatar management, monitoring, complex animations), use the dedicated [vrchat-mcp](https://github.com/sandraschi/vrchat-mcp) repository
 
-**🎨 `touchdesigner_manager`** - TouchDesigner visual programming (3 operations)
-- Parameter control, constants, button triggering
-- Operations: `set_parameter`, `set_constant`, `trigger_button`
+**🎨 `touchdesigner_manager`** - TouchDesigner visual programming (40+ operations)
+- Comprehensive operator control across all families: COMP, CHOP, SOP, TOP, DAT, MAT
+- Basic controls: parameters, constants, sliders, toggles, buttons
+- CHOP: audio processing, waveforms, filters, math operations
+- TOP: video processing, effects, compositing, transforms
+- SOP: 3D geometry, primitives, transformations
+- DAT: data manipulation, tables, text, scripting
+- MAT: materials, shaders, lighting
+- COMP: containers, UI components, windows
 
 **🔊 `supercollider_manager`** - SuperCollider audio synthesis (3 operations)
 - Synth creation, node management, control setting
@@ -266,6 +259,10 @@ OSC-MCP provides **19 tools** (10 managers + 9 core) for comprehensive bidirecti
 **🎛️ `puredata_manager`** - Pure Data visual programming (3 operations)
 - Message routing, DSP control
 - Operations: `send_bang`, `send_float`, `toggle_dsp`
+
+**🎵 `audio_workflow_manager`** - Multi-app orchestration (5 operations)
+- Coordinate transport across REAPER, VCV Rack, etc.
+- Operations: `sync_tempo_all`, `start_all`, `stop_all`, etc.
 
 **See [Application Tools Analysis](docs/APPLICATION_TOOLS_ANALYSIS.md) for complete documentation.**
 
@@ -287,9 +284,36 @@ await send_osc("127.0.0.1", 11000, "/live/track/1/mute", [1])
 
 ### TouchDesigner (port 9000)
 ```python
-# Control parameters
-await send_osc("localhost", 9000, "/project/comp1/opacity", [0.75])
-await send_osc("localhost", 9000, "/project/comp1/tx", [100.0])
+# Basic parameter control
+await touchdesigner_manager("set_constant", component_path="/project/const1", value=0.5)
+await touchdesigner_manager("set_slider", component_path="/project/slider1", value=0.75)
+await touchdesigner_manager("trigger_button", component_path="/project/button1")
+
+# CHOP operations (audio/video processing)
+await touchdesigner_manager("set_waveform_freq", component_path="/project/wave1", frequency=440)
+await touchdesigner_manager("set_audio_level", component_path="/project/audioin1", value=0.8)
+await touchdesigner_manager("set_filter_cutoff", component_path="/project/filter1", frequency=1000)
+
+# TOP operations (video processing)
+await touchdesigner_manager("set_level_brightness", component_path="/project/level1", value=1.2)
+await touchdesigner_manager("set_transform_scale", component_path="/project/transform1", x=2.0, y=2.0)
+await touchdesigner_manager("set_composite_opacity", component_path="/project/composite1", value=0.5)
+
+# SOP operations (3D geometry)
+await touchdesigner_manager("set_sphere_radius", component_path="/project/sphere1", value=0.8)
+await touchdesigner_manager("set_transform_sop_tx", component_path="/project/transform_sop1", value=100)
+
+# DAT operations (data manipulation)
+await touchdesigner_manager("set_table_cell", component_path="/project/table1", row=0, col=1, value=42)
+await touchdesigner_manager("set_text_string", component_path="/project/text1", text="Hello World")
+
+# MAT operations (materials)
+await touchdesigner_manager("set_phong_diffuse", component_path="/project/phong1", x=1.0, y=0.5, z=0.0)
+await touchdesigner_manager("set_phong_shininess", component_path="/project/phong1", value=0.8)
+
+# COMP operations (UI components)
+await touchdesigner_manager("set_container_opacity", component_path="/project/container1", value=0.7)
+await touchdesigner_manager("set_base_position", component_path="/project/base1", x=100, y=200)
 ```
 
 ### VRChat (port 9000)
@@ -331,21 +355,22 @@ latest = await get_latest_message(10002)                           # Get most re
 ```
 osc-mcp/
 ├── src/oscmcp/
-│   ├── mcp_server.py        # Primary stdio server (48 tools)
+│   ├── mcp_server.py        # Primary stdio server (19 tools)
 │   ├── stdio_server.py      # Alternative stdio server
 │   ├── server.py            # HTTP server variant
 │   ├── osc/                 # OSC protocol implementation
 │   │   ├── client.py        # OSC client for sending
 │   │   └── server.py        # OSC server with message buffering
-│   ├── apps/                # Application integrations
+│   ├── apps/                # Application integrations (10+ apps)
 │   │   ├── ableton.py
 │   │   ├── touchdesigner.py
 │   │   ├── vrchat.py
-│   │   └── ... (8 more)
+│   │   └── ... (7 more)
 │   └── midi/                # MIDI integration
 ├── tests/                   # Test suite
-├── docs/                    # Documentation
+├── docs/                    # Documentation (84+ files)
 │   ├── APPLICATION_TOOLS_ANALYSIS.md  # Tool analysis
+│   ├── PROJECT_ANALYSIS.md  # Project maturity assessment
 │   └── adn-notes/           # ADN documentation for each controlee
 ├── pyproject.toml          # Project configuration
 ├── UPGRADE_NOTES.md        # FastMCP 2.13 migration guide
@@ -382,6 +407,7 @@ mypy src
 ## 📚 Documentation
 
 - **[UPGRADE_NOTES.md](UPGRADE_NOTES.md)** - FastMCP 2.10 → 2.13 migration guide
+- **[docs/PROJECT_ANALYSIS.md](docs/PROJECT_ANALYSIS.md)** - Project maturity assessment and beta status analysis
 - **[docs/APPLICATION_TOOLS_ANALYSIS.md](docs/APPLICATION_TOOLS_ANALYSIS.md)** - Comprehensive analysis of application-specific tools
 - **[.claude/REPO_STATUS_AND_ROADMAP.md](.claude/REPO_STATUS_AND_ROADMAP.md)** - Repository status and improvement roadmap
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - Contribution guidelines
@@ -443,22 +469,26 @@ pip install --upgrade "fastmcp[all]>=2.13.1"
 
 See [.claude/REPO_STATUS_AND_ROADMAP.md](.claude/REPO_STATUS_AND_ROADMAP.md) for detailed roadmap.
 
-### Phase 1: Critical Fixes (In Progress)
+### Phase 1: Beta Stabilization (Current)
 - ✅ FastMCP 2.13 compliance
 - ✅ Server lifespan hooks
 - ✅ Response caching
 - ✅ Comprehensive docstrings
-- 🎯 Consolidate server implementations
-- 🎯 Migrate to persistent storage
+- ✅ Beta status achieved
+- 🎯 Gather community feedback
+- 🎯 Address beta feedback
+- 🎯 Expand test coverage
 
 ### Phase 2: Enhanced Functionality
-- 🎯 Message buffer with `get_received_messages()`
+- ✅ Message buffer with `get_received_messages()` - **Implemented!**
+- 🎯 Consolidate server implementations
 - 🎯 OSC connection health monitoring
+- 🎯 Persistent storage for OSC state
 - 🎯 Circuit breaker for unreachable hosts
 - 🎯 Metrics and telemetry
 
 ### Phase 3: Application Integration
-- ✅ Expose app-specific tools (Ableton, VRChat, etc.) - **43+ tools added!**
+- ✅ Expose app-specific tools (Ableton, VRChat, etc.) - **19 tools implemented!**
 - 🎯 Expand tool coverage for existing applications
 - 🎯 OSCQuery service discovery
 - 🎯 MIDI bridge tools

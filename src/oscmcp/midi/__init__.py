@@ -7,4 +7,4 @@ allowing translation between OSC messages and MIDI events.
 from .controller import MIDIController
 from .listener import MIDIListener
 
-__all__ = ['MIDIController', 'MIDIListener']
+__all__ = ["MIDIController", "MIDIListener"]

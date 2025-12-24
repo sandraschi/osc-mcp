@@ -7,4 +7,4 @@ including both client and server implementations.
 from .client import OSCClient
 from .server import OSCServer
 
-__all__ = ['OSCClient', 'OSCServer']
+__all__ = ["OSCClient", "OSCServer"]

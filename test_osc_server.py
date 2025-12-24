@@ -73,72 +73,75 @@ async def test_osc_server():
     logger.info("Starting server process...")
     server_process = None
     
+    server_process = None
     try:
         server_process = subprocess.Popen(
-        [sys.executable, "-m", "uvicorn", "oscmcp.server:server.app", "--host", "0.0.0.0", "--port", "8000"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True
-    )
-    
-    # Give the server time to start
-    max_attempts = 10
-    attempt = 0
-    server_started = False
-    
-    logger.info("Waiting for server to start...")
-    while attempt < max_attempts and not server_started:
-        if await is_port_in_use(8000):
-            server_started = True
-            logger.info("Server is running on port 8000")
-            break
-        logger.info(f"Waiting for server to start (attempt {attempt + 1}/{max_attempts})...")
-        await asyncio.sleep(1)
-        attempt += 1
-    
-    if not server_started:
-        logger.error("Server failed to start. Check the server logs for errors.")
-        server_process.terminate()
-        return
-    
-    # Create a client with a longer timeout
-    timeout = httpx.Timeout(10.0, connect=30.0)
-    async with httpx.AsyncClient(
-        base_url="http://localhost:8000",
-        timeout=timeout,
-        follow_redirects=True
-    ) as client:
-        try:
-            # Test server health first
-            logger.info("Checking server health...")
-            logger.info("\n--- Test complete ---")
-            
-        except Exception as e:
-            logger.error(f"Test failed: {e}", exc_info=True)
-            
-            # Log server output if available
-            if server_process.stderr:
-                server_process.stderr.seek(0)
-                stderr_output = server_process.stderr.read()
-                if stderr_output:
-                    logger.error("Server stderr output:" + stderr_output)
-            
-            if server_process.stdout:
-                server_process.stdout.seek(0)
-                stdout_output = server_process.stdout.read()
-                if stdout_output:
-                    logger.info("Server stdout output:" + stdout_output)
-        
-        finally:
-            # Clean up
-            logger.info("Shutting down server...")
+            [sys.executable, "-m", "uvicorn", "oscmcp.server:server.app", "--host", "0.0.0.0", "--port", "8000"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+
+        # Give the server time to start
+        max_attempts = 10
+        attempt = 0
+        server_started = False
+
+        logger.info("Waiting for server to start...")
+        while attempt < max_attempts and not server_started:
+            if await is_port_in_use(8000):
+                server_started = True
+                logger.info("Server is running on port 8000")
+                break
+            logger.info(f"Waiting for server to start (attempt {attempt + 1}/{max_attempts})...")
+            await asyncio.sleep(1)
+            attempt += 1
+
+        if not server_started:
+            logger.error("Server failed to start. Check the server logs for errors.")
+            return
+
+        # Create a client with a longer timeout
+        timeout = httpx.Timeout(10.0, connect=30.0)
+        async with httpx.AsyncClient(
+            base_url="http://localhost:8000",
+            timeout=timeout,
+            follow_redirects=True
+        ) as client:
             try:
-                server_process.terminate()
-                server_process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                logger.warning("Server did not terminate gracefully, forcing...")
-                server_process.kill()
-            logger.info("Server stopped")
+                # Test server health first
+                logger.info("Checking server health...")
+                logger.info("\n--- Test complete ---")
+
+            except Exception as e:
+                logger.error(f"Test failed: {e}", exc_info=True)
+
+                # Log server output if available
+                if server_process.stderr:
+                    server_process.stderr.seek(0)
+                    stderr_output = server_process.stderr.read()
+                    if stderr_output:
+                        logger.error("Server stderr output:" + stderr_output)
+
+                if server_process.stdout:
+                    server_process.stdout.seek(0)
+                    stdout_output = server_process.stdout.read()
+                    if stdout_output:
+                        logger.info("Server stdout output:" + stdout_output)
+
+    except Exception as e:
+        logger.error(f"Server process failed: {e}")
+        return
+
+    # Clean up (outside the async with block)
+    logger.info("Shutting down server...")
+    try:
+        server_process.terminate()
+        server_process.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        logger.warning("Server did not terminate gracefully, forcing...")
+        server_process.kill()
+    logger.info("Server stopped")
 
 if __name__ == "__main__":
     asyncio.run(test_osc_server())

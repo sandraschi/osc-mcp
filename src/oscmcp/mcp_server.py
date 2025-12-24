@@ -4,61 +4,138 @@ This module implements a FastMCP 2.13 compliant server that provides OSC functio
 through the MCP protocol over stdio, making it compatible with MCP clients like Claude or Windsurf.
 """
 
+# CRITICAL: Set stdio to binary mode on Windows for Antigravity IDE compatibility
+# Antigravity IDE is strict about JSON-RPC protocol and interprets trailing \r as "invalid trailing data"
+# This must happen BEFORE any imports that might write to stdout
+import os
+import sys
 import asyncio
 import logging
-from contextlib import asynccontextmanager
 from typing import Any, Dict, List, Optional
 
 from fastmcp import FastMCP
 from pydantic import BaseModel, Field
-from pythonosc import dispatcher, osc_server, udp_client
 from pythonosc.udp_client import SimpleUDPClient
 
 from .osc.server import OSCServer
 
+if os.name == "nt":  # Windows only
+    try:
+        # Force binary mode for stdin/stdout to prevent CRLF conversion
+        import msvcrt
+
+        msvcrt.setmode(sys.stdin.fileno(), os.O_BINARY)
+        msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
+    except (OSError, AttributeError):
+        # Fallback: just ensure no CRLF conversion
+        pass
+
+
+# DevNullStdout class for stdio mode suppression
+class DevNullStdout:
+    def __init__(self, original_stdout):
+        self.original_stdout = original_stdout
+
+    def write(self, data):
+        # Suppress all writes to stdout during initialization
+        pass
+
+    def flush(self):
+        pass
+
+    def restore(self):
+        sys.stdout = self.original_stdout
+
+
 # Set up logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
+# Detect if we're running in stdio mode (for MCP)
+_is_stdio_mode = (
+    len(sys.argv) == 1  # No arguments provided
+    or (len(sys.argv) == 2 and sys.argv[1] == "-m")  # Just module flag
+    or any(arg in ["--stdio", "stdio"] for arg in sys.argv)  # Explicit stdio flag
+)
+
+# Suppress stdout during FastMCP initialization in stdio mode
+if _is_stdio_mode:
+    # Save original getLogger function
+    original_getLogger = logging.getLogger
+
+    # Redirect stdout to prevent initialization output
+    sys.stdout = DevNullStdout(sys.stdout)
 
 # Create FastMCP instance with stdio transport
 server = FastMCP("OSC-MCP")
 
+# CRITICAL: After server initialization, restore stdout for stdio mode
+# This allows the server to communicate via JSON-RPC while preventing initialization logging
+if _is_stdio_mode:
+    if hasattr(sys.stdout, "restore"):
+        sys.stdout.restore()
+        # Now we can safely write to stdout for JSON-RPC communication
+
+    # Restore the original logging functionality
+    logging.getLogger = original_getLogger
+
+    # Set up proper logging to stderr only (not stdout)
+    import logging
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        stream=sys.stderr,  # Critical: log to stderr, not stdout
+    )
+
 # Store OSC clients and servers
 osc_clients: Dict[str, SimpleUDPClient] = {}
-osc_servers: Dict[int, 'OSCServer'] = {}
+osc_servers: Dict[int, "OSCServer"] = {}
 
 # OSC Recording system
 osc_recordings: Dict[str, List[Dict[str, Any]]] = {}
 
+
 # Pydantic models for input validation (FastMCP 2.13)
 class OSCMessageInput(BaseModel):
     """Input model for OSC message sending."""
+
     host: str = Field(..., description="Target hostname or IP address")
     port: int = Field(..., gt=0, le=65535, description="Target UDP port (1-65535)")
-    address: str = Field(..., pattern=r"^/.*", description="OSC address pattern starting with /")
-    values: List[Any] = Field(default_factory=list, description="List of values to send")
+    address: str = Field(
+        ..., pattern=r"^/.*", description="OSC address pattern starting with /"
+    )
+    values: List[Any] = Field(
+        default_factory=list, description="List of values to send"
+    )
+
 
 class OSCServerInput(BaseModel):
     """Input model for starting OSC server."""
-    port: int = Field(..., gt=0, le=65535, description="UDP port to listen on (1-65535)")
+
+    port: int = Field(
+        ..., gt=0, le=65535, description="UDP port to listen on (1-65535)"
+    )
     address: str = Field(default="0.0.0.0", description="Network interface to bind to")
+
 
 class OSCServerStopInput(BaseModel):
     """Input model for stopping OSC server."""
-    port: int = Field(..., gt=0, le=65535, description="Port of the server to stop (1-65535)")
+
+    port: int = Field(
+        ..., gt=0, le=65535, description="Port of the server to stop (1-65535)"
+    )
+
 
 # Lifespan management removed - FastMCP 2.13.1 doesn't support lifespan decorator
 # Resource cleanup happens automatically when server shuts down
 
+
 @server.tool()
 async def send_osc(
-    host: str,
-    port: int,
-    address: str,
-    values: List[Any] = None
+    host: str, port: int, address: str, values: List[Any] = None
 ) -> Dict[str, Any]:
     """Send an OSC message to the specified address.
 
@@ -173,34 +250,32 @@ async def send_osc(
     """
     if values is None:
         values = []
-        
+
     try:
         # Get or create OSC client
         client_key = f"{host}:{port}"
         if client_key not in osc_clients:
             osc_clients[client_key] = SimpleUDPClient(host, port)
-        
+
         # Send the OSC message
         osc_clients[client_key].send_message(address, values)
-        
+
         logger.info(f"Sent OSC to {host}:{port} - {address}: {values}")
         return {
             "status": "success",
             "host": host,
             "port": port,
             "address": address,
-            "values": values
+            "values": values,
         }
     except Exception as e:
         error = f"Failed to send OSC message: {e}"
         logger.error(error)
         return {"status": "error", "message": error}
 
+
 @server.tool()
-async def start_osc_server(
-    port: int,
-    address: str = "0.0.0.0"
-) -> Dict[str, Any]:
+async def start_osc_server(port: int, address: str = "0.0.0.0") -> Dict[str, Any]:
     """Start an OSC server to receive incoming messages.
 
     This tool creates a UDP server that listens for incoming OSC messages on the
@@ -339,7 +414,7 @@ async def start_osc_server(
     if port in osc_servers:
         return {
             "status": "error",
-            "message": f"OSC server already running on port {port}"
+            "message": f"OSC server already running on port {port}",
         }
 
     try:
@@ -357,13 +432,14 @@ async def start_osc_server(
             "status": "success",
             "message": f"OSC server started on {address}:{port} with message buffering",
             "port": port,
-            "address": address
+            "address": address,
         }
-        
+
     except Exception as e:
         error = f"Failed to start OSC server: {e}"
         logger.error(error)
         return {"status": "error", "message": error}
+
 
 @server.tool()
 async def stop_osc_server(port: int) -> Dict[str, Any]:
@@ -504,10 +580,7 @@ async def stop_osc_server(port: int) -> Dict[str, Any]:
     """
     osc_server_instance = osc_servers.pop(port, None)
     if not osc_server_instance:
-        return {
-            "status": "error",
-            "message": f"No OSC server running on port {port}"
-        }
+        return {"status": "error", "message": f"No OSC server running on port {port}"}
 
     try:
         await osc_server_instance.stop()
@@ -515,16 +588,21 @@ async def stop_osc_server(port: int) -> Dict[str, Any]:
         return {
             "status": "success",
             "message": f"OSC server stopped on port {port}",
-            "port": port
+            "port": port,
         }
     except Exception as e:
         error = f"Failed to stop OSC server: {e}"
         logger.error(error)
         return {"status": "error", "message": error}
 
+
 @server.tool()
-async def get_received_messages(port: int, address_pattern: Optional[str] = None,
-                               max_age_seconds: Optional[float] = None, limit: int = 100) -> Dict[str, Any]:
+async def get_received_messages(
+    port: int,
+    address_pattern: Optional[str] = None,
+    max_age_seconds: Optional[float] = None,
+    limit: int = 100,
+) -> Dict[str, Any]:
     """
     Get OSC messages received by a running OSC server.
 
@@ -581,27 +659,25 @@ async def get_received_messages(port: int, address_pattern: Optional[str] = None
     """
 
     if port not in osc_servers:
-        return {
-            "status": "error",
-            "message": f"No OSC server running on port {port}"
-        }
+        return {"status": "error", "message": f"No OSC server running on port {port}"}
 
     osc_server_instance = osc_servers[port]
     messages = osc_server_instance.get_received_messages(
-        address_pattern=address_pattern,
-        max_age_seconds=max_age_seconds,
-        limit=limit
+        address_pattern=address_pattern, max_age_seconds=max_age_seconds, limit=limit
     )
 
     return {
         "status": "success",
         "messages": messages,
         "count": len(messages),
-        "total_available": len(osc_server_instance._message_buffer)
+        "total_available": len(osc_server_instance._message_buffer),
     }
 
+
 @server.tool()
-async def get_latest_message(port: int, address_pattern: Optional[str] = None) -> Dict[str, Any]:
+async def get_latest_message(
+    port: int, address_pattern: Optional[str] = None
+) -> Dict[str, Any]:
     """
     Get the most recent OSC message from a running server.
 
@@ -636,19 +712,13 @@ async def get_latest_message(port: int, address_pattern: Optional[str] = None) -
     """
 
     if port not in osc_servers:
-        return {
-            "status": "error",
-            "message": f"No OSC server running on port {port}"
-        }
+        return {"status": "error", "message": f"No OSC server running on port {port}"}
 
     osc_server_instance = osc_servers[port]
     message = osc_server_instance.get_latest_message(address_pattern)
 
-    return {
-        "status": "success",
-        "message": message,
-        "found": message is not None
-    }
+    return {"status": "success", "message": message, "found": message is not None}
+
 
 @server.tool()
 async def get_osc_server_stats(port: int) -> Dict[str, Any]:
@@ -694,18 +764,13 @@ async def get_osc_server_stats(port: int) -> Dict[str, Any]:
     """
 
     if port not in osc_servers:
-        return {
-            "status": "error",
-            "message": f"No OSC server running on port {port}"
-        }
+        return {"status": "error", "message": f"No OSC server running on port {port}"}
 
     osc_server_instance = osc_servers[port]
     stats = osc_server_instance.get_buffer_stats()
 
-    return {
-        "status": "success",
-        "stats": stats
-    }
+    return {"status": "success", "stats": stats}
+
 
 @server.tool()
 async def clear_osc_message_buffer(port: int) -> Dict[str, Any]:
@@ -738,18 +803,13 @@ async def clear_osc_message_buffer(port: int) -> Dict[str, Any]:
     """
 
     if port not in osc_servers:
-        return {
-            "status": "error",
-            "message": f"No OSC server running on port {port}"
-        }
+        return {"status": "error", "message": f"No OSC server running on port {port}"}
 
     osc_server_instance = osc_servers[port]
     cleared_count = osc_server_instance.clear_message_buffer()
 
-    return {
-        "status": "success",
-        "messages_cleared": cleared_count
-    }
+    return {"status": "success", "messages_cleared": cleared_count}
+
 
 @server.tool()
 async def test_osc_echo(port: int = 9000) -> Dict[str, Any]:
@@ -814,7 +874,7 @@ async def test_osc_echo(port: int = 9000) -> Dict[str, Any]:
     server_started = False
     message_sent = False
     server_stopped = False
-    
+
     try:
         # Start the OSC server
         start_result = await start_osc_server(port, "127.0.0.1")
@@ -827,13 +887,13 @@ async def test_osc_echo(port: int = 9000) -> Dict[str, Any]:
                 "test_values": test_values,
                 "server_started": False,
                 "message_sent": False,
-                "server_stopped": False
+                "server_stopped": False,
             }
         server_started = True
-        
+
         # Give the server a moment to start
         await asyncio.sleep(0.1)
-        
+
         # Send test message
         send_result = await send_osc("127.0.0.1", port, test_address, test_values)
         if send_result["status"] == "success":
@@ -848,17 +908,17 @@ async def test_osc_echo(port: int = 9000) -> Dict[str, Any]:
                 "test_values": test_values,
                 "server_started": True,
                 "message_sent": False,
-                "server_stopped": False
+                "server_stopped": False,
             }
-        
+
         # Give time for message to be received and logged
         await asyncio.sleep(0.2)
-        
+
         # Stop the server
         stop_result = await stop_osc_server(port)
         if stop_result["status"] == "success":
             server_stopped = True
-        
+
         return {
             "status": "success",
             "message": "OSC echo test completed successfully",
@@ -867,21 +927,21 @@ async def test_osc_echo(port: int = 9000) -> Dict[str, Any]:
             "test_values": test_values,
             "server_started": server_started,
             "message_sent": message_sent,
-            "server_stopped": server_stopped
+            "server_stopped": server_stopped,
         }
-        
+
     except Exception as e:
         error = f"OSC echo test failed: {e}"
         logger.error(error)
-        
+
         # Try to stop server if it was started
         if server_started:
             try:
                 await stop_osc_server(port)
                 server_stopped = True
-            except:
+            except Exception:
                 pass
-        
+
         return {
             "status": "error",
             "message": error,
@@ -890,8 +950,9 @@ async def test_osc_echo(port: int = 9000) -> Dict[str, Any]:
             "test_values": test_values,
             "server_started": server_started,
             "message_sent": message_sent,
-            "server_stopped": server_stopped
+            "server_stopped": server_stopped,
         }
+
 
 # ============================================================================
 # Application-Specific Tools
@@ -899,11 +960,18 @@ async def test_osc_echo(port: int = 9000) -> Dict[str, Any]:
 # These tools provide high-level interfaces for specific applications
 # They use the send_osc function internally
 
+
 @server.tool()
-async def ableton_manager(operation: str, host: str = "127.0.0.1", port: int = 11000,
-                         track_index: Optional[int] = None, clip_slot: Optional[int] = None,
-                         bpm: Optional[float] = None, volume: Optional[float] = None,
-                         pan: Optional[float] = None) -> Dict[str, Any]:
+async def ableton_manager(
+    operation: str,
+    host: str = "127.0.0.1",
+    port: int = 11000,
+    track_index: Optional[int] = None,
+    clip_slot: Optional[int] = None,
+    bpm: Optional[float] = None,
+    volume: Optional[float] = None,
+    pan: Optional[float] = None,
+) -> Dict[str, Any]:
     """
     Ableton Live Manager - Professional DAW control.
 
@@ -942,28 +1010,47 @@ async def ableton_manager(operation: str, host: str = "127.0.0.1", port: int = 1
 
     elif operation == "play_clip":
         if track_index is None or clip_slot is None:
-            return {"status": "error", "message": "track_index and clip_slot required for play_clip"}
+            return {
+                "status": "error",
+                "message": "track_index and clip_slot required for play_clip",
+            }
         return await send_osc(host, port, "/live/clip/fire", [track_index, clip_slot])
 
     elif operation == "set_volume":
         if track_index is None or volume is None:
-            return {"status": "error", "message": "track_index and volume required for set_volume"}
-        return await send_osc(host, port, "/live/track/set/volume", [track_index, volume])
+            return {
+                "status": "error",
+                "message": "track_index and volume required for set_volume",
+            }
+        return await send_osc(
+            host, port, "/live/track/set/volume", [track_index, volume]
+        )
 
     elif operation == "set_pan":
         if track_index is None or pan is None:
-            return {"status": "error", "message": "track_index and pan required for set_pan"}
+            return {
+                "status": "error",
+                "message": "track_index and pan required for set_pan",
+            }
         return await send_osc(host, port, "/live/track/set/panning", [track_index, pan])
 
     else:
         return {"status": "error", "message": f"Unknown operation: {operation}"}
 
+
 @server.tool()
-async def vrchat_manager(operation: str, host: str = "127.0.0.1", port: int = 9000,
-                        param_name: Optional[str] = None, value: Optional[float] = None,
-                        message: Optional[str] = None, device: Optional[str] = None,
-                        duration: Optional[float] = None, amplitude: Optional[float] = None,
-                        frequency: Optional[float] = None) -> Dict[str, Any]:
+async def vrchat_manager(
+    operation: str,
+    host: str = "127.0.0.1",
+    port: int = 9000,
+    param_name: Optional[str] = None,
+    value: Optional[float] = None,
+    message: Optional[str] = None,
+    device: Optional[str] = None,
+    duration: Optional[float] = None,
+    amplitude: Optional[float] = None,
+    frequency: Optional[float] = None,
+) -> Dict[str, Any]:
     """
     VRChat Manager - Avatar and world control.
 
@@ -990,7 +1077,10 @@ async def vrchat_manager(operation: str, host: str = "127.0.0.1", port: int = 90
 
     if operation == "set_parameter":
         if param_name is None or value is None:
-            return {"status": "error", "message": "param_name and value required for set_parameter"}
+            return {
+                "status": "error",
+                "message": "param_name and value required for set_parameter",
+            }
         address = f"/avatar/parameters/{param_name}"
         return await send_osc(host, port, address, [value])
 
@@ -1006,21 +1096,37 @@ async def vrchat_manager(operation: str, host: str = "127.0.0.1", port: int = 90
         frequency = frequency or 0.0
 
         results = {}
-        if device.lower() in ('left', 'both'):
-            await send_osc(host, port, "/avatar/parameters/LeftHaptic", [duration, amplitude, frequency])
-            results['left'] = 'sent'
-        if device.lower() in ('right', 'both'):
-            await send_osc(host, port, "/avatar/parameters/RightHaptic", [duration, amplitude, frequency])
-            results['right'] = 'sent'
+        if device.lower() in ("left", "both"):
+            await send_osc(
+                host,
+                port,
+                "/avatar/parameters/LeftHaptic",
+                [duration, amplitude, frequency],
+            )
+            results["left"] = "sent"
+        if device.lower() in ("right", "both"):
+            await send_osc(
+                host,
+                port,
+                "/avatar/parameters/RightHaptic",
+                [duration, amplitude, frequency],
+            )
+            results["right"] = "sent"
         return {"status": "success", "device": device, "results": results}
 
     else:
         return {"status": "error", "message": f"Unknown operation: {operation}"}
 
+
 @server.tool()
-async def touchdesigner_manager(operation: str, host: str = "127.0.0.1", port: int = 9000,
-                               component_path: Optional[str] = None, parameter: Optional[str] = None,
-                               value: Optional[float] = None) -> Dict[str, Any]:
+async def touchdesigner_manager(
+    operation: str,
+    host: str = "127.0.0.1",
+    port: int = 9000,
+    component_path: Optional[str] = None,
+    parameter: Optional[str] = None,
+    value: Optional[float] = None,
+) -> Dict[str, Any]:
     """
     TouchDesigner Manager - Real-time visual programming control.
 
@@ -1043,18 +1149,27 @@ async def touchdesigner_manager(operation: str, host: str = "127.0.0.1", port: i
 
     if operation == "set_parameter":
         if component_path is None or parameter is None or value is None:
-            return {"status": "error", "message": "component_path, parameter, and value required for set_parameter"}
+            return {
+                "status": "error",
+                "message": "component_path, parameter, and value required for set_parameter",
+            }
         address = f"{component_path}/{parameter}"
         return await send_osc(host, port, address, [value])
 
     elif operation == "set_constant":
         if component_path is None or value is None:
-            return {"status": "error", "message": "component_path and value required for set_constant"}
+            return {
+                "status": "error",
+                "message": "component_path and value required for set_constant",
+            }
         return await send_osc(host, port, f"{component_path}/value1", [value])
 
     elif operation == "trigger_button":
         if component_path is None:
-            return {"status": "error", "message": "component_path required for trigger_button"}
+            return {
+                "status": "error",
+                "message": "component_path required for trigger_button",
+            }
         return await send_osc(host, port, f"{component_path}/pulse", [1])
 
     else:
@@ -1063,19 +1178,35 @@ async def touchdesigner_manager(operation: str, host: str = "127.0.0.1", port: i
 
 # --- Application Manager Tools ---
 
+
 @server.tool()
-async def vcv_manager(operation: str, host: str = "127.0.0.1", port: int = 10001,
-                      module_id: Optional[int] = None, param_id: Optional[int] = None,
-                      value: Optional[float] = None, cv_id: Optional[int] = None,
-                      voltage: Optional[float] = None, light_id: Optional[int] = None,
-                      brightness: Optional[float] = None, trigger_id: Optional[int] = None,
-                      note: Optional[int] = None, velocity: Optional[int] = None,
-                      channel: Optional[int] = None, controller: Optional[int] = None,
-                      frequency: Optional[float] = None, level: Optional[float] = None,
-                      rate: Optional[float] = None, cutoff: Optional[float] = None,
-                      attack: Optional[float] = None, decay: Optional[float] = None,
-                      sustain: Optional[float] = None, release: Optional[float] = None,
-                      reaper_tempo: Optional[float] = None, position: Optional[float] = None) -> Dict[str, Any]:
+async def vcv_manager(
+    operation: str,
+    host: str = "127.0.0.1",
+    port: int = 10001,
+    module_id: Optional[int] = None,
+    param_id: Optional[int] = None,
+    value: Optional[float] = None,
+    cv_id: Optional[int] = None,
+    voltage: Optional[float] = None,
+    light_id: Optional[int] = None,
+    brightness: Optional[float] = None,
+    trigger_id: Optional[int] = None,
+    note: Optional[int] = None,
+    velocity: Optional[int] = None,
+    channel: Optional[int] = None,
+    controller: Optional[int] = None,
+    frequency: Optional[float] = None,
+    level: Optional[float] = None,
+    rate: Optional[float] = None,
+    cutoff: Optional[float] = None,
+    attack: Optional[float] = None,
+    decay: Optional[float] = None,
+    sustain: Optional[float] = None,
+    release: Optional[float] = None,
+    reaper_tempo: Optional[float] = None,
+    position: Optional[float] = None,
+) -> Dict[str, Any]:
     """
     VCV Rack Manager - Comprehensive modular synthesis control.
 
@@ -1134,22 +1265,34 @@ async def vcv_manager(operation: str, host: str = "127.0.0.1", port: int = 10001
 
     if operation == "set_parameter":
         if module_id is None or param_id is None or value is None:
-            return {"status": "error", "message": "module_id, param_id, and value required for set_parameter"}
+            return {
+                "status": "error",
+                "message": "module_id, param_id, and value required for set_parameter",
+            }
         return await send_osc(host, port, "/param", [module_id, param_id, value])
 
     elif operation == "trigger":
         if module_id is None or trigger_id is None:
-            return {"status": "error", "message": "module_id and trigger_id required for trigger"}
+            return {
+                "status": "error",
+                "message": "module_id and trigger_id required for trigger",
+            }
         return await send_osc(host, port, "/trigger", [module_id, trigger_id])
 
     elif operation == "send_cv":
         if module_id is None or cv_id is None or voltage is None:
-            return {"status": "error", "message": "module_id, cv_id, and voltage required for send_cv"}
+            return {
+                "status": "error",
+                "message": "module_id, cv_id, and voltage required for send_cv",
+            }
         return await send_osc(host, port, "/cv", [module_id, cv_id, voltage])
 
     elif operation == "set_light":
         if module_id is None or light_id is None or brightness is None:
-            return {"status": "error", "message": "module_id, light_id, and brightness required for set_light"}
+            return {
+                "status": "error",
+                "message": "module_id, light_id, and brightness required for set_light",
+            }
         return await send_osc(host, port, "/light", [module_id, light_id, brightness])
 
     elif operation == "play_midi":
@@ -1167,55 +1310,82 @@ async def vcv_manager(operation: str, host: str = "127.0.0.1", port: int = 10001
 
     elif operation == "send_midi_cc":
         if controller is None or value is None:
-            return {"status": "error", "message": "controller and value required for send_midi_cc"}
+            return {
+                "status": "error",
+                "message": "controller and value required for send_midi_cc",
+            }
         channel = channel or 1
         return await send_osc(host, port, "/midi/cc", [channel, controller, value])
 
     elif operation == "set_vco_frequency":
         if module_id is None or frequency is None:
-            return {"status": "error", "message": "module_id and frequency required for set_vco_frequency"}
+            return {
+                "status": "error",
+                "message": "module_id and frequency required for set_vco_frequency",
+            }
         value = min(max(0.0, frequency / 10000.0), 1.0)
         return await send_osc(host, port, "/param", [module_id, 0, value])
 
     elif operation == "set_vca_level":
         if module_id is None or level is None:
-            return {"status": "error", "message": "module_id and level required for set_vca_level"}
+            return {
+                "status": "error",
+                "message": "module_id and level required for set_vca_level",
+            }
         value = min(max(0.0, level), 1.0)
         return await send_osc(host, port, "/param", [module_id, 0, value])
 
     elif operation == "set_lfo_rate":
         if module_id is None or rate is None:
-            return {"status": "error", "message": "module_id and rate required for set_lfo_rate"}
+            return {
+                "status": "error",
+                "message": "module_id and rate required for set_lfo_rate",
+            }
         value = min(max(0.0, rate), 1.0)
         return await send_osc(host, port, "/param", [module_id, 0, value])
 
     elif operation == "set_filter_cutoff":
         if module_id is None or cutoff is None:
-            return {"status": "error", "message": "module_id and cutoff required for set_filter_cutoff"}
+            return {
+                "status": "error",
+                "message": "module_id and cutoff required for set_filter_cutoff",
+            }
         value = min(max(0.0, cutoff), 1.0)
         return await send_osc(host, port, "/param", [module_id, 0, value])
 
     elif operation == "set_envelope_attack":
         if module_id is None or attack is None:
-            return {"status": "error", "message": "module_id and attack required for set_envelope_attack"}
+            return {
+                "status": "error",
+                "message": "module_id and attack required for set_envelope_attack",
+            }
         value = min(max(0.0, attack), 1.0)
         return await send_osc(host, port, "/param", [module_id, 0, value])
 
     elif operation == "set_envelope_decay":
         if module_id is None or decay is None:
-            return {"status": "error", "message": "module_id and decay required for set_envelope_decay"}
+            return {
+                "status": "error",
+                "message": "module_id and decay required for set_envelope_decay",
+            }
         value = min(max(0.0, decay), 1.0)
         return await send_osc(host, port, "/param", [module_id, 1, value])
 
     elif operation == "set_envelope_sustain":
         if module_id is None or sustain is None:
-            return {"status": "error", "message": "module_id and sustain required for set_envelope_sustain"}
+            return {
+                "status": "error",
+                "message": "module_id and sustain required for set_envelope_sustain",
+            }
         value = min(max(0.0, sustain), 1.0)
         return await send_osc(host, port, "/param", [module_id, 2, value])
 
     elif operation == "set_envelope_release":
         if module_id is None or release is None:
-            return {"status": "error", "message": "module_id and release required for set_envelope_release"}
+            return {
+                "status": "error",
+                "message": "module_id and release required for set_envelope_release",
+            }
         value = min(max(0.0, release), 1.0)
         return await send_osc(host, port, "/param", [module_id, 3, value])
 
@@ -1224,7 +1394,10 @@ async def vcv_manager(operation: str, host: str = "127.0.0.1", port: int = 10001
         # Listen for REAPER tempo changes and apply to VCV Rack
         # This would typically be used with get_received_messages to monitor REAPER
         if reaper_tempo is None:
-            return {"status": "error", "message": "reaper_tempo required for sync_reaper_tempo"}
+            return {
+                "status": "error",
+                "message": "reaper_tempo required for sync_reaper_tempo",
+            }
         # Convert BPM to VCV Rack clock rate (this is module-specific)
         # Most VCV sequencers expect BPM or clock division
         bpm_value = reaper_tempo / 120.0  # Normalize assuming 120 BPM = 1.0
@@ -1245,16 +1418,25 @@ async def vcv_manager(operation: str, host: str = "127.0.0.1", port: int = 10001
     elif operation == "set_transport_position":
         # Set transport position (0.0-1.0 for normalized position)
         if position is None:
-            return {"status": "error", "message": "position required for set_transport_position"}
+            return {
+                "status": "error",
+                "message": "position required for set_transport_position",
+            }
         return await send_osc(host, port, "/transport/position", [position])
 
     else:
         return {"status": "error", "message": f"Unknown operation: {operation}"}
 
+
 @server.tool()
-async def osc_recorder_manager(operation: str, recording_name: Optional[str] = None,
-                             port: Optional[int] = None, playback_speed: float = 1.0,
-                             loop: bool = False, filter_address: Optional[str] = None) -> Dict[str, Any]:
+async def osc_recorder_manager(
+    operation: str,
+    recording_name: Optional[str] = None,
+    port: Optional[int] = None,
+    playback_speed: float = 1.0,
+    loop: bool = False,
+    filter_address: Optional[str] = None,
+) -> Dict[str, Any]:
     """
     OSC Recorder Manager - Record and playback OSC message sequences.
 
@@ -1280,10 +1462,16 @@ async def osc_recorder_manager(operation: str, recording_name: Optional[str] = N
 
     if operation == "start_recording":
         if recording_name is None or port is None:
-            return {"status": "error", "message": "recording_name and port required for start_recording"}
+            return {
+                "status": "error",
+                "message": "recording_name and port required for start_recording",
+            }
 
         if port not in osc_servers:
-            return {"status": "error", "message": f"No OSC server running on port {port}"}
+            return {
+                "status": "error",
+                "message": f"No OSC server running on port {port}",
+            }
 
         # Clear any existing recording with this name
         osc_recordings[recording_name] = []
@@ -1295,61 +1483,74 @@ async def osc_recorder_manager(operation: str, recording_name: Optional[str] = N
             "message": f"Started recording '{recording_name}' on port {port}",
             "recording_name": recording_name,
             "port": port,
-            "filter": filter_address
+            "filter": filter_address,
         }
 
     elif operation == "stop_recording":
         if recording_name is None:
-            return {"status": "error", "message": "recording_name required for stop_recording"}
+            return {
+                "status": "error",
+                "message": "recording_name required for stop_recording",
+            }
 
         if recording_name not in osc_recordings:
-            return {"status": "error", "message": f"No recording found with name '{recording_name}'"}
+            return {
+                "status": "error",
+                "message": f"No recording found with name '{recording_name}'",
+            }
 
         message_count = len(osc_recordings[recording_name])
         return {
             "status": "success",
             "message": f"Stopped recording '{recording_name}' with {message_count} messages",
             "recording_name": recording_name,
-            "message_count": message_count
+            "message_count": message_count,
         }
 
     elif operation == "list_recordings":
         recordings = []
         for name, messages in osc_recordings.items():
-            recordings.append({
-                "name": name,
-                "message_count": len(messages),
-                "duration": messages[-1]["timestamp"] - messages[0]["timestamp"] if messages else 0
-            })
+            recordings.append(
+                {
+                    "name": name,
+                    "message_count": len(messages),
+                    "duration": messages[-1]["timestamp"] - messages[0]["timestamp"]
+                    if messages
+                    else 0,
+                }
+            )
 
-        return {
-            "status": "success",
-            "recordings": recordings,
-            "count": len(recordings)
-        }
+        return {"status": "success", "recordings": recordings, "count": len(recordings)}
 
     elif operation == "playback_recording":
         if recording_name is None:
-            return {"status": "error", "message": "recording_name required for playback_recording"}
+            return {
+                "status": "error",
+                "message": "recording_name required for playback_recording",
+            }
 
         if recording_name not in osc_recordings:
-            return {"status": "error", "message": f"No recording found with name '{recording_name}'"}
+            return {
+                "status": "error",
+                "message": f"No recording found with name '{recording_name}'",
+            }
 
         messages = osc_recordings[recording_name]
         if not messages:
-            return {"status": "error", "message": f"Recording '{recording_name}' is empty"}
+            return {
+                "status": "error",
+                "message": f"Recording '{recording_name}' is empty",
+            }
 
         # Calculate timing and send messages
-        start_time = messages[0]["timestamp"]
         sent_count = 0
 
         for msg in messages:
-            # Calculate delay from start
-            delay = (msg["timestamp"] - start_time) / playback_speed
-
             # Send the message (would need async scheduling for precise timing)
             # For now, just send immediately
-            await send_osc("127.0.0.1", 10001, msg["address"], msg["args"])  # Default to VCV Rack
+            await send_osc(
+                "127.0.0.1", 10001, msg["address"], msg["args"]
+            )  # Default to VCV Rack
             sent_count += 1
 
         return {
@@ -1358,29 +1559,41 @@ async def osc_recorder_manager(operation: str, recording_name: Optional[str] = N
             "recording_name": recording_name,
             "messages_sent": sent_count,
             "playback_speed": playback_speed,
-            "looping": loop
+            "looping": loop,
         }
 
     elif operation == "delete_recording":
         if recording_name is None:
-            return {"status": "error", "message": "recording_name required for delete_recording"}
+            return {
+                "status": "error",
+                "message": "recording_name required for delete_recording",
+            }
 
         if recording_name not in osc_recordings:
-            return {"status": "error", "message": f"No recording found with name '{recording_name}'"}
+            return {
+                "status": "error",
+                "message": f"No recording found with name '{recording_name}'",
+            }
 
         del osc_recordings[recording_name]
         return {
             "status": "success",
             "message": f"Deleted recording '{recording_name}'",
-            "recording_name": recording_name
+            "recording_name": recording_name,
         }
 
     elif operation == "get_recording_info":
         if recording_name is None:
-            return {"status": "error", "message": "recording_name required for get_recording_info"}
+            return {
+                "status": "error",
+                "message": "recording_name required for get_recording_info",
+            }
 
         if recording_name not in osc_recordings:
-            return {"status": "error", "message": f"No recording found with name '{recording_name}'"}
+            return {
+                "status": "error",
+                "message": f"No recording found with name '{recording_name}'",
+            }
 
         messages = osc_recordings[recording_name]
         if not messages:
@@ -1389,7 +1602,7 @@ async def osc_recorder_manager(operation: str, recording_name: Optional[str] = N
                 "recording_name": recording_name,
                 "message_count": 0,
                 "duration": 0,
-                "addresses": []
+                "addresses": [],
             }
 
         addresses = list(set(msg["address"] for msg in messages))
@@ -1402,18 +1615,25 @@ async def osc_recorder_manager(operation: str, recording_name: Optional[str] = N
             "duration": duration,
             "start_time": messages[0]["timestamp"],
             "end_time": messages[-1]["timestamp"],
-            "addresses": addresses
+            "addresses": addresses,
         }
 
     else:
         return {"status": "error", "message": f"Unknown operation: {operation}"}
 
+
 @server.tool()
-async def music_loader_manager(operation: str, midi_file_path: Optional[str] = None,
-                             instrument_type: str = "organ", tempo: Optional[float] = None,
-                             vcv_host: str = "127.0.0.1", vcv_port: int = 10001,
-                             reaper_host: str = "127.0.0.1", reaper_port: int = 8000,
-                             auto_setup: bool = True) -> Dict[str, Any]:
+async def music_loader_manager(
+    operation: str,
+    midi_file_path: Optional[str] = None,
+    instrument_type: str = "organ",
+    tempo: Optional[float] = None,
+    vcv_host: str = "127.0.0.1",
+    vcv_port: int = 10001,
+    reaper_host: str = "127.0.0.1",
+    reaper_port: int = 8000,
+    auto_setup: bool = True,
+) -> Dict[str, Any]:
     """
     Music Loader Manager - High-level orchestration for loading and playing music.
 
@@ -1439,14 +1659,19 @@ async def music_loader_manager(operation: str, midi_file_path: Optional[str] = N
 
     if operation == "load_bach_organ":
         if midi_file_path is None:
-            return {"status": "error", "message": "midi_file_path required for load_bach_organ"}
+            return {
+                "status": "error",
+                "message": "midi_file_path required for load_bach_organ",
+            }
 
         # Step 1: Setup organ modules in VCV Rack
         setup_results = []
 
         if auto_setup:
             # Setup wavetable oscillator for organ sound (Bogaudio WT recommended)
-            result = await send_osc(vcv_host, vcv_port, "/param", [1, 0, 0.5])  # WT wavetable select (organ preset)
+            result = await send_osc(
+                vcv_host, vcv_port, "/param", [1, 0, 0.5]
+            )  # WT wavetable select (organ preset)
             setup_results.append({"step": "wavetable_setup", "result": result})
 
             # Setup envelope for organ attack/decay
@@ -1474,12 +1699,15 @@ async def music_loader_manager(operation: str, midi_file_path: Optional[str] = N
             "message": f"Loaded Bach organ music from {midi_file_path}",
             "instrument_type": instrument_type,
             "setup_steps": setup_results,
-            "next_action": "Use start_performance to begin playback"
+            "next_action": "Use start_performance to begin playback",
         }
 
     elif operation == "load_midi_file":
         if midi_file_path is None:
-            return {"status": "error", "message": "midi_file_path required for load_midi_file"}
+            return {
+                "status": "error",
+                "message": "midi_file_path required for load_midi_file",
+            }
 
         # Intelligent MIDI file loading with instrument detection
         # Parse MIDI file and setup appropriate modules based on content
@@ -1493,18 +1721,22 @@ async def music_loader_manager(operation: str, midi_file_path: Optional[str] = N
         # Auto-detect instrument needs based on MIDI content
         if instrument_type == "organ":
             # Setup organ-like sound
-            result = await send_osc(vcv_host, vcv_port, "/module/load", ["Bogaudio-WT", 1])
+            result = await send_osc(
+                vcv_host, vcv_port, "/module/load", ["Bogaudio-WT", 1]
+            )
             results.append({"step": "load_organ_module", "result": result})
 
         elif instrument_type == "piano":
             # Setup piano-like sound
-            result = await send_osc(vcv_host, vcv_port, "/module/load", ["PianoModule", 1])
+            result = await send_osc(
+                vcv_host, vcv_port, "/module/load", ["PianoModule", 1]
+            )
             results.append({"step": "load_piano_module", "result": result})
 
         return {
             "status": "success",
             "message": f"Loaded MIDI file {midi_file_path} as {instrument_type}",
-            "setup_results": results
+            "setup_results": results,
         }
 
     elif operation == "setup_organ_rig":
@@ -1512,27 +1744,41 @@ async def music_loader_manager(operation: str, midi_file_path: Optional[str] = N
         setup_results = []
 
         # Load Bogaudio WT wavetable oscillator (free, excellent for organs)
-        result = await send_osc(vcv_host, vcv_port, "/module/add", ["Bogaudio-WT", 1, 100, 100])
+        result = await send_osc(
+            vcv_host, vcv_port, "/module/add", ["Bogaudio-WT", 1, 100, 100]
+        )
         setup_results.append({"step": "add_wavetable_osc", "result": result})
 
         # Add envelope generator
-        result = await send_osc(vcv_host, vcv_port, "/module/add", ["Envelope", 2, 200, 100])
+        result = await send_osc(
+            vcv_host, vcv_port, "/module/add", ["Envelope", 2, 200, 100]
+        )
         setup_results.append({"step": "add_envelope", "result": result})
 
         # Add filter
-        result = await send_osc(vcv_host, vcv_port, "/module/add", ["Filter", 3, 300, 100])
+        result = await send_osc(
+            vcv_host, vcv_port, "/module/add", ["Filter", 3, 300, 100]
+        )
         setup_results.append({"step": "add_filter", "result": result})
 
         # Add audio output
-        result = await send_osc(vcv_host, vcv_port, "/module/add", ["AudioOut", 4, 400, 100])
+        result = await send_osc(
+            vcv_host, vcv_port, "/module/add", ["AudioOut", 4, 400, 100]
+        )
         setup_results.append({"step": "add_audio_out", "result": result})
 
         # Connect modules
-        result = await send_osc(vcv_host, vcv_port, "/connect", [1, "out", 3, "in"])  # Osc -> Filter
+        result = await send_osc(
+            vcv_host, vcv_port, "/connect", [1, "out", 3, "in"]
+        )  # Osc -> Filter
         setup_results.append({"step": "connect_osc_filter", "result": result})
-        result = await send_osc(vcv_host, vcv_port, "/connect", [2, "out", 1, "gate"])  # Env -> Osc gate
+        result = await send_osc(
+            vcv_host, vcv_port, "/connect", [2, "out", 1, "gate"]
+        )  # Env -> Osc gate
         setup_results.append({"step": "connect_env_osc", "result": result})
-        result = await send_osc(vcv_host, vcv_port, "/connect", [3, "out", 4, "in"])  # Filter -> Audio Out
+        result = await send_osc(
+            vcv_host, vcv_port, "/connect", [3, "out", 4, "in"]
+        )  # Filter -> Audio Out
         setup_results.append({"step": "connect_filter_out", "result": result})
 
         return {
@@ -1540,7 +1786,7 @@ async def music_loader_manager(operation: str, midi_file_path: Optional[str] = N
             "message": "Organ rig setup complete with Bogaudio WT",
             "modules_added": ["Bogaudio-WT", "Envelope", "Filter", "AudioOut"],
             "connections_made": 3,
-            "setup_results": setup_results
+            "setup_results": setup_results,
         }
 
     elif operation == "start_performance":
@@ -1549,7 +1795,9 @@ async def music_loader_manager(operation: str, midi_file_path: Optional[str] = N
 
         # Start VCV Rack sequencer
         result = await send_osc(vcv_host, vcv_port, "/transport/play", [])
-        results.append({"app": "vcv_rack", "action": "start_transport", "result": result})
+        results.append(
+            {"app": "vcv_rack", "action": "start_transport", "result": result}
+        )
 
         # Start REAPER if available
         result = await send_osc(reaper_host, reaper_port, "/play", [])
@@ -1558,7 +1806,7 @@ async def music_loader_manager(operation: str, midi_file_path: Optional[str] = N
         return {
             "status": "success",
             "message": "Performance started across all applications",
-            "results": results
+            "results": results,
         }
 
     elif operation == "stop_performance":
@@ -1567,7 +1815,9 @@ async def music_loader_manager(operation: str, midi_file_path: Optional[str] = N
 
         # Stop VCV Rack sequencer
         result = await send_osc(vcv_host, vcv_port, "/transport/stop", [])
-        results.append({"app": "vcv_rack", "action": "stop_transport", "result": result})
+        results.append(
+            {"app": "vcv_rack", "action": "stop_transport", "result": result}
+        )
 
         # Stop REAPER if available
         result = await send_osc(reaper_host, reaper_port, "/stop", [])
@@ -1576,22 +1826,29 @@ async def music_loader_manager(operation: str, midi_file_path: Optional[str] = N
         return {
             "status": "success",
             "message": "Performance stopped across all applications",
-            "results": results
+            "results": results,
         }
 
     else:
         return {"status": "error", "message": f"Unknown operation: {operation}"}
 
+
 @server.tool()
-async def music_orchestrator(operation: str,
-                           # Bach demo specific
-                           midi_file_path: Optional[str] = None, organ_module: Optional[int] = None,
-                           # General orchestration
-                           workflow_name: Optional[str] = None, tempo: Optional[float] = None,
-                           key_signature: Optional[str] = None, time_signature: Optional[str] = None,
-                           # Multi-app coordination
-                           sync_apps: bool = True, record_performance: bool = False,
-                           recording_name: Optional[str] = None) -> Dict[str, Any]:
+async def music_orchestrator(
+    operation: str,
+    # Bach demo specific
+    midi_file_path: Optional[str] = None,
+    organ_module: Optional[int] = None,
+    # General orchestration
+    workflow_name: Optional[str] = None,
+    tempo: Optional[float] = None,
+    key_signature: Optional[str] = None,
+    time_signature: Optional[str] = None,
+    # Multi-app coordination
+    sync_apps: bool = True,
+    record_performance: bool = False,
+    recording_name: Optional[str] = None,
+) -> Dict[str, Any]:
     """
     Music Orchestrator - High-level multi-step workflow automation.
 
@@ -1620,40 +1877,81 @@ async def music_orchestrator(operation: str,
 
     if operation == "bach_organ_setup":
         if midi_file_path is None:
-            return {"status": "error", "message": "midi_file_path required for bach_organ_setup"}
+            return {
+                "status": "error",
+                "message": "midi_file_path required for bach_organ_setup",
+            }
 
         results = {"status": "success", "steps": [], "setup_complete": False}
 
         # Step 1: Parse MIDI file (would need MIDI parsing library)
-        results["steps"].append({"step": "midi_parse", "status": "simulated", "message": f"Parsed MIDI file: {midi_file_path}"})
+        results["steps"].append(
+            {
+                "step": "midi_parse",
+                "status": "simulated",
+                "message": f"Parsed MIDI file: {midi_file_path}",
+            }
+        )
 
         # Step 2: Extract organ-appropriate notes (Bach organ music)
-        results["steps"].append({"step": "organ_analysis", "status": "simulated", "message": "Analyzed for organ registration and voicing"})
+        results["steps"].append(
+            {
+                "step": "organ_analysis",
+                "status": "simulated",
+                "message": "Analyzed for organ registration and voicing",
+            }
+        )
 
         # Step 3: Configure VCV Rack organ sound
         organ_module = organ_module or 1
         # Set up wavetable for organ-like sound (assuming Surge XT or similar)
         vcv_results = []
-        vcv_results.append(await send_osc("127.0.0.1", 10001, "/param", [organ_module, 0, 0.3]))  # Organ wavetable
-        vcv_results.append(await send_osc("127.0.0.1", 10001, "/param", [organ_module, 1, 0.7]))  # Reverb mix
-        vcv_results.append(await send_osc("127.0.0.1", 10001, "/param", [organ_module, 2, 0.8]))  # Drawbar 8'
-        vcv_results.append(await send_osc("127.0.0.1", 10001, "/param", [organ_module, 3, 0.6]))  # Drawbar 4'
-        results["steps"].append({"step": "vcv_organ_setup", "status": "success", "results": vcv_results})
+        vcv_results.append(
+            await send_osc("127.0.0.1", 10001, "/param", [organ_module, 0, 0.3])
+        )  # Organ wavetable
+        vcv_results.append(
+            await send_osc("127.0.0.1", 10001, "/param", [organ_module, 1, 0.7])
+        )  # Reverb mix
+        vcv_results.append(
+            await send_osc("127.0.0.1", 10001, "/param", [organ_module, 2, 0.8])
+        )  # Drawbar 8'
+        vcv_results.append(
+            await send_osc("127.0.0.1", 10001, "/param", [organ_module, 3, 0.6])
+        )  # Drawbar 4'
+        results["steps"].append(
+            {"step": "vcv_organ_setup", "status": "success", "results": vcv_results}
+        )
 
         # Step 4: Configure REAPER (if available) for additional processing
         if sync_apps:
             reaper_results = []
-            reaper_results.append(await send_osc("127.0.0.1", 8000, "/tempo", [tempo or 120.0]))
-            reaper_results.append(await send_osc("127.0.0.1", 8000, "/track/1/volume", [0.8]))
-            results["steps"].append({"step": "reaper_sync", "status": "success", "results": reaper_results})
+            reaper_results.append(
+                await send_osc("127.0.0.1", 8000, "/tempo", [tempo or 120.0])
+            )
+            reaper_results.append(
+                await send_osc("127.0.0.1", 8000, "/track/1/volume", [0.8])
+            )
+            results["steps"].append(
+                {"step": "reaper_sync", "status": "success", "results": reaper_results}
+            )
 
         # Step 5: Set up performance recording if requested
         if record_performance and recording_name:
-            record_result = await osc_recorder_manager("start_recording", recording_name=recording_name, port=10001)
-            results["steps"].append({"step": "recording_setup", "status": "success", "result": record_result})
+            record_result = await osc_recorder_manager(
+                "start_recording", recording_name=recording_name, port=10001
+            )
+            results["steps"].append(
+                {
+                    "step": "recording_setup",
+                    "status": "success",
+                    "result": record_result,
+                }
+            )
 
         results["setup_complete"] = True
-        results["ready_message"] = "🎵 Bach organ rig configured! Ready to perform. Use performance_start to begin."
+        results["ready_message"] = (
+            "🎵 Bach organ rig configured! Ready to perform. Use performance_start to begin."
+        )
         return results
 
     elif operation == "performance_start":
@@ -1663,14 +1961,20 @@ async def music_orchestrator(operation: str,
         if sync_apps:
             # VCV Rack transport
             vcv_result = await send_osc("127.0.0.1", 10001, "/transport/play", [])
-            results["coordinated_apps"].append({"app": "vcv_rack", "operation": "start", "result": vcv_result})
+            results["coordinated_apps"].append(
+                {"app": "vcv_rack", "operation": "start", "result": vcv_result}
+            )
 
             # REAPER transport
             reaper_result = await send_osc("127.0.0.1", 8000, "/play", [])
-            results["coordinated_apps"].append({"app": "reaper", "operation": "start", "result": reaper_result})
+            results["coordinated_apps"].append(
+                {"app": "reaper", "operation": "start", "result": reaper_result}
+            )
 
             # Any other apps could be added here
-            results["message"] = "🎼 Synchronized performance started across all applications!"
+            results["message"] = (
+                "🎼 Synchronized performance started across all applications!"
+            )
         else:
             results["message"] = "Performance start requested but sync_apps=False"
 
@@ -1688,8 +1992,12 @@ async def music_orchestrator(operation: str,
 
         # Stop recording if active
         if record_performance and recording_name:
-            record_result = await osc_recorder_manager("stop_recording", recording_name=recording_name)
-            results["stopped_apps"].append({"app": "osc_recorder", "result": record_result})
+            record_result = await osc_recorder_manager(
+                "stop_recording", recording_name=recording_name
+            )
+            results["stopped_apps"].append(
+                {"app": "osc_recorder", "result": record_result}
+            )
 
         results["message"] = "🛑 Performance stopped across all applications."
         return results
@@ -1702,58 +2010,79 @@ async def music_orchestrator(operation: str,
 
         # Classic organ drawbar settings (8', 4', 2', etc.)
         drawbar_settings = [
-            ("8ft_diapason", 0.8),    # Principal 8'
-            ("4ft_octave", 0.6),      # Octave 4'
-            ("2ft_super", 0.4),       # Super Octave 2'
-            ("16ft_bourdon", 0.7),    # Bourdon 16'
-            ("reverb", 0.5),          # Cathedral reverb
-            ("tremolo", 0.3)          # Light tremolo
+            ("8ft_diapason", 0.8),  # Principal 8'
+            ("4ft_octave", 0.6),  # Octave 4'
+            ("2ft_super", 0.4),  # Super Octave 2'
+            ("16ft_bourdon", 0.7),  # Bourdon 16'
+            ("reverb", 0.5),  # Cathedral reverb
+            ("tremolo", 0.3),  # Light tremolo
         ]
 
         for param_name, value in drawbar_settings:
             result = await send_osc("127.0.0.1", 10001, f"/organ/{param_name}", [value])
-            results["organ_settings"].append({"parameter": param_name, "value": value, "result": result})
+            results["organ_settings"].append(
+                {"parameter": param_name, "value": value, "result": result}
+            )
 
         results["message"] = "🎹 Organ voice configured with classic drawbar settings!"
         return results
 
     elif operation == "midi_to_cv":
         if midi_file_path is None:
-            return {"status": "error", "message": "midi_file_path required for midi_to_cv"}
+            return {
+                "status": "error",
+                "message": "midi_file_path required for midi_to_cv",
+            }
 
         results = {"status": "success", "cv_sequences": []}
 
         # Parse MIDI and convert to CV sequences
         # This would create sequences for pitch, gate, velocity, etc.
-        results["cv_sequences"].append({
-            "type": "pitch_cv",
-            "notes": ["simulated", "bach", "organ", "sequence"],
-            "message": f"Converted MIDI pitch data from {midi_file_path}"
-        })
+        results["cv_sequences"].append(
+            {
+                "type": "pitch_cv",
+                "notes": ["simulated", "bach", "organ", "sequence"],
+                "message": f"Converted MIDI pitch data from {midi_file_path}",
+            }
+        )
 
-        results["cv_sequences"].append({
-            "type": "gate_cv",
-            "triggers": ["simulated", "note_on", "note_off", "events"],
-            "message": "Generated gate signals for modular sequencer"
-        })
+        results["cv_sequences"].append(
+            {
+                "type": "gate_cv",
+                "triggers": ["simulated", "note_on", "note_off", "events"],
+                "message": "Generated gate signals for modular sequencer",
+            }
+        )
 
-        results["cv_sequences"].append({
-            "type": "velocity_cv",
-            "values": ["simulated", "dynamics", "from", "MIDI"],
-            "message": "Converted velocity data to CV modulation"
-        })
+        results["cv_sequences"].append(
+            {
+                "type": "velocity_cv",
+                "values": ["simulated", "dynamics", "from", "MIDI"],
+                "message": "Converted velocity data to CV modulation",
+            }
+        )
 
-        results["message"] = "🎛️ MIDI file converted to CV sequences for modular synthesis!"
+        results["message"] = (
+            "🎛️ MIDI file converted to CV sequences for modular synthesis!"
+        )
         return results
 
     else:
         return {"status": "error", "message": f"Unknown operation: {operation}"}
 
+
 @server.tool()
-async def supercollider_manager(operation: str, host: str = "127.0.0.1", port: int = 57120,
-                               def_name: Optional[str] = None, node_id: Optional[int] = None,
-                               add_action: Optional[int] = None, target: Optional[int] = None,
-                               control_name: Optional[str] = None, value: Optional[float] = None) -> Dict[str, Any]:
+async def supercollider_manager(
+    operation: str,
+    host: str = "127.0.0.1",
+    port: int = 57120,
+    def_name: Optional[str] = None,
+    node_id: Optional[int] = None,
+    add_action: Optional[int] = None,
+    target: Optional[int] = None,
+    control_name: Optional[str] = None,
+    value: Optional[float] = None,
+) -> Dict[str, Any]:
     """
     SuperCollider Manager - Algorithmic composition and audio synthesis.
 
@@ -1779,10 +2108,15 @@ async def supercollider_manager(operation: str, host: str = "127.0.0.1", port: i
 
     if operation == "create_synth":
         if def_name is None or node_id is None:
-            return {"status": "error", "message": "def_name and node_id required for create_synth"}
+            return {
+                "status": "error",
+                "message": "def_name and node_id required for create_synth",
+            }
         add_action = add_action or 0
         target = target or 0
-        return await send_osc(host, port, "/s_new", [def_name, node_id, add_action, target])
+        return await send_osc(
+            host, port, "/s_new", [def_name, node_id, add_action, target]
+        )
 
     elif operation == "free_node":
         if node_id is None:
@@ -1791,15 +2125,24 @@ async def supercollider_manager(operation: str, host: str = "127.0.0.1", port: i
 
     elif operation == "set_control":
         if node_id is None or control_name is None or value is None:
-            return {"status": "error", "message": "node_id, control_name, and value required for set_control"}
+            return {
+                "status": "error",
+                "message": "node_id, control_name, and value required for set_control",
+            }
         return await send_osc(host, port, "/n_set", [node_id, control_name, value])
 
     else:
         return {"status": "error", "message": f"Unknown operation: {operation}"}
 
+
 @server.tool()
-async def maxmsp_manager(operation: str, host: str = "127.0.0.1", port: int = 4000,
-                        receiver: Optional[str] = None, value: Optional[float] = None) -> Dict[str, Any]:
+async def maxmsp_manager(
+    operation: str,
+    host: str = "127.0.0.1",
+    port: int = 4000,
+    receiver: Optional[str] = None,
+    value: Optional[float] = None,
+) -> Dict[str, Any]:
     """
     Max/MSP Manager - Audio/visual programming control.
 
@@ -1826,7 +2169,10 @@ async def maxmsp_manager(operation: str, host: str = "127.0.0.1", port: int = 40
 
     elif operation == "send_float":
         if receiver is None or value is None:
-            return {"status": "error", "message": "receiver and value required for send_float"}
+            return {
+                "status": "error",
+                "message": "receiver and value required for send_float",
+            }
         return await send_osc(host, port, f"/{receiver}", [value])
 
     elif operation == "toggle_dsp":
@@ -1835,10 +2181,17 @@ async def maxmsp_manager(operation: str, host: str = "127.0.0.1", port: int = 40
     else:
         return {"status": "error", "message": f"Unknown operation: {operation}"}
 
+
 @server.tool()
-async def resolume_manager(operation: str, host: str = "127.0.0.1", port: int = 7000,
-                          layer: Optional[int] = None, column: Optional[int] = None,
-                          opacity: Optional[float] = None, bpm: Optional[float] = None) -> Dict[str, Any]:
+async def resolume_manager(
+    operation: str,
+    host: str = "127.0.0.1",
+    port: int = 7000,
+    layer: Optional[int] = None,
+    column: Optional[int] = None,
+    opacity: Optional[float] = None,
+    bpm: Optional[float] = None,
+) -> Dict[str, Any]:
     """
     Resolume Arena Manager - VJ software and live video mixing.
 
@@ -1862,13 +2215,23 @@ async def resolume_manager(operation: str, host: str = "127.0.0.1", port: int = 
 
     if operation == "play_clip":
         if layer is None or column is None:
-            return {"status": "error", "message": "layer and column required for play_clip"}
-        return await send_osc(host, port, f"/composition/layers/{layer}/clips/{column}/connect", [1])
+            return {
+                "status": "error",
+                "message": "layer and column required for play_clip",
+            }
+        return await send_osc(
+            host, port, f"/composition/layers/{layer}/clips/{column}/connect", [1]
+        )
 
     elif operation == "set_layer_opacity":
         if layer is None or opacity is None:
-            return {"status": "error", "message": "layer and opacity required for set_layer_opacity"}
-        return await send_osc(host, port, f"/composition/layers/{layer}/opacity", [opacity])
+            return {
+                "status": "error",
+                "message": "layer and opacity required for set_layer_opacity",
+            }
+        return await send_osc(
+            host, port, f"/composition/layers/{layer}/opacity", [opacity]
+        )
 
     elif operation == "set_bpm":
         if bpm is None:
@@ -1878,16 +2241,22 @@ async def resolume_manager(operation: str, host: str = "127.0.0.1", port: int = 
     else:
         return {"status": "error", "message": f"Unknown operation: {operation}"}
 
+
 @server.tool()
-async def audio_workflow_manager(operation: str,
-                               # VCV Rack parameters
-                               vcv_host: str = "127.0.0.1", vcv_port: int = 10001,
-                               module_id: Optional[int] = None,
-                               # REAPER parameters
-                               reaper_host: str = "127.0.0.1", reaper_port: int = 8000,
-                               track_index: Optional[int] = None,
-                               # Common parameters
-                               bpm: Optional[float] = None, start_stop: Optional[bool] = None) -> Dict[str, Any]:
+async def audio_workflow_manager(
+    operation: str,
+    # VCV Rack parameters
+    vcv_host: str = "127.0.0.1",
+    vcv_port: int = 10001,
+    module_id: Optional[int] = None,
+    # REAPER parameters
+    reaper_host: str = "127.0.0.1",
+    reaper_port: int = 8000,
+    track_index: Optional[int] = None,
+    # Common parameters
+    bpm: Optional[float] = None,
+    start_stop: Optional[bool] = None,
+) -> Dict[str, Any]:
     """
     Audio Workflow Manager - Coordinate multi-application audio workflows.
 
@@ -1921,45 +2290,63 @@ async def audio_workflow_manager(operation: str,
         # Sync to VCV Rack (assuming BPM module on module_id)
         if module_id is not None:
             bpm_normalized = bpm / 120.0  # Normalize assuming 120 BPM = 1.0
-            result = await send_osc(vcv_host, vcv_port, "/param", [module_id, 0, bpm_normalized])
-            results["operations"].append({"app": "vcv_rack", "operation": "set_bpm", "result": result})
+            result = await send_osc(
+                vcv_host, vcv_port, "/param", [module_id, 0, bpm_normalized]
+            )
+            results["operations"].append(
+                {"app": "vcv_rack", "operation": "set_bpm", "result": result}
+            )
 
         # Sync to REAPER
         result = await send_osc(reaper_host, reaper_port, "/tempo", [bpm])
-        results["operations"].append({"app": "reaper", "operation": "set_tempo", "result": result})
+        results["operations"].append(
+            {"app": "reaper", "operation": "set_tempo", "result": result}
+        )
 
         results["message"] = f"Synced tempo {bpm} BPM across all applications"
 
     elif operation == "start_all":
         # Start VCV Rack transport
         result = await send_osc(vcv_host, vcv_port, "/transport/play", [])
-        results["operations"].append({"app": "vcv_rack", "operation": "start_transport", "result": result})
+        results["operations"].append(
+            {"app": "vcv_rack", "operation": "start_transport", "result": result}
+        )
 
         # Start REAPER transport
         result = await send_osc(reaper_host, reaper_port, "/play", [])
-        results["operations"].append({"app": "reaper", "operation": "start_playback", "result": result})
+        results["operations"].append(
+            {"app": "reaper", "operation": "start_playback", "result": result}
+        )
 
         results["message"] = "Started transport in all applications"
 
     elif operation == "stop_all":
         # Stop VCV Rack transport
         result = await send_osc(vcv_host, vcv_port, "/transport/stop", [])
-        results["operations"].append({"app": "vcv_rack", "operation": "stop_transport", "result": result})
+        results["operations"].append(
+            {"app": "vcv_rack", "operation": "stop_transport", "result": result}
+        )
 
         # Stop REAPER transport
         result = await send_osc(reaper_host, reaper_port, "/stop", [])
-        results["operations"].append({"app": "reaper", "operation": "stop_playback", "result": result})
+        results["operations"].append(
+            {"app": "reaper", "operation": "stop_playback", "result": result}
+        )
 
         results["message"] = "Stopped transport in all applications"
 
     elif operation == "reset_all":
         # Reset VCV Rack transport
         result = await send_osc(vcv_host, vcv_port, "/transport/reset", [])
-        results["operations"].append({"app": "vcv_rack", "operation": "reset_transport", "result": result})
+        results["operations"].append(
+            {"app": "vcv_rack", "operation": "reset_transport", "result": result}
+        )
 
         # Reset REAPER transport (this might need REAPER-specific command)
         result = await send_osc(reaper_host, reaper_port, "/rewind", [])
-        results["operations"].append({"app": "reaper", "operation": "reset_position", "result": result})
+        results["operations"].append(
+            {"app": "reaper", "operation": "reset_position", "result": result}
+        )
 
         results["message"] = "Reset all applications to beginning"
 
@@ -1968,9 +2355,15 @@ async def audio_workflow_manager(operation: str,
 
     return results
 
+
 @server.tool()
-async def puredata_manager(operation: str, host: str = "127.0.0.1", port: int = 3000,
-                          receiver: Optional[str] = None, value: Optional[float] = None) -> Dict[str, Any]:
+async def puredata_manager(
+    operation: str,
+    host: str = "127.0.0.1",
+    port: int = 3000,
+    receiver: Optional[str] = None,
+    value: Optional[float] = None,
+) -> Dict[str, Any]:
     """
     Pure Data Manager - Visual programming and audio processing.
 
@@ -1997,7 +2390,10 @@ async def puredata_manager(operation: str, host: str = "127.0.0.1", port: int = 
 
     elif operation == "send_float":
         if receiver is None or value is None:
-            return {"status": "error", "message": "receiver and value required for send_float"}
+            return {
+                "status": "error",
+                "message": "receiver and value required for send_float",
+            }
         return await send_osc(host, port, f"/{receiver}", [value])
 
     elif operation == "toggle_dsp":
@@ -2005,6 +2401,7 @@ async def puredata_manager(operation: str, host: str = "127.0.0.1", port: int = 
 
     else:
         return {"status": "error", "message": f"Unknown operation: {operation}"}
+
 
 # This allows running the server directly with: python -m oscmcp.mcp_server
 if __name__ == "__main__":
