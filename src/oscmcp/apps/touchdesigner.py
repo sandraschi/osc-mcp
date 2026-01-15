@@ -183,6 +183,15 @@ class TouchDesignerOSC:
         """
         self.set_parameter(component_path, "value", value)
 
+    def set_toggle(self, component_path: str, value: bool) -> None:
+        """Set the state of a toggle component.
+
+        Args:
+            component_path: Path to the toggle component
+            value: New state for the toggle
+        """
+        self.set_parameter(component_path, "value", 1 if value else 0)
+
     def trigger_button(self, component_path: str) -> None:
         """Trigger a button component.
 
@@ -190,6 +199,418 @@ class TouchDesignerOSC:
             component_path: Path to the button component
         """
         self.pulse(component_path)
+
+    def pulse_momentary(self, component_path: str) -> None:
+        """Pulse a momentary button component.
+
+        Args:
+            component_path: Path to the momentary button component
+        """
+        self.pulse(component_path)
+
+    # CHOP Operations (Channel Operators)
+
+    def set_chop_channel(self, component_path: str, channel_index: int, value: float) -> None:
+        """Set a CHOP channel value by index.
+
+        Args:
+            component_path: Path to the CHOP
+            channel_index: Channel index (0-based)
+            value: New value for the channel
+        """
+        self.send(f"{component_path}/chan{channel_index}", value)
+
+    def set_chop_channel_by_name(self, component_path: str, channel_name: str, value: float) -> None:
+        """Set a CHOP channel value by name.
+
+        Args:
+            component_path: Path to the CHOP
+            channel_name: Channel name
+            value: New value for the channel
+        """
+        self.send(f"{component_path}/{channel_name}", value)
+
+    def set_waveform_freq(self, component_path: str, frequency: float) -> None:
+        """Set waveform CHOP frequency.
+
+        Args:
+            component_path: Path to the waveform CHOP
+            frequency: Frequency in Hz
+        """
+        self.set_parameter(component_path, "frequency", frequency)
+
+    def set_waveform_amp(self, component_path: str, amplitude: float) -> None:
+        """Set waveform CHOP amplitude.
+
+        Args:
+            component_path: Path to the waveform CHOP
+            amplitude: Amplitude value
+        """
+        self.set_parameter(component_path, "amplitude", amplitude)
+
+    def set_waveform_phase(self, component_path: str, phase: float) -> None:
+        """Set waveform CHOP phase.
+
+        Args:
+            component_path: Path to the waveform CHOP
+            phase: Phase value (0-1)
+        """
+        self.set_parameter(component_path, "phase", phase)
+
+    def set_audio_level(self, component_path: str, level: float) -> None:
+        """Set audio device CHOP level.
+
+        Args:
+            component_path: Path to the audio device CHOP
+            level: Audio level (0.0-1.0)
+        """
+        self.set_parameter(component_path, "level", level)
+
+    def set_filter_cutoff(self, component_path: str, cutoff: float) -> None:
+        """Set filter CHOP cutoff frequency.
+
+        Args:
+            component_path: Path to the filter CHOP
+            cutoff: Cutoff frequency in Hz
+        """
+        self.set_parameter(component_path, "cutoff", cutoff)
+
+    def set_math_multiply(self, component_path: str, multiplier: float) -> None:
+        """Set math CHOP multiply value.
+
+        Args:
+            component_path: Path to the math CHOP
+            multiplier: Multiply value
+        """
+        self.set_parameter(component_path, "multiply", multiplier)
+
+    def set_lfo_rate(self, component_path: str, rate: float) -> None:
+        """Set LFO CHOP rate.
+
+        Args:
+            component_path: Path to the LFO CHOP
+            rate: LFO rate (Hz)
+        """
+        self.set_parameter(component_path, "rate", rate)
+
+    # TOP Operations (Texture Operators)
+
+    def set_movie_play(self, component_path: str, play: bool) -> None:
+        """Control movie file TOP playback.
+
+        Args:
+            component_path: Path to the movie file TOP
+            play: True to play, False to pause
+        """
+        self.set_parameter(component_path, "play", 1 if play else 0)
+
+    def set_level_brightness(self, component_path: str, brightness: float) -> None:
+        """Set level TOP brightness.
+
+        Args:
+            component_path: Path to the level TOP
+            brightness: Brightness value
+        """
+        self.set_parameter(component_path, "brightness", brightness)
+
+    def set_level_contrast(self, component_path: str, contrast: float) -> None:
+        """Set level TOP contrast.
+
+        Args:
+            component_path: Path to the level TOP
+            contrast: Contrast value
+        """
+        self.set_parameter(component_path, "contrast", contrast)
+
+    def set_level_gamma(self, component_path: str, gamma: float) -> None:
+        """Set level TOP gamma.
+
+        Args:
+            component_path: Path to the level TOP
+            gamma: Gamma value
+        """
+        self.set_parameter(component_path, "gamma", gamma)
+
+    def set_transform_scale(self, component_path: str, x: float = None, y: float = None, z: float = None) -> None:
+        """Set transform TOP scale.
+
+        Args:
+            component_path: Path to the transform TOP
+            x: Scale X value
+            y: Scale Y value
+            z: Scale Z value (for 3D transforms)
+        """
+        values = []
+        if x is not None: values.append(x)
+        if y is not None: values.append(y)
+        if z is not None: values.append(z)
+        if values:
+            self.send(f"{component_path}/scale", *values)
+
+    def set_transform_rotate(self, component_path: str, x: float = None, y: float = None, z: float = None) -> None:
+        """Set transform TOP rotation.
+
+        Args:
+            component_path: Path to the transform TOP
+            x: Rotate X value (degrees)
+            y: Rotate Y value (degrees)
+            z: Rotate Z value (degrees)
+        """
+        values = []
+        if x is not None: values.append(x)
+        if y is not None: values.append(y)
+        if z is not None: values.append(z)
+        if values:
+            self.send(f"{component_path}/rotate", *values)
+
+    def set_transform_translate(self, component_path: str, x: float = None, y: float = None, z: float = None) -> None:
+        """Set transform TOP translation.
+
+        Args:
+            component_path: Path to the transform TOP
+            x: Translate X value
+            y: Translate Y value
+            z: Translate Z value
+        """
+        values = []
+        if x is not None: values.append(x)
+        if y is not None: values.append(y)
+        if z is not None: values.append(z)
+        if values:
+            self.send(f"{component_path}/translate", *values)
+
+    def set_composite_opacity(self, component_path: str, opacity: float) -> None:
+        """Set composite TOP opacity.
+
+        Args:
+            component_path: Path to the composite TOP
+            opacity: Opacity value (0.0-1.0)
+        """
+        self.set_parameter(component_path, "opacity", opacity)
+
+    # SOP Operations (Surface Operators)
+
+    def set_sphere_radius(self, component_path: str, radius: float) -> None:
+        """Set sphere SOP radius.
+
+        Args:
+            component_path: Path to the sphere SOP
+            radius: Radius value
+        """
+        self.set_parameter(component_path, "radius", radius)
+
+    def set_box_size(self, component_path: str, x: float = None, y: float = None, z: float = None) -> None:
+        """Set box SOP size.
+
+        Args:
+            component_path: Path to the box SOP
+            x: Size X value
+            y: Size Y value
+            z: Size Z value
+        """
+        values = []
+        if x is not None: values.append(x)
+        if y is not None: values.append(y)
+        if z is not None: values.append(z)
+        if values:
+            self.send(f"{component_path}/size", *values)
+
+    def set_torus_major(self, component_path: str, radius: float) -> None:
+        """Set torus SOP major radius.
+
+        Args:
+            component_path: Path to the torus SOP
+            radius: Major radius value
+        """
+        self.set_parameter(component_path, "majorradius", radius)
+
+    def set_torus_minor(self, component_path: str, radius: float) -> None:
+        """Set torus SOP minor radius.
+
+        Args:
+            component_path: Path to the torus SOP
+            radius: Minor radius value
+        """
+        self.set_parameter(component_path, "minorradius", radius)
+
+    def set_transform_sop_tx(self, component_path: str, value: float) -> None:
+        """Set SOP transform translate X.
+
+        Args:
+            component_path: Path to the transform SOP
+            value: Translate X value
+        """
+        self.set_parameter(component_path, "tx", value)
+
+    def set_transform_sop_ty(self, component_path: str, value: float) -> None:
+        """Set SOP transform translate Y.
+
+        Args:
+            component_path: Path to the transform SOP
+            value: Translate Y value
+        """
+        self.set_parameter(component_path, "ty", value)
+
+    def set_transform_sop_tz(self, component_path: str, value: float) -> None:
+        """Set SOP transform translate Z.
+
+        Args:
+            component_path: Path to the transform SOP
+            value: Translate Z value
+        """
+        self.set_parameter(component_path, "tz", value)
+
+    def set_transform_sop_rx(self, component_path: str, value: float) -> None:
+        """Set SOP transform rotate X.
+
+        Args:
+            component_path: Path to the transform SOP
+            value: Rotate X value (degrees)
+        """
+        self.set_parameter(component_path, "rx", value)
+
+    def set_transform_sop_ry(self, component_path: str, value: float) -> None:
+        """Set SOP transform rotate Y.
+
+        Args:
+            component_path: Path to the transform SOP
+            value: Rotate Y value (degrees)
+        """
+        self.set_parameter(component_path, "ry", value)
+
+    def set_transform_sop_rz(self, component_path: str, value: float) -> None:
+        """Set SOP transform rotate Z.
+
+        Args:
+            component_path: Path to the transform SOP
+            value: Rotate Z value (degrees)
+        """
+        self.set_parameter(component_path, "rz", value)
+
+    # DAT Operations (Data Operators)
+
+    def set_table_cell(self, component_path: str, row: int, col: int, value: Any) -> None:
+        """Set table DAT cell value.
+
+        Args:
+            component_path: Path to the table DAT
+            row: Row index
+            col: Column index
+            value: Cell value
+        """
+        self.send(f"{component_path}/cell/{row}/{col}", value)
+
+    def set_text_string(self, component_path: str, text: str) -> None:
+        """Set text DAT string.
+
+        Args:
+            component_path: Path to the text DAT
+            text: Text content
+        """
+        self.set_parameter(component_path, "text", text)
+
+    def trigger_script(self, component_path: str) -> None:
+        """Execute script DAT.
+
+        Args:
+            component_path: Path to the script DAT
+        """
+        self.pulse(component_path)
+
+    def set_parameter_dat(self, component_path: str, parameter: str, value: Any) -> None:
+        """Set parameter DAT value.
+
+        Args:
+            component_path: Path to the parameter DAT
+            parameter: Parameter name
+            value: Parameter value
+        """
+        self.set_parameter(component_path, parameter, value)
+
+    # MAT Operations (Material Operators)
+
+    def set_phong_diffuse(self, component_path: str, r: float, g: float, b: float) -> None:
+        """Set phong MAT diffuse color.
+
+        Args:
+            component_path: Path to the phong MAT
+            r: Red component (0.0-1.0)
+            g: Green component (0.0-1.0)
+            b: Blue component (0.0-1.0)
+        """
+        self.send(f"{component_path}/diffusecolor", r, g, b)
+
+    def set_phong_specular(self, component_path: str, r: float, g: float, b: float) -> None:
+        """Set phong MAT specular color.
+
+        Args:
+            component_path: Path to the phong MAT
+            r: Red component (0.0-1.0)
+            g: Green component (0.0-1.0)
+            b: Blue component (0.0-1.0)
+        """
+        self.send(f"{component_path}/specularcolor", r, g, b)
+
+    def set_phong_emissive(self, component_path: str, r: float, g: float, b: float) -> None:
+        """Set phong MAT emissive color.
+
+        Args:
+            component_path: Path to the phong MAT
+            r: Red component (0.0-1.0)
+            g: Green component (0.0-1.0)
+            b: Blue component (0.0-1.0)
+        """
+        self.send(f"{component_path}/emissivecolor", r, g, b)
+
+    def set_phong_shininess(self, component_path: str, shininess: float) -> None:
+        """Set phong MAT shininess.
+
+        Args:
+            component_path: Path to the phong MAT
+            shininess: Shininess value
+        """
+        self.set_parameter(component_path, "shininess", shininess)
+
+    # COMP Operations (Components)
+
+    def set_container_opacity(self, component_path: str, opacity: float) -> None:
+        """Set container COMP opacity.
+
+        Args:
+            component_path: Path to the container COMP
+            opacity: Opacity value (0.0-1.0)
+        """
+        self.set_parameter(component_path, "opacity", opacity)
+
+    def set_base_position(self, component_path: str, x: float, y: float) -> None:
+        """Set base COMP position.
+
+        Args:
+            component_path: Path to the base COMP
+            x: X position
+            y: Y position
+        """
+        self.send(f"{component_path}/position", x, y)
+
+    def set_base_size(self, component_path: str, width: float, height: float) -> None:
+        """Set base COMP size.
+
+        Args:
+            component_path: Path to the base COMP
+            width: Component width
+            height: Component height
+        """
+        self.send(f"{component_path}/size", width, height)
+
+    def set_window_position(self, component_path: str, x: float, y: float) -> None:
+        """Set window COMP position.
+
+        Args:
+            component_path: Path to the window COMP
+            x: Window X position
+            y: Window Y position
+        """
+        self.send(f"{component_path}/winpos", x, y)
 
 
 # Example usage

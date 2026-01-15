@@ -1,0 +1,41 @@
+
+TOUCHDESIGNER TROUBLESHOOTING
+==============================
+
+PROBLEM: No output circle on OSC In CHOP
+
+POSSIBLE CAUSES & SOLUTIONS:
+
+1. WRONG OPERATOR TYPE:
+   - You need: CHOP -> OSC In (not OSC Out!)
+   - OSC Out sends messages, OSC In receives them
+   - Delete current operator and create CHOP -> OSC In
+
+2. LOOKING AT WRONG SIDE:
+   - Outputs are on the RIGHT side of operators
+   - Inputs are on the LEFT side
+   - The circle should be on the right edge of the OSC In box
+
+3. OPERATOR NOT SELECTED:
+   - Click on the OSC In operator first
+   - Should see it highlighted with a colored border
+   - Then look for the output circle
+
+4. ALTERNATIVE: Use OSC In DAT instead
+   - DAT tab -> OSC In (under Network)
+   - DATs have different connection style but work the same
+
+5. CHECK OPERATOR NAME:
+   - Should say 'osc1' or similar at the top
+   - If it says 'oscout1', you have the wrong operator
+
+DEBUG STEPS:
+1. Right-click OSC operator -> 'View Parameter' 
+2. Should see 'Port' parameter = 9000
+3. If no parameters show, wrong operator type
+
+If still stuck, tell me:
+- What does the operator name say at the top?
+- What color/shape is the box?
+- Can you right-click it and see a menu?
+

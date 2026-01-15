@@ -161,3 +161,8 @@ cvOSCcv can also send OSC messages when CV inputs change:
 
 
 
+
+
+
+
+

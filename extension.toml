@@ -1,0 +1,10 @@
+id = "osc-mcp"
+name = "OSCCommunicationProtocol"
+version = "0.1.0"
+schema_version = 1
+authors = ["Sandra <sandraschipal@hotmail.com>"]
+description = "Open Sound Control protocol for multimedia applications"
+repository = "https://github.com/sandraschi/osc-mcp"
+
+[context_servers.osc-mcp]
+name = "OSC Communication Tools"

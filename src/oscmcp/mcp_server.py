@@ -1126,27 +1126,140 @@ async def touchdesigner_manager(
     component_path: Optional[str] = None,
     parameter: Optional[str] = None,
     value: Optional[float] = None,
+    # CHOP parameters
+    channel_index: Optional[int] = None,
+    channel_name: Optional[str] = None,
+    # TOP parameters
+    texture_index: Optional[int] = None,
+    # DAT parameters
+    row: Optional[int] = None,
+    col: Optional[int] = None,
+    text: Optional[str] = None,
+    # 3D parameters
+    x: Optional[float] = None,
+    y: Optional[float] = None,
+    z: Optional[float] = None,
+    # Audio parameters
+    frequency: Optional[float] = None,
+    amplitude: Optional[float] = None,
+    phase: Optional[float] = None,
+    # Video parameters
+    resolution: Optional[str] = None,
+    fps: Optional[float] = None,
 ) -> Dict[str, Any]:
     """
-    TouchDesigner Manager - Real-time visual programming control.
+    TouchDesigner Manager - Comprehensive real-time visual programming control.
 
     PORTMANTEAU TOOL: Consolidates all TouchDesigner operations into one tool.
+    Supports COMP, CHOP, SOP, TOP, DAT, and MAT operator families.
 
     Args:
         operation: Operation to perform
-            - "set_parameter" - Set component parameter
-            - "set_constant" - Set constant component value
-            - "trigger_button" - Trigger button component
+
+        # Basic Parameter Control
+        - "set_parameter" - Set any component parameter
+        - "set_constant" - Set constant operator value
+        - "set_slider" - Set slider operator value
+        - "set_toggle" - Set toggle operator state
+        - "trigger_button" - Trigger button component
+        - "pulse_momentary" - Pulse momentary button
+
+        # CHOP Operations (Channel Operators)
+        - "set_chop_channel" - Set CHOP channel value by index
+        - "set_chop_channel_by_name" - Set CHOP channel value by name
+        - "set_waveform_freq" - Set waveform CHOP frequency
+        - "set_waveform_amp" - Set waveform CHOP amplitude
+        - "set_waveform_phase" - Set waveform CHOP phase
+        - "set_audio_level" - Set audio device CHOP level
+        - "set_filter_cutoff" - Set filter CHOP cutoff frequency
+        - "set_math_multiply" - Set math CHOP multiply value
+        - "set_lfo_rate" - Set LFO CHOP rate
+
+        # TOP Operations (Texture Operators)
+        - "set_movie_play" - Control movie file TOP playback
+        - "set_level_brightness" - Set level TOP brightness
+        - "set_level_contrast" - Set level TOP contrast
+        - "set_level_gamma" - Set level TOP gamma
+        - "set_transform_scale" - Set transform TOP scale
+        - "set_transform_rotate" - Set transform TOP rotation
+        - "set_transform_translate" - Set transform TOP translation
+        - "set_composite_opacity" - Set composite TOP opacity
+
+        # SOP Operations (Surface Operators)
+        - "set_sphere_radius" - Set sphere SOP radius
+        - "set_box_size" - Set box SOP size
+        - "set_torus_major" - Set torus SOP major radius
+        - "set_torus_minor" - Set torus SOP minor radius
+        - "set_transform_sop_tx" - Set SOP transform translate X
+        - "set_transform_sop_ty" - Set SOP transform translate Y
+        - "set_transform_sop_tz" - Set SOP transform translate Z
+        - "set_transform_sop_rx" - Set SOP transform rotate X
+        - "set_transform_sop_ry" - Set SOP transform rotate Y
+        - "set_transform_sop_rz" - Set SOP transform rotate Z
+
+        # DAT Operations (Data Operators)
+        - "set_table_cell" - Set table DAT cell value
+        - "set_text_string" - Set text DAT string
+        - "trigger_script" - Execute script DAT
+        - "set_parameter_dat" - Set parameter DAT value
+
+        # MAT Operations (Material Operators)
+        - "set_phong_diffuse" - Set phong MAT diffuse color
+        - "set_phong_specular" - Set phong MAT specular color
+        - "set_phong_emissive" - Set phong MAT emissive color
+        - "set_phong_shininess" - Set phong MAT shininess
+
+        # COMP Operations (Components)
+        - "set_container_opacity" - Set container COMP opacity
+        - "set_base_position" - Set base COMP position
+        - "set_base_size" - Set base COMP size
+        - "set_window_position" - Set window COMP position
+
         host: Target host (default: 127.0.0.1)
         port: Target port (default: 9000)
         component_path: Component path (e.g., '/project1/constant1')
         parameter: Parameter name (for set_parameter)
         value: Parameter/constant value
+        channel_index: CHOP channel index (for CHOP operations)
+        channel_name: CHOP channel name (for named channel operations)
+        texture_index: TOP texture index (for multi-input TOPs)
+        row: DAT table row (for table operations)
+        col: DAT table column (for table operations)
+        text: Text string (for DAT text operations)
+        x,y,z: 3D coordinates (for 3D operations)
+        frequency: Frequency value (for audio/waveform operations)
+        amplitude: Amplitude value (for audio/waveform operations)
+        phase: Phase value (for waveform operations)
+        resolution: Video resolution (e.g., "1920x1080")
+        fps: Frames per second (for video operations)
 
     Returns:
         Operation result with status and details
+
+    Examples:
+        # Basic operations
+        await touchdesigner_manager("set_constant", component_path="/project1/const1", value=0.5)
+        await touchdesigner_manager("set_slider", component_path="/project1/slider1", value=0.75)
+        await touchdesigner_manager("trigger_button", component_path="/project1/button1")
+
+        # CHOP operations
+        await touchdesigner_manager("set_waveform_freq", component_path="/project1/wave1", frequency=440)
+        await touchdesigner_manager("set_audio_level", component_path="/project1/audioin1", value=0.8)
+
+        # TOP operations
+        await touchdesigner_manager("set_level_brightness", component_path="/project1/level1", value=1.2)
+        await touchdesigner_manager("set_transform_scale", component_path="/project1/transform1", x=2.0, y=2.0, z=1.0)
+
+        # SOP operations
+        await touchdesigner_manager("set_sphere_radius", component_path="/project1/sphere1", value=0.5)
+        await touchdesigner_manager("set_transform_sop_tx", component_path="/project1/transform1", value=100)
+
+        # DAT operations
+        await touchdesigner_manager("set_table_cell", component_path="/project1/table1", row=0, col=1, value=42)
+        await touchdesigner_manager("set_text_string", component_path="/project1/text1", text="Hello World")
     """
 
+    # Basic Parameter Operations
     if operation == "set_parameter":
         if component_path is None or parameter is None or value is None:
             return {
@@ -1164,6 +1277,22 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/value1", [value])
 
+    elif operation == "set_slider":
+        if component_path is None or value is None:
+            return {
+                "status": "error",
+                "message": "component_path and value required for set_slider",
+            }
+        return await send_osc(host, port, f"{component_path}/value", [value])
+
+    elif operation == "set_toggle":
+        if component_path is None or value is None:
+            return {
+                "status": "error",
+                "message": "component_path and value required for set_toggle",
+            }
+        return await send_osc(host, port, f"{component_path}/value", [1 if value else 0])
+
     elif operation == "trigger_button":
         if component_path is None:
             return {
@@ -1171,6 +1300,419 @@ async def touchdesigner_manager(
                 "message": "component_path required for trigger_button",
             }
         return await send_osc(host, port, f"{component_path}/pulse", [1])
+
+    elif operation == "pulse_momentary":
+        if component_path is None:
+            return {
+                "status": "error",
+                "message": "component_path required for pulse_momentary",
+            }
+        return await send_osc(host, port, f"{component_path}/pulse", [1])
+
+    # CHOP Operations (Channel Operators)
+    elif operation == "set_chop_channel":
+        if component_path is None or channel_index is None or value is None:
+            return {
+                "status": "error",
+                "message": "component_path, channel_index, and value required for set_chop_channel",
+            }
+        return await send_osc(host, port, f"{component_path}/chan{channel_index}", [value])
+
+    elif operation == "set_chop_channel_by_name":
+        if component_path is None or channel_name is None or value is None:
+            return {
+                "status": "error",
+                "message": "component_path, channel_name, and value required for set_chop_channel_by_name",
+            }
+        return await send_osc(host, port, f"{component_path}/{channel_name}", [value])
+
+    elif operation == "set_waveform_freq":
+        if component_path is None or frequency is None:
+            return {
+                "status": "error",
+                "message": "component_path and frequency required for set_waveform_freq",
+            }
+        return await send_osc(host, port, f"{component_path}/frequency", [frequency])
+
+    elif operation == "set_waveform_amp":
+        if component_path is None or amplitude is None:
+            return {
+                "status": "error",
+                "message": "component_path and amplitude required for set_waveform_amp",
+            }
+        return await send_osc(host, port, f"{component_path}/amplitude", [amplitude])
+
+    elif operation == "set_waveform_phase":
+        if component_path is None or phase is None:
+            return {
+                "status": "error",
+                "message": "component_path and phase required for set_waveform_phase",
+            }
+        return await send_osc(host, port, f"{component_path}/phase", [phase])
+
+    elif operation == "set_audio_level":
+        if component_path is None or value is None:
+            return {
+                "status": "error",
+                "message": "component_path and value required for set_audio_level",
+            }
+        return await send_osc(host, port, f"{component_path}/level", [value])
+
+    elif operation == "set_filter_cutoff":
+        if component_path is None or frequency is None:
+            return {
+                "status": "error",
+                "message": "component_path and frequency required for set_filter_cutoff",
+            }
+        return await send_osc(host, port, f"{component_path}/cutoff", [frequency])
+
+    elif operation == "set_math_multiply":
+        if component_path is None or value is None:
+            return {
+                "status": "error",
+                "message": "component_path and value required for set_math_multiply",
+            }
+        return await send_osc(host, port, f"{component_path}/multiply", [value])
+
+    elif operation == "set_lfo_rate":
+        if component_path is None or value is None:
+            return {
+                "status": "error",
+                "message": "component_path and value required for set_lfo_rate",
+            }
+        return await send_osc(host, port, f"{component_path}/rate", [value])
+
+    # TOP Operations (Texture Operators)
+    elif operation == "set_movie_play":
+        if component_path is None or value is None:
+            return {
+                "status": "error",
+                "message": "component_path and value required for set_movie_play",
+            }
+        return await send_osc(host, port, f"{component_path}/play", [1 if value else 0])
+
+    elif operation == "set_level_brightness":
+        if component_path is None or value is None:
+            return {
+                "status": "error",
+                "message": "component_path and value required for set_level_brightness",
+            }
+        return await send_osc(host, port, f"{component_path}/brightness", [value])
+
+    elif operation == "set_level_contrast":
+        if component_path is None or value is None:
+            return {
+                "status": "error",
+                "message": "component_path and value required for set_level_contrast",
+            }
+        return await send_osc(host, port, f"{component_path}/contrast", [value])
+
+    elif operation == "set_level_gamma":
+        if component_path is None or value is None:
+            return {
+                "status": "error",
+                "message": "component_path and value required for set_level_gamma",
+            }
+        return await send_osc(host, port, f"{component_path}/gamma", [value])
+
+    elif operation == "set_transform_scale":
+        if component_path is None:
+            return {
+                "status": "error",
+                "message": "component_path required for set_transform_scale",
+            }
+        values = []
+        if x is not None: values.append(x)
+        if y is not None: values.append(y)
+        if z is not None: values.append(z)
+        if not values:
+            return {
+                "status": "error",
+                "message": "at least one of x, y, or z required for set_transform_scale",
+            }
+        return await send_osc(host, port, f"{component_path}/scale", values)
+
+    elif operation == "set_transform_rotate":
+        if component_path is None:
+            return {
+                "status": "error",
+                "message": "component_path required for set_transform_rotate",
+            }
+        values = []
+        if x is not None: values.append(x)
+        if y is not None: values.append(y)
+        if z is not None: values.append(z)
+        if not values:
+            return {
+                "status": "error",
+                "message": "at least one of x, y, or z required for set_transform_rotate",
+            }
+        return await send_osc(host, port, f"{component_path}/rotate", values)
+
+    elif operation == "set_transform_translate":
+        if component_path is None:
+            return {
+                "status": "error",
+                "message": "component_path required for set_transform_translate",
+            }
+        values = []
+        if x is not None: values.append(x)
+        if y is not None: values.append(y)
+        if z is not None: values.append(z)
+        if not values:
+            return {
+                "status": "error",
+                "message": "at least one of x, y, or z required for set_transform_translate",
+            }
+        return await send_osc(host, port, f"{component_path}/translate", values)
+
+    elif operation == "set_composite_opacity":
+        if component_path is None or value is None:
+            return {
+                "status": "error",
+                "message": "component_path and value required for set_composite_opacity",
+            }
+        return await send_osc(host, port, f"{component_path}/opacity", [value])
+
+    # SOP Operations (Surface Operators)
+    elif operation == "set_sphere_radius":
+        if component_path is None or value is None:
+            return {
+                "status": "error",
+                "message": "component_path and value required for set_sphere_radius",
+            }
+        return await send_osc(host, port, f"{component_path}/radius", [value])
+
+    elif operation == "set_box_size":
+        if component_path is None:
+            return {
+                "status": "error",
+                "message": "component_path required for set_box_size",
+            }
+        values = []
+        if x is not None: values.append(x)
+        if y is not None: values.append(y)
+        if z is not None: values.append(z)
+        if not values:
+            return {
+                "status": "error",
+                "message": "at least one of x, y, or z required for set_box_size",
+            }
+        return await send_osc(host, port, f"{component_path}/size", values)
+
+    elif operation == "set_torus_major":
+        if component_path is None or value is None:
+            return {
+                "status": "error",
+                "message": "component_path and value required for set_torus_major",
+            }
+        return await send_osc(host, port, f"{component_path}/majorradius", [value])
+
+    elif operation == "set_torus_minor":
+        if component_path is None or value is None:
+            return {
+                "status": "error",
+                "message": "component_path and value required for set_torus_minor",
+            }
+        return await send_osc(host, port, f"{component_path}/minorradius", [value])
+
+    elif operation == "set_transform_sop_tx":
+        if component_path is None or value is None:
+            return {
+                "status": "error",
+                "message": "component_path and value required for set_transform_sop_tx",
+            }
+        return await send_osc(host, port, f"{component_path}/tx", [value])
+
+    elif operation == "set_transform_sop_ty":
+        if component_path is None or value is None:
+            return {
+                "status": "error",
+                "message": "component_path and value required for set_transform_sop_ty",
+            }
+        return await send_osc(host, port, f"{component_path}/ty", [value])
+
+    elif operation == "set_transform_sop_tz":
+        if component_path is None or value is None:
+            return {
+                "status": "error",
+                "message": "component_path and value required for set_transform_sop_tz",
+            }
+        return await send_osc(host, port, f"{component_path}/tz", [value])
+
+    elif operation == "set_transform_sop_rx":
+        if component_path is None or value is None:
+            return {
+                "status": "error",
+                "message": "component_path and value required for set_transform_sop_rx",
+            }
+        return await send_osc(host, port, f"{component_path}/rx", [value])
+
+    elif operation == "set_transform_sop_ry":
+        if component_path is None or value is None:
+            return {
+                "status": "error",
+                "message": "component_path and value required for set_transform_sop_ry",
+            }
+        return await send_osc(host, port, f"{component_path}/ry", [value])
+
+    elif operation == "set_transform_sop_rz":
+        if component_path is None or value is None:
+            return {
+                "status": "error",
+                "message": "component_path and value required for set_transform_sop_rz",
+            }
+        return await send_osc(host, port, f"{component_path}/rz", [value])
+
+    # DAT Operations (Data Operators)
+    elif operation == "set_table_cell":
+        if component_path is None or row is None or col is None or value is None:
+            return {
+                "status": "error",
+                "message": "component_path, row, col, and value required for set_table_cell",
+            }
+        return await send_osc(host, port, f"{component_path}/cell/{row}/{col}", [value])
+
+    elif operation == "set_text_string":
+        if component_path is None or text is None:
+            return {
+                "status": "error",
+                "message": "component_path and text required for set_text_string",
+            }
+        return await send_osc(host, port, f"{component_path}/text", [text])
+
+    elif operation == "trigger_script":
+        if component_path is None:
+            return {
+                "status": "error",
+                "message": "component_path required for trigger_script",
+            }
+        return await send_osc(host, port, f"{component_path}/pulse", [1])
+
+    elif operation == "set_parameter_dat":
+        if component_path is None or parameter is None or value is None:
+            return {
+                "status": "error",
+                "message": "component_path, parameter, and value required for set_parameter_dat",
+            }
+        return await send_osc(host, port, f"{component_path}/{parameter}", [value])
+
+    # MAT Operations (Material Operators)
+    elif operation == "set_phong_diffuse":
+        if component_path is None:
+            return {
+                "status": "error",
+                "message": "component_path required for set_phong_diffuse",
+            }
+        values = []
+        if x is not None: values.append(x)
+        if y is not None: values.append(y)
+        if z is not None: values.append(z)
+        if not values:
+            return {
+                "status": "error",
+                "message": "RGB values (x,y,z) required for set_phong_diffuse",
+            }
+        return await send_osc(host, port, f"{component_path}/diffusecolor", values)
+
+    elif operation == "set_phong_specular":
+        if component_path is None:
+            return {
+                "status": "error",
+                "message": "component_path required for set_phong_specular",
+            }
+        values = []
+        if x is not None: values.append(x)
+        if y is not None: values.append(y)
+        if z is not None: values.append(z)
+        if not values:
+            return {
+                "status": "error",
+                "message": "RGB values (x,y,z) required for set_phong_specular",
+            }
+        return await send_osc(host, port, f"{component_path}/specularcolor", values)
+
+    elif operation == "set_phong_emissive":
+        if component_path is None:
+            return {
+                "status": "error",
+                "message": "component_path required for set_phong_emissive",
+            }
+        values = []
+        if x is not None: values.append(x)
+        if y is not None: values.append(y)
+        if z is not None: values.append(z)
+        if not values:
+            return {
+                "status": "error",
+                "message": "RGB values (x,y,z) required for set_phong_emissive",
+            }
+        return await send_osc(host, port, f"{component_path}/emissivecolor", values)
+
+    elif operation == "set_phong_shininess":
+        if component_path is None or value is None:
+            return {
+                "status": "error",
+                "message": "component_path and value required for set_phong_shininess",
+            }
+        return await send_osc(host, port, f"{component_path}/shininess", [value])
+
+    # COMP Operations (Components)
+    elif operation == "set_container_opacity":
+        if component_path is None or value is None:
+            return {
+                "status": "error",
+                "message": "component_path and value required for set_container_opacity",
+            }
+        return await send_osc(host, port, f"{component_path}/opacity", [value])
+
+    elif operation == "set_base_position":
+        if component_path is None:
+            return {
+                "status": "error",
+                "message": "component_path required for set_base_position",
+            }
+        values = []
+        if x is not None: values.append(x)
+        if y is not None: values.append(y)
+        if not values:
+            return {
+                "status": "error",
+                "message": "x and y coordinates required for set_base_position",
+            }
+        return await send_osc(host, port, f"{component_path}/position", values)
+
+    elif operation == "set_base_size":
+        if component_path is None:
+            return {
+                "status": "error",
+                "message": "component_path required for set_base_size",
+            }
+        values = []
+        if x is not None: values.append(x)
+        if y is not None: values.append(y)
+        if not values:
+            return {
+                "status": "error",
+                "message": "width (x) and height (y) required for set_base_size",
+            }
+        return await send_osc(host, port, f"{component_path}/size", values)
+
+    elif operation == "set_window_position":
+        if component_path is None:
+            return {
+                "status": "error",
+                "message": "component_path required for set_window_position",
+            }
+        values = []
+        if x is not None: values.append(x)
+        if y is not None: values.append(y)
+        if not values:
+            return {
+                "status": "error",
+                "message": "x and y coordinates required for set_window_position",
+            }
+        return await send_osc(host, port, f"{component_path}/winpos", values)
 
     else:
         return {"status": "error", "message": f"Unknown operation: {operation}"}

@@ -1,0 +1,37 @@
+
+TOUCHDESIGNER OSC SETUP GUIDE
+===============================
+
+1. Create new project: File -> New Project
+2. Right-click empty space -> OP Create Dialog opens
+3. Look for these operators:
+
+COMP TAB:
+- Constant (under 'Basic' section)
+
+CHOP TAB:  
+- OSC In (under 'Network' section)
+
+4. Create operators in this order:
+   a) OSC In CHOP first
+   b) Constant COMP second
+   c) Connect: OSC In output -> Constant value1 input
+
+5. Configure OSC In CHOP:
+   - Click on OSC In operator
+   - Parameters panel (bottom right)
+   - Set 'Port' to 9000
+   - Set 'Address Scope' to '/project/const1/value1'
+
+6. Test: Run the Python OSC test command
+
+If you still can't find Constant COMP:
+- Make sure you're in COMP tab (not CHOP, TOP, SOP, DAT, MAT)
+- Look under 'Basic' or 'Utility' sections
+- Try typing 'constant' in the search box at top of OP Create Dialog
+
+ALTERNATIVE: Use a simple Constant CHOP instead:
+- CHOP tab -> Constant (under 'Basic')
+- This creates a CHOP that outputs a constant value
+- Connect OSC In -> Constant CHOP
+

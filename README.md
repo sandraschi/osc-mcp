@@ -498,9 +498,9 @@ See [.claude/REPO_STATUS_AND_ROADMAP.md](.claude/REPO_STATUS_AND_ROADMAP.md) for
 Contributions welcome! Please:
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
+2. Create a feature branch (`git checkout -b feature/new-feature`)
+3. Commit changes (`git commit -m 'Add new feature'`)
+4. Push to branch (`git push origin feature/new-feature`)
 5. Open a Pull Request
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
@@ -514,7 +514,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **[FastMCP](https://github.com/jlowin/fastmcp)** - MCP protocol framework by @jlowin
 - **[python-osc](https://github.com/attwad/python-osc)** - OSC protocol implementation
 - **[python-rtmidi](https://github.com/SpotlightKid/python-rtmidi)** - MIDI integration
-- **OSC Community** - For the amazing Open Sound Control protocol
+- **OSC Community** - For the Open Sound Control protocol
 
 ## 📞 Support
 

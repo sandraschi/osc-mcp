@@ -1,0 +1,32 @@
+
+TOUCHDESIGNER OSC OPERATOR VERIFICATION
+========================================
+
+YOU NEED: OSC In CHOP (for connecting to COMP parameters)
+CURRENT: Sounds like you have OSC In DAT (no output circles)
+
+CRITICAL DIFFERENCE:
+- CHOP: Has output circles on RIGHT side, can connect to COMPs
+- DAT: Has no output circles, can't connect to COMPs directly
+
+VERIFY WHAT YOU HAVE:
+1. Click on oscin1 operator
+2. Look at VERY TOP of operator box
+3. What does it say? Should be: oscin1 (CHOP)
+4. Right-click -> What menu options do you see?
+
+IF IT'S A DAT (wrong):
+- Delete it
+- CHOP tab -> OSC In
+- Name: oscin1
+- Should have output circle on right
+
+IF IT'S A CHOP (right):
+- The green color is just your theme
+- It should still have the output circle
+- Connect to constant1 and test
+
+ALTERNATIVE: Use OSC In CHOP -> Constant CHOP (both CHOPs)
+- Easier to connect CHOP to CHOP
+- Same functionality, simpler connection
+

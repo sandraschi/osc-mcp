@@ -1,0 +1,26 @@
+
+TOUCHDESIGNER OSC CONNECTION GUIDE
+====================================
+
+YES - Connect the boxes like this:
+
+OSC In CHOP → Constant Operator
+
+Visual connection:
+[OSC In CHOP] ----(wire)----> [Constant]
+
+What this does:
+1. OSC In CHOP receives OSC messages from Python
+2. OSC In CHOP outputs the received values 
+3. Constant operator receives those values and displays them
+
+Without connection: OSC messages arrive but nothing changes visually
+With connection: OSC messages change the Constant's value in real-time
+
+TEST IT:
+1. Make sure they're connected with a wire
+2. Run the test command below
+3. Watch the Constant operator's value change to 0.5
+
+The wire is what makes the magic happen! ⚡
+

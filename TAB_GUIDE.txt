@@ -1,0 +1,28 @@
+
+TOUCHDESIGNER TAB IDENTIFICATION
+=================================
+
+OP CREATE DIALOG TABS (across the top):
+
+1. COMP - Components (usually gray/white)
+2. CHOP - Channel Operators (usually blue when created)
+3. TOP  - Texture Operators (usually yellow)
+4. SOP  - Surface Operators (usually red)
+5. DAT  - Data Operators (usually green)
+6. MAT  - Material Operators (usually purple)
+
+PROBLEM: Everything showing green
+SOLUTION: You're probably still in DAT tab!
+
+CHECK THIS:
+- Close OP Create Dialog (ESC key)
+- Right-click empty space again
+- Look at the tab labels at the VERY TOP
+- Click the CHOP tab (should be second tab)
+- Now create OSC In from CHOP tab
+
+ALTERNATIVE: Use keyboard shortcut
+- Press TAB key to open dialog
+- Type 'chop' then press TAB to switch to CHOP tab
+- Type 'osc in' and it should appear
+

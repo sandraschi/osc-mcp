@@ -1,0 +1,24 @@
+
+PERFECT! You have OSC In CHOP - that's correct!
+
+CHOPs ALWAYS have output circles on the RIGHT side.
+The green color is just your TouchDesigner theme.
+
+OUTPUT CIRCLE LOCATION:
+- RIGHT side of the operator box
+- Small circle/dot
+- Might be hard to see if zoomed out
+
+TRY THIS:
+1. Zoom in (mouse wheel)
+2. Click and drag from right side of oscin1
+3. If you see connection line start, the circle is there!
+
+ALTERNATIVE TEST:
+Create a temporary operator to verify:
+1. CHOP tab -> Math
+2. Connect oscin1 -> Math
+3. If connection works, oscin1 output is working!
+
+The circle is definitely there - it's a core CHOP feature.
+
