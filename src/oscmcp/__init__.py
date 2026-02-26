@@ -7,7 +7,7 @@ using the Open Sound Control (OSC) protocol.
 __version__ = "0.1.0"
 
 import logging
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 # Set up logging
 logging.basicConfig(

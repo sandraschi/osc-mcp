@@ -1,0 +1,92 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 0.3.1)'
+        required: true
+        type: string
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-release-${{ hashFiles('**/pyproject.toml') }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine
+
+    - name: Run pre-release checks
+      run: |
+        # Lint check
+        pip install ruff
+        ruff check .
+        ruff format --check .
+
+        # Type check
+        pip install mypy
+        mypy src/ --ignore-missing-imports
+
+        # Test
+        pip install -e ".[dev]"
+        pytest tests/ -v
+
+    - name: Build package
+      run: python -m build
+
+    - name: Check package
+      run: twine check dist/*
+
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        print-hash: true
+
+    - name: Generate changelog
+      id: changelog
+      run: |
+        # Get the latest tag
+        LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.1.0")
+        # Generate changelog from commits since last tag
+        CHANGES=$(git log --pretty=format:"- %s (%h)" "${LATEST_TAG}..HEAD" 2>/dev/null || echo "- Initial release")
+        echo "changes<<EOF" >> $GITHUB_OUTPUT
+        echo "# Changelog" >> $GITHUB_OUTPUT
+        echo "" >> $GITHUB_OUTPUT
+        echo "## $(git describe --tags --abbrev=0 2>/dev/null || echo "v0.3.0") ($(date +%Y-%m-%d))" >> $GITHUB_OUTPUT
+        echo "" >> $GITHUB_OUTPUT
+        echo "$CHANGES" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    - name: Update release notes
+      if: github.event_name == 'release'
+      uses: softprops/action-gh-release@v2
+      with:
+        body: ${{ steps.changelog.outputs.changes }}
+        append_body: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

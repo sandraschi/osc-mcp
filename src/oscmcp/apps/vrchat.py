@@ -7,7 +7,7 @@ bidirectional communication with VRChat avatars and worlds.
 import logging
 import os
 from pathlib import Path
-from typing import Dict, List, Optional, Callable, Any, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from ..osc.client import OSCClient
 from ..osc.server import OSCServer
@@ -68,9 +68,7 @@ class VRChatOSC:
         self.server.dispatcher.map("/avatar/change", self._handle_avatar_change)
 
         # Avatar parameter handler
-        self.server.dispatcher.map(
-            "/avatar/parameters/*", self._handle_avatar_parameter
-        )
+        self.server.dispatcher.map("/avatar/parameters/*", self._handle_avatar_parameter)
 
     async def start(self) -> None:
         """Start the OSC server to receive messages from VRChat."""
@@ -109,7 +107,7 @@ class VRChatOSC:
             *args: Parameter value(s)
         """
         # Extract parameter name from address
-        param_name = address.split("/")[-1]
+        param_name = address.rsplit("/", maxsplit=1)[-1]
 
         # Get the value (OSC messages can have multiple args, but VRChat sends single values)
         value = args[0] if args else None
@@ -156,9 +154,7 @@ class VRChatOSC:
         """
         self.avatar_change_callback = callback
 
-    def on_parameter_change(
-        self, param_name: str, callback: Callable[[str, Any], None]
-    ) -> None:
+    def on_parameter_change(self, param_name: str, callback: Callable[[str, Any], None]) -> None:
         """Register a callback for parameter changes.
 
         Args:
@@ -169,7 +165,7 @@ class VRChatOSC:
             self.parameter_callbacks[param_name] = []
         self.parameter_callbacks[param_name].append(callback)
 
-    def set_parameter(self, param_name: str, value: Union[int, float, bool]) -> None:
+    def set_parameter(self, param_name: str, value: Union[float, bool]) -> None:
         """Set an avatar parameter in VRChat.
 
         Args:
@@ -217,13 +213,9 @@ class VRChatOSC:
 
         # Send the appropriate OSC message based on device
         if device.lower() in ("left", "both"):
-            self.client.send(
-                "/avatar/parameters/LeftHaptic", [duration, amplitude, frequency]
-            )
+            self.client.send("/avatar/parameters/LeftHaptic", [duration, amplitude, frequency])
         if device.lower() in ("right", "both"):
-            self.client.send(
-                "/avatar/parameters/RightHaptic", [duration, amplitude, frequency]
-            )
+            self.client.send("/avatar/parameters/RightHaptic", [duration, amplitude, frequency])
 
 
 # Example usage

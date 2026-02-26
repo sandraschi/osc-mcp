@@ -5,7 +5,7 @@ bidirectional communication for interactive media and visual programming.
 """
 
 import logging
-from typing import Dict, List, Callable, Any
+from typing import Any, Callable, Dict, List
 
 from ..osc.client import OSCClient
 from ..osc.server import OSCServer
@@ -220,7 +220,9 @@ class TouchDesignerOSC:
         """
         self.send(f"{component_path}/chan{channel_index}", value)
 
-    def set_chop_channel_by_name(self, component_path: str, channel_name: str, value: float) -> None:
+    def set_chop_channel_by_name(
+        self, component_path: str, channel_name: str, value: float
+    ) -> None:
         """Set a CHOP channel value by name.
 
         Args:
@@ -331,7 +333,9 @@ class TouchDesignerOSC:
         """
         self.set_parameter(component_path, "gamma", gamma)
 
-    def set_transform_scale(self, component_path: str, x: float = None, y: float = None, z: float = None) -> None:
+    def set_transform_scale(
+        self, component_path: str, x: float = None, y: float = None, z: float = None
+    ) -> None:
         """Set transform TOP scale.
 
         Args:
@@ -341,13 +345,18 @@ class TouchDesignerOSC:
             z: Scale Z value (for 3D transforms)
         """
         values = []
-        if x is not None: values.append(x)
-        if y is not None: values.append(y)
-        if z is not None: values.append(z)
+        if x is not None:
+            values.append(x)
+        if y is not None:
+            values.append(y)
+        if z is not None:
+            values.append(z)
         if values:
             self.send(f"{component_path}/scale", *values)
 
-    def set_transform_rotate(self, component_path: str, x: float = None, y: float = None, z: float = None) -> None:
+    def set_transform_rotate(
+        self, component_path: str, x: float = None, y: float = None, z: float = None
+    ) -> None:
         """Set transform TOP rotation.
 
         Args:
@@ -357,13 +366,18 @@ class TouchDesignerOSC:
             z: Rotate Z value (degrees)
         """
         values = []
-        if x is not None: values.append(x)
-        if y is not None: values.append(y)
-        if z is not None: values.append(z)
+        if x is not None:
+            values.append(x)
+        if y is not None:
+            values.append(y)
+        if z is not None:
+            values.append(z)
         if values:
             self.send(f"{component_path}/rotate", *values)
 
-    def set_transform_translate(self, component_path: str, x: float = None, y: float = None, z: float = None) -> None:
+    def set_transform_translate(
+        self, component_path: str, x: float = None, y: float = None, z: float = None
+    ) -> None:
         """Set transform TOP translation.
 
         Args:
@@ -373,9 +387,12 @@ class TouchDesignerOSC:
             z: Translate Z value
         """
         values = []
-        if x is not None: values.append(x)
-        if y is not None: values.append(y)
-        if z is not None: values.append(z)
+        if x is not None:
+            values.append(x)
+        if y is not None:
+            values.append(y)
+        if z is not None:
+            values.append(z)
         if values:
             self.send(f"{component_path}/translate", *values)
 
@@ -399,7 +416,9 @@ class TouchDesignerOSC:
         """
         self.set_parameter(component_path, "radius", radius)
 
-    def set_box_size(self, component_path: str, x: float = None, y: float = None, z: float = None) -> None:
+    def set_box_size(
+        self, component_path: str, x: float = None, y: float = None, z: float = None
+    ) -> None:
         """Set box SOP size.
 
         Args:
@@ -409,9 +428,12 @@ class TouchDesignerOSC:
             z: Size Z value
         """
         values = []
-        if x is not None: values.append(x)
-        if y is not None: values.append(y)
-        if z is not None: values.append(z)
+        if x is not None:
+            values.append(x)
+        if y is not None:
+            values.append(y)
+        if z is not None:
+            values.append(z)
         if values:
             self.send(f"{component_path}/size", *values)
 

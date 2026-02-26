@@ -18,7 +18,7 @@ Or call individual operations via MCP:
 """
 
 import asyncio
-import time
+
 from oscmcp.apps.touchdesigner import TouchDesignerOSC
 
 
@@ -237,7 +237,7 @@ async def demo_animated_sequence(td: TouchDesignerOSC):
         td.set_transform_sop_ry("/project/transform_sop1", i * 36)  # Full rotation
 
         # Material animation
-        hue = (i / 10.0)  # Cycle through hues
+        hue = i / 10.0  # Cycle through hues
         td.set_phong_diffuse("/project/phong1", hue, 1.0 - hue, 0.5)
 
         await asyncio.sleep(0.2)
@@ -305,8 +305,3 @@ async def main():
 if __name__ == "__main__":
     # Run the demo
     asyncio.run(main())
-
-
-
-
-

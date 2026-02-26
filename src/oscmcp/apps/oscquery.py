@@ -8,10 +8,10 @@ import asyncio
 import logging
 import socket
 import uuid
-from typing import Dict, List, Optional, Callable, Any
+from typing import Any, Callable, Dict, List, Optional
 
 import aiohttp
-from zeroconf import ServiceInfo, Zeroconf, IPVersion
+from zeroconf import IPVersion, ServiceInfo, Zeroconf
 from zeroconf.asyncio import AsyncZeroconf
 
 from ..osc.client import OSCClient
@@ -54,13 +54,12 @@ class OSCQueryService:
         """Fetch the host info from the OSCQuery service."""
         url = f"http://{self.host}:{self.ws_port}/"
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url) as response:
-                    if response.status == 200:
-                        self._host_info = await response.json()
-                    else:
-                        self._host_info = {}
-                        logger.warning(f"Failed to fetch host info: {response.status}")
+            async with aiohttp.ClientSession() as session, session.get(url) as response:
+                if response.status == 200:
+                    self._host_info = await response.json()
+                else:
+                    self._host_info = {}
+                    logger.warning(f"Failed to fetch host info: {response.status}")
         except Exception as e:
             self._host_info = {}
             logger.error(f"Error fetching host info: {e}")
@@ -79,13 +78,11 @@ class OSCQueryService:
 
         url = f"http://{self.host}:{self.ws_port}{path}"
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url) as response:
-                    if response.status == 200:
-                        return await response.json()
-                    else:
-                        logger.warning(f"Failed to query {path}: {response.status}")
-                        return {}
+            async with aiohttp.ClientSession() as session, session.get(url) as response:
+                if response.status == 200:
+                    return await response.json()
+                logger.warning(f"Failed to query {path}: {response.status}")
+                return {}
         except Exception as e:
             logger.error(f"Error querying {path}: {e}")
             return {}
@@ -174,9 +171,7 @@ class OSCQueryBrowser:
         elif state_change == "remove":
             self._remove_service(name)
 
-    async def _add_service(
-        self, zeroconf: Zeroconf, service_type: str, name: str
-    ) -> None:
+    async def _add_service(self, zeroconf: Zeroconf, service_type: str, name: str) -> None:
         """Add a discovered OSCQuery service."""
         try:
             info = await zeroconf.async_get_service_info(service_type, name)
@@ -212,7 +207,7 @@ class OSCQueryBrowser:
 
                 # Create service object
                 service = OSCQueryService(
-                    name=name.split(".")[0],
+                    name=name.split(".", maxsplit=1)[0],
                     host=host,
                     osc_port=osc_port,
                     ws_port=port,
@@ -246,9 +241,7 @@ class OSCQueryBrowser:
                 except Exception as e:
                     logger.error(f"Error in service listener: {e}")
 
-    def on_service_change(
-        self, callback: Callable[[str, OSCQueryService], None]
-    ) -> None:
+    def on_service_change(self, callback: Callable[[str, OSCQueryService], None]) -> None:
         """Register a callback for service changes.
 
         Args:
@@ -432,8 +425,7 @@ class OSCQueryServer:
             path = "/" + request.match_info.get("path", "")
             if path in self.endpoints:
                 return web.json_response(self.endpoints[path])
-            else:
-                return web.HTTPNotFound()
+            return web.HTTPNotFound()
 
         # Add routes
         app.router.add_get("/", handle_root)

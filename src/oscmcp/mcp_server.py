@@ -7,10 +7,10 @@ through the MCP protocol over stdio, making it compatible with MCP clients like 
 # CRITICAL: Set stdio to binary mode on Windows for Antigravity IDE compatibility
 # Antigravity IDE is strict about JSON-RPC protocol and interprets trailing \r as "invalid trailing data"
 # This must happen BEFORE any imports that might write to stdout
-import os
-import sys
 import asyncio
 import logging
+import os
+import sys
 from typing import Any, Dict, List, Optional
 
 from fastmcp import FastMCP
@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field
 from pythonosc.udp_client import SimpleUDPClient
 
 from .osc.server import OSCServer
+from .transport import run_server
 
 if os.name == "nt":  # Windows only
     try:
@@ -104,29 +105,21 @@ class OSCMessageInput(BaseModel):
 
     host: str = Field(..., description="Target hostname or IP address")
     port: int = Field(..., gt=0, le=65535, description="Target UDP port (1-65535)")
-    address: str = Field(
-        ..., pattern=r"^/.*", description="OSC address pattern starting with /"
-    )
-    values: List[Any] = Field(
-        default_factory=list, description="List of values to send"
-    )
+    address: str = Field(..., pattern=r"^/.*", description="OSC address pattern starting with /")
+    values: List[Any] = Field(default_factory=list, description="List of values to send")
 
 
 class OSCServerInput(BaseModel):
     """Input model for starting OSC server."""
 
-    port: int = Field(
-        ..., gt=0, le=65535, description="UDP port to listen on (1-65535)"
-    )
+    port: int = Field(..., gt=0, le=65535, description="UDP port to listen on (1-65535)")
     address: str = Field(default="0.0.0.0", description="Network interface to bind to")
 
 
 class OSCServerStopInput(BaseModel):
     """Input model for stopping OSC server."""
 
-    port: int = Field(
-        ..., gt=0, le=65535, description="Port of the server to stop (1-65535)"
-    )
+    port: int = Field(..., gt=0, le=65535, description="Port of the server to stop (1-65535)")
 
 
 # Lifespan management removed - FastMCP 2.13.1 doesn't support lifespan decorator
@@ -134,9 +127,7 @@ class OSCServerStopInput(BaseModel):
 
 
 @server.tool()
-async def send_osc(
-    host: str, port: int, address: str, values: List[Any] = None
-) -> Dict[str, Any]:
+async def send_osc(host: str, port: int, address: str, values: List[Any] = None) -> Dict[str, Any]:
     """Send an OSC message to the specified address.
 
     This tool sends OSC (Open Sound Control) messages over UDP to any OSC-enabled
@@ -675,9 +666,7 @@ async def get_received_messages(
 
 
 @server.tool()
-async def get_latest_message(
-    port: int, address_pattern: Optional[str] = None
-) -> Dict[str, Any]:
+async def get_latest_message(port: int, address_pattern: Optional[str] = None) -> Dict[str, Any]:
     """
     Get the most recent OSC message from a running server.
 
@@ -1000,15 +989,15 @@ async def ableton_manager(
     if operation == "play":
         return await send_osc(host, port, "/live/play", [])
 
-    elif operation == "stop":
+    if operation == "stop":
         return await send_osc(host, port, "/live/stop", [])
 
-    elif operation == "set_tempo":
+    if operation == "set_tempo":
         if bpm is None:
             return {"status": "error", "message": "bpm required for set_tempo"}
         return await send_osc(host, port, "/live/tempo", [bpm])
 
-    elif operation == "play_clip":
+    if operation == "play_clip":
         if track_index is None or clip_slot is None:
             return {
                 "status": "error",
@@ -1016,17 +1005,15 @@ async def ableton_manager(
             }
         return await send_osc(host, port, "/live/clip/fire", [track_index, clip_slot])
 
-    elif operation == "set_volume":
+    if operation == "set_volume":
         if track_index is None or volume is None:
             return {
                 "status": "error",
                 "message": "track_index and volume required for set_volume",
             }
-        return await send_osc(
-            host, port, "/live/track/set/volume", [track_index, volume]
-        )
+        return await send_osc(host, port, "/live/track/set/volume", [track_index, volume])
 
-    elif operation == "set_pan":
+    if operation == "set_pan":
         if track_index is None or pan is None:
             return {
                 "status": "error",
@@ -1034,8 +1021,7 @@ async def ableton_manager(
             }
         return await send_osc(host, port, "/live/track/set/panning", [track_index, pan])
 
-    else:
-        return {"status": "error", "message": f"Unknown operation: {operation}"}
+    return {"status": "error", "message": f"Unknown operation: {operation}"}
 
 
 @server.tool()
@@ -1084,12 +1070,12 @@ async def vrchat_manager(
         address = f"/avatar/parameters/{param_name}"
         return await send_osc(host, port, address, [value])
 
-    elif operation == "send_chat":
+    if operation == "send_chat":
         if message is None:
             return {"status": "error", "message": "message required for send_chat"}
         return await send_osc(host, port, "/chatbox/input", [message, True, False])
 
-    elif operation == "trigger_haptic":
+    if operation == "trigger_haptic":
         device = device or "both"
         duration = duration or 0.1
         amplitude = amplitude or 0.5
@@ -1114,8 +1100,7 @@ async def vrchat_manager(
             results["right"] = "sent"
         return {"status": "success", "device": device, "results": results}
 
-    else:
-        return {"status": "error", "message": f"Unknown operation: {operation}"}
+    return {"status": "error", "message": f"Unknown operation: {operation}"}
 
 
 @server.tool()
@@ -1269,7 +1254,7 @@ async def touchdesigner_manager(
         address = f"{component_path}/{parameter}"
         return await send_osc(host, port, address, [value])
 
-    elif operation == "set_constant":
+    if operation == "set_constant":
         if component_path is None or value is None:
             return {
                 "status": "error",
@@ -1277,7 +1262,7 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/value1", [value])
 
-    elif operation == "set_slider":
+    if operation == "set_slider":
         if component_path is None or value is None:
             return {
                 "status": "error",
@@ -1285,7 +1270,7 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/value", [value])
 
-    elif operation == "set_toggle":
+    if operation == "set_toggle":
         if component_path is None or value is None:
             return {
                 "status": "error",
@@ -1293,7 +1278,7 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/value", [1 if value else 0])
 
-    elif operation == "trigger_button":
+    if operation == "trigger_button":
         if component_path is None:
             return {
                 "status": "error",
@@ -1301,7 +1286,7 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/pulse", [1])
 
-    elif operation == "pulse_momentary":
+    if operation == "pulse_momentary":
         if component_path is None:
             return {
                 "status": "error",
@@ -1310,7 +1295,7 @@ async def touchdesigner_manager(
         return await send_osc(host, port, f"{component_path}/pulse", [1])
 
     # CHOP Operations (Channel Operators)
-    elif operation == "set_chop_channel":
+    if operation == "set_chop_channel":
         if component_path is None or channel_index is None or value is None:
             return {
                 "status": "error",
@@ -1318,7 +1303,7 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/chan{channel_index}", [value])
 
-    elif operation == "set_chop_channel_by_name":
+    if operation == "set_chop_channel_by_name":
         if component_path is None or channel_name is None or value is None:
             return {
                 "status": "error",
@@ -1326,7 +1311,7 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/{channel_name}", [value])
 
-    elif operation == "set_waveform_freq":
+    if operation == "set_waveform_freq":
         if component_path is None or frequency is None:
             return {
                 "status": "error",
@@ -1334,7 +1319,7 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/frequency", [frequency])
 
-    elif operation == "set_waveform_amp":
+    if operation == "set_waveform_amp":
         if component_path is None or amplitude is None:
             return {
                 "status": "error",
@@ -1342,7 +1327,7 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/amplitude", [amplitude])
 
-    elif operation == "set_waveform_phase":
+    if operation == "set_waveform_phase":
         if component_path is None or phase is None:
             return {
                 "status": "error",
@@ -1350,7 +1335,7 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/phase", [phase])
 
-    elif operation == "set_audio_level":
+    if operation == "set_audio_level":
         if component_path is None or value is None:
             return {
                 "status": "error",
@@ -1358,7 +1343,7 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/level", [value])
 
-    elif operation == "set_filter_cutoff":
+    if operation == "set_filter_cutoff":
         if component_path is None or frequency is None:
             return {
                 "status": "error",
@@ -1366,7 +1351,7 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/cutoff", [frequency])
 
-    elif operation == "set_math_multiply":
+    if operation == "set_math_multiply":
         if component_path is None or value is None:
             return {
                 "status": "error",
@@ -1374,7 +1359,7 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/multiply", [value])
 
-    elif operation == "set_lfo_rate":
+    if operation == "set_lfo_rate":
         if component_path is None or value is None:
             return {
                 "status": "error",
@@ -1383,7 +1368,7 @@ async def touchdesigner_manager(
         return await send_osc(host, port, f"{component_path}/rate", [value])
 
     # TOP Operations (Texture Operators)
-    elif operation == "set_movie_play":
+    if operation == "set_movie_play":
         if component_path is None or value is None:
             return {
                 "status": "error",
@@ -1391,7 +1376,7 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/play", [1 if value else 0])
 
-    elif operation == "set_level_brightness":
+    if operation == "set_level_brightness":
         if component_path is None or value is None:
             return {
                 "status": "error",
@@ -1399,7 +1384,7 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/brightness", [value])
 
-    elif operation == "set_level_contrast":
+    if operation == "set_level_contrast":
         if component_path is None or value is None:
             return {
                 "status": "error",
@@ -1407,7 +1392,7 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/contrast", [value])
 
-    elif operation == "set_level_gamma":
+    if operation == "set_level_gamma":
         if component_path is None or value is None:
             return {
                 "status": "error",
@@ -1415,16 +1400,19 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/gamma", [value])
 
-    elif operation == "set_transform_scale":
+    if operation == "set_transform_scale":
         if component_path is None:
             return {
                 "status": "error",
                 "message": "component_path required for set_transform_scale",
             }
         values = []
-        if x is not None: values.append(x)
-        if y is not None: values.append(y)
-        if z is not None: values.append(z)
+        if x is not None:
+            values.append(x)
+        if y is not None:
+            values.append(y)
+        if z is not None:
+            values.append(z)
         if not values:
             return {
                 "status": "error",
@@ -1432,16 +1420,19 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/scale", values)
 
-    elif operation == "set_transform_rotate":
+    if operation == "set_transform_rotate":
         if component_path is None:
             return {
                 "status": "error",
                 "message": "component_path required for set_transform_rotate",
             }
         values = []
-        if x is not None: values.append(x)
-        if y is not None: values.append(y)
-        if z is not None: values.append(z)
+        if x is not None:
+            values.append(x)
+        if y is not None:
+            values.append(y)
+        if z is not None:
+            values.append(z)
         if not values:
             return {
                 "status": "error",
@@ -1449,16 +1440,19 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/rotate", values)
 
-    elif operation == "set_transform_translate":
+    if operation == "set_transform_translate":
         if component_path is None:
             return {
                 "status": "error",
                 "message": "component_path required for set_transform_translate",
             }
         values = []
-        if x is not None: values.append(x)
-        if y is not None: values.append(y)
-        if z is not None: values.append(z)
+        if x is not None:
+            values.append(x)
+        if y is not None:
+            values.append(y)
+        if z is not None:
+            values.append(z)
         if not values:
             return {
                 "status": "error",
@@ -1466,7 +1460,7 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/translate", values)
 
-    elif operation == "set_composite_opacity":
+    if operation == "set_composite_opacity":
         if component_path is None or value is None:
             return {
                 "status": "error",
@@ -1475,7 +1469,7 @@ async def touchdesigner_manager(
         return await send_osc(host, port, f"{component_path}/opacity", [value])
 
     # SOP Operations (Surface Operators)
-    elif operation == "set_sphere_radius":
+    if operation == "set_sphere_radius":
         if component_path is None or value is None:
             return {
                 "status": "error",
@@ -1483,16 +1477,19 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/radius", [value])
 
-    elif operation == "set_box_size":
+    if operation == "set_box_size":
         if component_path is None:
             return {
                 "status": "error",
                 "message": "component_path required for set_box_size",
             }
         values = []
-        if x is not None: values.append(x)
-        if y is not None: values.append(y)
-        if z is not None: values.append(z)
+        if x is not None:
+            values.append(x)
+        if y is not None:
+            values.append(y)
+        if z is not None:
+            values.append(z)
         if not values:
             return {
                 "status": "error",
@@ -1500,7 +1497,7 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/size", values)
 
-    elif operation == "set_torus_major":
+    if operation == "set_torus_major":
         if component_path is None or value is None:
             return {
                 "status": "error",
@@ -1508,7 +1505,7 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/majorradius", [value])
 
-    elif operation == "set_torus_minor":
+    if operation == "set_torus_minor":
         if component_path is None or value is None:
             return {
                 "status": "error",
@@ -1516,7 +1513,7 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/minorradius", [value])
 
-    elif operation == "set_transform_sop_tx":
+    if operation == "set_transform_sop_tx":
         if component_path is None or value is None:
             return {
                 "status": "error",
@@ -1524,7 +1521,7 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/tx", [value])
 
-    elif operation == "set_transform_sop_ty":
+    if operation == "set_transform_sop_ty":
         if component_path is None or value is None:
             return {
                 "status": "error",
@@ -1532,7 +1529,7 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/ty", [value])
 
-    elif operation == "set_transform_sop_tz":
+    if operation == "set_transform_sop_tz":
         if component_path is None or value is None:
             return {
                 "status": "error",
@@ -1540,7 +1537,7 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/tz", [value])
 
-    elif operation == "set_transform_sop_rx":
+    if operation == "set_transform_sop_rx":
         if component_path is None or value is None:
             return {
                 "status": "error",
@@ -1548,7 +1545,7 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/rx", [value])
 
-    elif operation == "set_transform_sop_ry":
+    if operation == "set_transform_sop_ry":
         if component_path is None or value is None:
             return {
                 "status": "error",
@@ -1556,7 +1553,7 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/ry", [value])
 
-    elif operation == "set_transform_sop_rz":
+    if operation == "set_transform_sop_rz":
         if component_path is None or value is None:
             return {
                 "status": "error",
@@ -1565,7 +1562,7 @@ async def touchdesigner_manager(
         return await send_osc(host, port, f"{component_path}/rz", [value])
 
     # DAT Operations (Data Operators)
-    elif operation == "set_table_cell":
+    if operation == "set_table_cell":
         if component_path is None or row is None or col is None or value is None:
             return {
                 "status": "error",
@@ -1573,7 +1570,7 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/cell/{row}/{col}", [value])
 
-    elif operation == "set_text_string":
+    if operation == "set_text_string":
         if component_path is None or text is None:
             return {
                 "status": "error",
@@ -1581,7 +1578,7 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/text", [text])
 
-    elif operation == "trigger_script":
+    if operation == "trigger_script":
         if component_path is None:
             return {
                 "status": "error",
@@ -1589,7 +1586,7 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/pulse", [1])
 
-    elif operation == "set_parameter_dat":
+    if operation == "set_parameter_dat":
         if component_path is None or parameter is None or value is None:
             return {
                 "status": "error",
@@ -1598,16 +1595,19 @@ async def touchdesigner_manager(
         return await send_osc(host, port, f"{component_path}/{parameter}", [value])
 
     # MAT Operations (Material Operators)
-    elif operation == "set_phong_diffuse":
+    if operation == "set_phong_diffuse":
         if component_path is None:
             return {
                 "status": "error",
                 "message": "component_path required for set_phong_diffuse",
             }
         values = []
-        if x is not None: values.append(x)
-        if y is not None: values.append(y)
-        if z is not None: values.append(z)
+        if x is not None:
+            values.append(x)
+        if y is not None:
+            values.append(y)
+        if z is not None:
+            values.append(z)
         if not values:
             return {
                 "status": "error",
@@ -1615,16 +1615,19 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/diffusecolor", values)
 
-    elif operation == "set_phong_specular":
+    if operation == "set_phong_specular":
         if component_path is None:
             return {
                 "status": "error",
                 "message": "component_path required for set_phong_specular",
             }
         values = []
-        if x is not None: values.append(x)
-        if y is not None: values.append(y)
-        if z is not None: values.append(z)
+        if x is not None:
+            values.append(x)
+        if y is not None:
+            values.append(y)
+        if z is not None:
+            values.append(z)
         if not values:
             return {
                 "status": "error",
@@ -1632,16 +1635,19 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/specularcolor", values)
 
-    elif operation == "set_phong_emissive":
+    if operation == "set_phong_emissive":
         if component_path is None:
             return {
                 "status": "error",
                 "message": "component_path required for set_phong_emissive",
             }
         values = []
-        if x is not None: values.append(x)
-        if y is not None: values.append(y)
-        if z is not None: values.append(z)
+        if x is not None:
+            values.append(x)
+        if y is not None:
+            values.append(y)
+        if z is not None:
+            values.append(z)
         if not values:
             return {
                 "status": "error",
@@ -1649,7 +1655,7 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/emissivecolor", values)
 
-    elif operation == "set_phong_shininess":
+    if operation == "set_phong_shininess":
         if component_path is None or value is None:
             return {
                 "status": "error",
@@ -1658,7 +1664,7 @@ async def touchdesigner_manager(
         return await send_osc(host, port, f"{component_path}/shininess", [value])
 
     # COMP Operations (Components)
-    elif operation == "set_container_opacity":
+    if operation == "set_container_opacity":
         if component_path is None or value is None:
             return {
                 "status": "error",
@@ -1666,15 +1672,17 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/opacity", [value])
 
-    elif operation == "set_base_position":
+    if operation == "set_base_position":
         if component_path is None:
             return {
                 "status": "error",
                 "message": "component_path required for set_base_position",
             }
         values = []
-        if x is not None: values.append(x)
-        if y is not None: values.append(y)
+        if x is not None:
+            values.append(x)
+        if y is not None:
+            values.append(y)
         if not values:
             return {
                 "status": "error",
@@ -1682,15 +1690,17 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/position", values)
 
-    elif operation == "set_base_size":
+    if operation == "set_base_size":
         if component_path is None:
             return {
                 "status": "error",
                 "message": "component_path required for set_base_size",
             }
         values = []
-        if x is not None: values.append(x)
-        if y is not None: values.append(y)
+        if x is not None:
+            values.append(x)
+        if y is not None:
+            values.append(y)
         if not values:
             return {
                 "status": "error",
@@ -1698,15 +1708,17 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/size", values)
 
-    elif operation == "set_window_position":
+    if operation == "set_window_position":
         if component_path is None:
             return {
                 "status": "error",
                 "message": "component_path required for set_window_position",
             }
         values = []
-        if x is not None: values.append(x)
-        if y is not None: values.append(y)
+        if x is not None:
+            values.append(x)
+        if y is not None:
+            values.append(y)
         if not values:
             return {
                 "status": "error",
@@ -1714,8 +1726,7 @@ async def touchdesigner_manager(
             }
         return await send_osc(host, port, f"{component_path}/winpos", values)
 
-    else:
-        return {"status": "error", "message": f"Unknown operation: {operation}"}
+    return {"status": "error", "message": f"Unknown operation: {operation}"}
 
 
 # --- Application Manager Tools ---
@@ -1813,7 +1824,7 @@ async def vcv_manager(
             }
         return await send_osc(host, port, "/param", [module_id, param_id, value])
 
-    elif operation == "trigger":
+    if operation == "trigger":
         if module_id is None or trigger_id is None:
             return {
                 "status": "error",
@@ -1821,7 +1832,7 @@ async def vcv_manager(
             }
         return await send_osc(host, port, "/trigger", [module_id, trigger_id])
 
-    elif operation == "send_cv":
+    if operation == "send_cv":
         if module_id is None or cv_id is None or voltage is None:
             return {
                 "status": "error",
@@ -1829,7 +1840,7 @@ async def vcv_manager(
             }
         return await send_osc(host, port, "/cv", [module_id, cv_id, voltage])
 
-    elif operation == "set_light":
+    if operation == "set_light":
         if module_id is None or light_id is None or brightness is None:
             return {
                 "status": "error",
@@ -1837,20 +1848,20 @@ async def vcv_manager(
             }
         return await send_osc(host, port, "/light", [module_id, light_id, brightness])
 
-    elif operation == "play_midi":
+    if operation == "play_midi":
         if note is None:
             return {"status": "error", "message": "note required for play_midi"}
         velocity = velocity or 100
         channel = channel or 1
         return await send_osc(host, port, "/midi/note", [channel, note, velocity])
 
-    elif operation == "stop_midi":
+    if operation == "stop_midi":
         if note is None:
             return {"status": "error", "message": "note required for stop_midi"}
         channel = channel or 1
         return await send_osc(host, port, "/midi/note", [channel, note, 0])
 
-    elif operation == "send_midi_cc":
+    if operation == "send_midi_cc":
         if controller is None or value is None:
             return {
                 "status": "error",
@@ -1859,7 +1870,7 @@ async def vcv_manager(
         channel = channel or 1
         return await send_osc(host, port, "/midi/cc", [channel, controller, value])
 
-    elif operation == "set_vco_frequency":
+    if operation == "set_vco_frequency":
         if module_id is None or frequency is None:
             return {
                 "status": "error",
@@ -1868,7 +1879,7 @@ async def vcv_manager(
         value = min(max(0.0, frequency / 10000.0), 1.0)
         return await send_osc(host, port, "/param", [module_id, 0, value])
 
-    elif operation == "set_vca_level":
+    if operation == "set_vca_level":
         if module_id is None or level is None:
             return {
                 "status": "error",
@@ -1877,7 +1888,7 @@ async def vcv_manager(
         value = min(max(0.0, level), 1.0)
         return await send_osc(host, port, "/param", [module_id, 0, value])
 
-    elif operation == "set_lfo_rate":
+    if operation == "set_lfo_rate":
         if module_id is None or rate is None:
             return {
                 "status": "error",
@@ -1886,7 +1897,7 @@ async def vcv_manager(
         value = min(max(0.0, rate), 1.0)
         return await send_osc(host, port, "/param", [module_id, 0, value])
 
-    elif operation == "set_filter_cutoff":
+    if operation == "set_filter_cutoff":
         if module_id is None or cutoff is None:
             return {
                 "status": "error",
@@ -1895,7 +1906,7 @@ async def vcv_manager(
         value = min(max(0.0, cutoff), 1.0)
         return await send_osc(host, port, "/param", [module_id, 0, value])
 
-    elif operation == "set_envelope_attack":
+    if operation == "set_envelope_attack":
         if module_id is None or attack is None:
             return {
                 "status": "error",
@@ -1904,7 +1915,7 @@ async def vcv_manager(
         value = min(max(0.0, attack), 1.0)
         return await send_osc(host, port, "/param", [module_id, 0, value])
 
-    elif operation == "set_envelope_decay":
+    if operation == "set_envelope_decay":
         if module_id is None or decay is None:
             return {
                 "status": "error",
@@ -1913,7 +1924,7 @@ async def vcv_manager(
         value = min(max(0.0, decay), 1.0)
         return await send_osc(host, port, "/param", [module_id, 1, value])
 
-    elif operation == "set_envelope_sustain":
+    if operation == "set_envelope_sustain":
         if module_id is None or sustain is None:
             return {
                 "status": "error",
@@ -1922,7 +1933,7 @@ async def vcv_manager(
         value = min(max(0.0, sustain), 1.0)
         return await send_osc(host, port, "/param", [module_id, 2, value])
 
-    elif operation == "set_envelope_release":
+    if operation == "set_envelope_release":
         if module_id is None or release is None:
             return {
                 "status": "error",
@@ -1932,7 +1943,7 @@ async def vcv_manager(
         return await send_osc(host, port, "/param", [module_id, 3, value])
 
     # REAPER-VCV Rack Bridge Operations
-    elif operation == "sync_reaper_tempo":
+    if operation == "sync_reaper_tempo":
         # Listen for REAPER tempo changes and apply to VCV Rack
         # This would typically be used with get_received_messages to monitor REAPER
         if reaper_tempo is None:
@@ -1945,19 +1956,19 @@ async def vcv_manager(
         bpm_value = reaper_tempo / 120.0  # Normalize assuming 120 BPM = 1.0
         return await send_osc(host, port, "/param", [module_id or 1, 0, bpm_value])
 
-    elif operation == "start_transport":
+    if operation == "start_transport":
         # Start VCV Rack transport/sequencer
         return await send_osc(host, port, "/transport/play", [])
 
-    elif operation == "stop_transport":
+    if operation == "stop_transport":
         # Stop VCV Rack transport/sequencer
         return await send_osc(host, port, "/transport/stop", [])
 
-    elif operation == "reset_transport":
+    if operation == "reset_transport":
         # Reset VCV Rack transport to beginning
         return await send_osc(host, port, "/transport/reset", [])
 
-    elif operation == "set_transport_position":
+    if operation == "set_transport_position":
         # Set transport position (0.0-1.0 for normalized position)
         if position is None:
             return {
@@ -1966,8 +1977,7 @@ async def vcv_manager(
             }
         return await send_osc(host, port, "/transport/position", [position])
 
-    else:
-        return {"status": "error", "message": f"Unknown operation: {operation}"}
+    return {"status": "error", "message": f"Unknown operation: {operation}"}
 
 
 @server.tool()
@@ -2028,7 +2038,7 @@ async def osc_recorder_manager(
             "filter": filter_address,
         }
 
-    elif operation == "stop_recording":
+    if operation == "stop_recording":
         if recording_name is None:
             return {
                 "status": "error",
@@ -2049,7 +2059,7 @@ async def osc_recorder_manager(
             "message_count": message_count,
         }
 
-    elif operation == "list_recordings":
+    if operation == "list_recordings":
         recordings = []
         for name, messages in osc_recordings.items():
             recordings.append(
@@ -2064,7 +2074,7 @@ async def osc_recorder_manager(
 
         return {"status": "success", "recordings": recordings, "count": len(recordings)}
 
-    elif operation == "playback_recording":
+    if operation == "playback_recording":
         if recording_name is None:
             return {
                 "status": "error",
@@ -2090,9 +2100,7 @@ async def osc_recorder_manager(
         for msg in messages:
             # Send the message (would need async scheduling for precise timing)
             # For now, just send immediately
-            await send_osc(
-                "127.0.0.1", 10001, msg["address"], msg["args"]
-            )  # Default to VCV Rack
+            await send_osc("127.0.0.1", 10001, msg["address"], msg["args"])  # Default to VCV Rack
             sent_count += 1
 
         return {
@@ -2104,7 +2112,7 @@ async def osc_recorder_manager(
             "looping": loop,
         }
 
-    elif operation == "delete_recording":
+    if operation == "delete_recording":
         if recording_name is None:
             return {
                 "status": "error",
@@ -2124,7 +2132,7 @@ async def osc_recorder_manager(
             "recording_name": recording_name,
         }
 
-    elif operation == "get_recording_info":
+    if operation == "get_recording_info":
         if recording_name is None:
             return {
                 "status": "error",
@@ -2160,8 +2168,7 @@ async def osc_recorder_manager(
             "addresses": addresses,
         }
 
-    else:
-        return {"status": "error", "message": f"Unknown operation: {operation}"}
+    return {"status": "error", "message": f"Unknown operation: {operation}"}
 
 
 @server.tool()
@@ -2244,7 +2251,7 @@ async def music_loader_manager(
             "next_action": "Use start_performance to begin playback",
         }
 
-    elif operation == "load_midi_file":
+    if operation == "load_midi_file":
         if midi_file_path is None:
             return {
                 "status": "error",
@@ -2263,16 +2270,12 @@ async def music_loader_manager(
         # Auto-detect instrument needs based on MIDI content
         if instrument_type == "organ":
             # Setup organ-like sound
-            result = await send_osc(
-                vcv_host, vcv_port, "/module/load", ["Bogaudio-WT", 1]
-            )
+            result = await send_osc(vcv_host, vcv_port, "/module/load", ["Bogaudio-WT", 1])
             results.append({"step": "load_organ_module", "result": result})
 
         elif instrument_type == "piano":
             # Setup piano-like sound
-            result = await send_osc(
-                vcv_host, vcv_port, "/module/load", ["PianoModule", 1]
-            )
+            result = await send_osc(vcv_host, vcv_port, "/module/load", ["PianoModule", 1])
             results.append({"step": "load_piano_module", "result": result})
 
         return {
@@ -2281,32 +2284,24 @@ async def music_loader_manager(
             "setup_results": results,
         }
 
-    elif operation == "setup_organ_rig":
+    if operation == "setup_organ_rig":
         # Complete organ rig setup for Bach music
         setup_results = []
 
         # Load Bogaudio WT wavetable oscillator (free, excellent for organs)
-        result = await send_osc(
-            vcv_host, vcv_port, "/module/add", ["Bogaudio-WT", 1, 100, 100]
-        )
+        result = await send_osc(vcv_host, vcv_port, "/module/add", ["Bogaudio-WT", 1, 100, 100])
         setup_results.append({"step": "add_wavetable_osc", "result": result})
 
         # Add envelope generator
-        result = await send_osc(
-            vcv_host, vcv_port, "/module/add", ["Envelope", 2, 200, 100]
-        )
+        result = await send_osc(vcv_host, vcv_port, "/module/add", ["Envelope", 2, 200, 100])
         setup_results.append({"step": "add_envelope", "result": result})
 
         # Add filter
-        result = await send_osc(
-            vcv_host, vcv_port, "/module/add", ["Filter", 3, 300, 100]
-        )
+        result = await send_osc(vcv_host, vcv_port, "/module/add", ["Filter", 3, 300, 100])
         setup_results.append({"step": "add_filter", "result": result})
 
         # Add audio output
-        result = await send_osc(
-            vcv_host, vcv_port, "/module/add", ["AudioOut", 4, 400, 100]
-        )
+        result = await send_osc(vcv_host, vcv_port, "/module/add", ["AudioOut", 4, 400, 100])
         setup_results.append({"step": "add_audio_out", "result": result})
 
         # Connect modules
@@ -2331,15 +2326,13 @@ async def music_loader_manager(
             "setup_results": setup_results,
         }
 
-    elif operation == "start_performance":
+    if operation == "start_performance":
         # Synchronized start across all applications
         results = []
 
         # Start VCV Rack sequencer
         result = await send_osc(vcv_host, vcv_port, "/transport/play", [])
-        results.append(
-            {"app": "vcv_rack", "action": "start_transport", "result": result}
-        )
+        results.append({"app": "vcv_rack", "action": "start_transport", "result": result})
 
         # Start REAPER if available
         result = await send_osc(reaper_host, reaper_port, "/play", [])
@@ -2351,15 +2344,13 @@ async def music_loader_manager(
             "results": results,
         }
 
-    elif operation == "stop_performance":
+    if operation == "stop_performance":
         # Synchronized stop across all applications
         results = []
 
         # Stop VCV Rack sequencer
         result = await send_osc(vcv_host, vcv_port, "/transport/stop", [])
-        results.append(
-            {"app": "vcv_rack", "action": "stop_transport", "result": result}
-        )
+        results.append({"app": "vcv_rack", "action": "stop_transport", "result": result})
 
         # Stop REAPER if available
         result = await send_osc(reaper_host, reaper_port, "/stop", [])
@@ -2371,8 +2362,7 @@ async def music_loader_manager(
             "results": results,
         }
 
-    else:
-        return {"status": "error", "message": f"Unknown operation: {operation}"}
+    return {"status": "error", "message": f"Unknown operation: {operation}"}
 
 
 @server.tool()
@@ -2467,12 +2457,8 @@ async def music_orchestrator(
         # Step 4: Configure REAPER (if available) for additional processing
         if sync_apps:
             reaper_results = []
-            reaper_results.append(
-                await send_osc("127.0.0.1", 8000, "/tempo", [tempo or 120.0])
-            )
-            reaper_results.append(
-                await send_osc("127.0.0.1", 8000, "/track/1/volume", [0.8])
-            )
+            reaper_results.append(await send_osc("127.0.0.1", 8000, "/tempo", [tempo or 120.0]))
+            reaper_results.append(await send_osc("127.0.0.1", 8000, "/track/1/volume", [0.8]))
             results["steps"].append(
                 {"step": "reaper_sync", "status": "success", "results": reaper_results}
             )
@@ -2496,7 +2482,7 @@ async def music_orchestrator(
         )
         return results
 
-    elif operation == "performance_start":
+    if operation == "performance_start":
         results = {"status": "success", "coordinated_apps": []}
 
         # Start all applications in sync
@@ -2514,15 +2500,13 @@ async def music_orchestrator(
             )
 
             # Any other apps could be added here
-            results["message"] = (
-                "🎼 Synchronized performance started across all applications!"
-            )
+            results["message"] = "🎼 Synchronized performance started across all applications!"
         else:
             results["message"] = "Performance start requested but sync_apps=False"
 
         return results
 
-    elif operation == "performance_stop":
+    if operation == "performance_stop":
         results = {"status": "success", "stopped_apps": []}
 
         # Stop all applications
@@ -2537,14 +2521,12 @@ async def music_orchestrator(
             record_result = await osc_recorder_manager(
                 "stop_recording", recording_name=recording_name
             )
-            results["stopped_apps"].append(
-                {"app": "osc_recorder", "result": record_result}
-            )
+            results["stopped_apps"].append({"app": "osc_recorder", "result": record_result})
 
         results["message"] = "🛑 Performance stopped across all applications."
         return results
 
-    elif operation == "organ_voice_setup":
+    if operation == "organ_voice_setup":
         # Configure organ-like voice settings
         results = {"status": "success", "organ_settings": []}
 
@@ -2569,7 +2551,7 @@ async def music_orchestrator(
         results["message"] = "🎹 Organ voice configured with classic drawbar settings!"
         return results
 
-    elif operation == "midi_to_cv":
+    if operation == "midi_to_cv":
         if midi_file_path is None:
             return {
                 "status": "error",
@@ -2604,13 +2586,10 @@ async def music_orchestrator(
             }
         )
 
-        results["message"] = (
-            "🎛️ MIDI file converted to CV sequences for modular synthesis!"
-        )
+        results["message"] = "🎛️ MIDI file converted to CV sequences for modular synthesis!"
         return results
 
-    else:
-        return {"status": "error", "message": f"Unknown operation: {operation}"}
+    return {"status": "error", "message": f"Unknown operation: {operation}"}
 
 
 @server.tool()
@@ -2656,16 +2635,14 @@ async def supercollider_manager(
             }
         add_action = add_action or 0
         target = target or 0
-        return await send_osc(
-            host, port, "/s_new", [def_name, node_id, add_action, target]
-        )
+        return await send_osc(host, port, "/s_new", [def_name, node_id, add_action, target])
 
-    elif operation == "free_node":
+    if operation == "free_node":
         if node_id is None:
             return {"status": "error", "message": "node_id required for free_node"}
         return await send_osc(host, port, "/n_free", [node_id])
 
-    elif operation == "set_control":
+    if operation == "set_control":
         if node_id is None or control_name is None or value is None:
             return {
                 "status": "error",
@@ -2673,8 +2650,7 @@ async def supercollider_manager(
             }
         return await send_osc(host, port, "/n_set", [node_id, control_name, value])
 
-    else:
-        return {"status": "error", "message": f"Unknown operation: {operation}"}
+    return {"status": "error", "message": f"Unknown operation: {operation}"}
 
 
 @server.tool()
@@ -2709,7 +2685,7 @@ async def maxmsp_manager(
             return {"status": "error", "message": "receiver required for send_bang"}
         return await send_osc(host, port, f"/{receiver}", ["bang"])
 
-    elif operation == "send_float":
+    if operation == "send_float":
         if receiver is None or value is None:
             return {
                 "status": "error",
@@ -2717,11 +2693,10 @@ async def maxmsp_manager(
             }
         return await send_osc(host, port, f"/{receiver}", [value])
 
-    elif operation == "toggle_dsp":
+    if operation == "toggle_dsp":
         return await send_osc(host, port, "/dsp/toggle", [])
 
-    else:
-        return {"status": "error", "message": f"Unknown operation: {operation}"}
+    return {"status": "error", "message": f"Unknown operation: {operation}"}
 
 
 @server.tool()
@@ -2765,23 +2740,20 @@ async def resolume_manager(
             host, port, f"/composition/layers/{layer}/clips/{column}/connect", [1]
         )
 
-    elif operation == "set_layer_opacity":
+    if operation == "set_layer_opacity":
         if layer is None or opacity is None:
             return {
                 "status": "error",
                 "message": "layer and opacity required for set_layer_opacity",
             }
-        return await send_osc(
-            host, port, f"/composition/layers/{layer}/opacity", [opacity]
-        )
+        return await send_osc(host, port, f"/composition/layers/{layer}/opacity", [opacity])
 
-    elif operation == "set_bpm":
+    if operation == "set_bpm":
         if bpm is None:
             return {"status": "error", "message": "bpm required for set_bpm"}
         return await send_osc(host, port, "/transport/tempo", [bpm])
 
-    else:
-        return {"status": "error", "message": f"Unknown operation: {operation}"}
+    return {"status": "error", "message": f"Unknown operation: {operation}"}
 
 
 @server.tool()
@@ -2832,18 +2804,14 @@ async def audio_workflow_manager(
         # Sync to VCV Rack (assuming BPM module on module_id)
         if module_id is not None:
             bpm_normalized = bpm / 120.0  # Normalize assuming 120 BPM = 1.0
-            result = await send_osc(
-                vcv_host, vcv_port, "/param", [module_id, 0, bpm_normalized]
-            )
+            result = await send_osc(vcv_host, vcv_port, "/param", [module_id, 0, bpm_normalized])
             results["operations"].append(
                 {"app": "vcv_rack", "operation": "set_bpm", "result": result}
             )
 
         # Sync to REAPER
         result = await send_osc(reaper_host, reaper_port, "/tempo", [bpm])
-        results["operations"].append(
-            {"app": "reaper", "operation": "set_tempo", "result": result}
-        )
+        results["operations"].append({"app": "reaper", "operation": "set_tempo", "result": result})
 
         results["message"] = f"Synced tempo {bpm} BPM across all applications"
 
@@ -2930,7 +2898,7 @@ async def puredata_manager(
             return {"status": "error", "message": "receiver required for send_bang"}
         return await send_osc(host, port, f"/{receiver}", ["bang"])
 
-    elif operation == "send_float":
+    if operation == "send_float":
         if receiver is None or value is None:
             return {
                 "status": "error",
@@ -2938,14 +2906,13 @@ async def puredata_manager(
             }
         return await send_osc(host, port, f"/{receiver}", [value])
 
-    elif operation == "toggle_dsp":
+    if operation == "toggle_dsp":
         return await send_osc(host, port, "/pd/dsp/toggle", [])
 
-    else:
-        return {"status": "error", "message": f"Unknown operation: {operation}"}
+    return {"status": "error", "message": f"Unknown operation: {operation}"}
 
 
 # This allows running the server directly with: python -m oscmcp.mcp_server
 if __name__ == "__main__":
     # Run the FastMCP server with stdio transport
-    server.run(transport="stdio")
+    run_server(server, server_name="OSC-MCP")

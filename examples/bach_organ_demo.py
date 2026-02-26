@@ -25,25 +25,25 @@ Usage:
 """
 
 import asyncio
-import sys
 import os
-from pathlib import Path
+import sys
 
 # Add parent directory to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 try:
     from src.oscmcp.mcp_server import (
-        music_orchestrator,
         audio_workflow_manager,
+        music_orchestrator,
         osc_recorder_manager,
         start_osc_server,
-        stop_osc_server
+        stop_osc_server,
     )
 except ImportError as e:
     print(f"Import error: {e}")
     print("Make sure osc-mcp is properly installed or run from the project root")
     sys.exit(1)
+
 
 async def bach_organ_demo():
     """
@@ -66,10 +66,10 @@ async def bach_organ_demo():
             operation="bach_organ_setup",
             midi_file_path=bach_midi_path,
             organ_module=1,  # Surge XT VCO in slot 1
-            tempo=120.0,     # Appropriate for Bach organ
+            tempo=120.0,  # Appropriate for Bach organ
             sync_apps=True,
             record_performance=True,
-            recording_name="bach_toccata_performance"
+            recording_name="bach_toccata_performance",
         )
 
         print("✅ Rig configuration:")
@@ -79,10 +79,7 @@ async def bach_organ_demo():
 
         # Step 3: Configure organ voice (drawbars, reverb)
         print("\n3. Setting up organ voice characteristics...")
-        voice_result = await music_orchestrator(
-            operation="organ_voice_setup",
-            organ_module=1
-        )
+        voice_result = await music_orchestrator(operation="organ_voice_setup", organ_module=1)
 
         print("✅ Organ voice configured:")
         for setting in voice_result["organ_settings"]:
@@ -92,10 +89,7 @@ async def bach_organ_demo():
         print("\n4. Starting synchronized performance...")
         print("🎼 Get ready for Bach!")
 
-        perf_result = await music_orchestrator(
-            operation="performance_start",
-            sync_apps=True
-        )
+        perf_result = await music_orchestrator(operation="performance_start", sync_apps=True)
 
         print("✅ Performance started:")
         for app in perf_result["coordinated_apps"]:
@@ -114,8 +108,7 @@ async def bach_organ_demo():
         # Step 6: Stop performance and save recording
         print("\n6. Stopping performance and saving recording...")
         stop_result = await music_orchestrator(
-            operation="performance_stop",
-            recording_name="bach_toccata_performance"
+            operation="performance_stop", recording_name="bach_toccata_performance"
         )
 
         print("✅ Performance stopped:")
@@ -125,8 +118,7 @@ async def bach_organ_demo():
         # Step 7: Show recording info
         print("\n7. Performance recording saved:")
         record_info = await osc_recorder_manager(
-            operation="get_recording_info",
-            recording_name="bach_toccata_performance"
+            operation="get_recording_info", recording_name="bach_toccata_performance"
         )
 
         if record_info["status"] == "success":
@@ -139,7 +131,7 @@ async def bach_organ_demo():
         replay_result = await osc_recorder_manager(
             operation="playback_recording",
             recording_name="bach_toccata_performance",
-            playback_speed=0.5
+            playback_speed=0.5,
         )
 
         if replay_result["status"] == "success":
@@ -166,6 +158,7 @@ async def bach_organ_demo():
         cleanup_result = await stop_osc_server(10001)
         print(f"✅ Cleanup: {cleanup_result['message']}")
 
+
 async def quick_bach_test():
     """
     Quick test without full MIDI file - demonstrates the orchestration concept
@@ -178,10 +171,7 @@ async def quick_bach_test():
     try:
         # Configure organ sound
         print("\nSetting up organ synthesis...")
-        result = await music_orchestrator(
-            operation="organ_voice_setup",
-            organ_module=1
-        )
+        result = await music_orchestrator(operation="organ_voice_setup", organ_module=1)
 
         if result["status"] == "success":
             print("✅ Organ voice configured!")
@@ -197,6 +187,7 @@ async def quick_bach_test():
 
     finally:
         await stop_osc_server(10001)
+
 
 def show_free_module_recommendations():
     """
@@ -220,6 +211,7 @@ def show_free_module_recommendations():
     print("\n📥 Install: Open VCV Rack → Library → Search for module name → Add")
     print("🎵 For organs: Surge XT gives professional results!")
 
+
 def show_bach_midi_sources():
     """
     Show where to get free Bach MIDI files
@@ -238,6 +230,7 @@ def show_bach_midi_sources():
         print("15")
 
     print("\n🔍 Search for: 'Bach organ toccata fugue MIDI'")
+
 
 if __name__ == "__main__":
     import argparse

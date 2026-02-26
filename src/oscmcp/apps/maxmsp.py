@@ -4,9 +4,9 @@ This module provides integration with Max/MSP's OSC protocol, enabling
 bidirectional communication for music and multimedia applications.
 """
 
-import logging
 import asyncio
-from typing import Dict, List, Callable, Any
+import logging
+from typing import Any, Callable, Dict, List
 
 from ..osc.client import OSCClient
 from ..osc.server import OSCServer

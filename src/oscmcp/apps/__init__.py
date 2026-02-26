@@ -4,29 +4,29 @@ This package contains applications that use the OSC-MCP bridge for specific use 
 """
 
 from .ableton import AbletonLive
-from .vrchat import VRChatOSC
+from .maxmsp import MaxMSPOSC
+from .midibridge import MIDIBridge, MIDIMapping, MIDIType
+from .oscquery import OSCQueryBrowser, OSCQueryServer, OSCQueryService
+from .puredata import PureDataOSC
+from .resolume import ResolumeArena
+from .supercollider import SuperColliderOSC
 from .touchdesigner import TouchDesignerOSC
 from .vcvrack import VCVController
-from .resolume import ResolumeArena
-from .puredata import PureDataOSC
-from .supercollider import SuperColliderOSC
-from .maxmsp import MaxMSPOSC
-from .oscquery import OSCQueryService, OSCQueryBrowser, OSCQueryServer
-from .midibridge import MIDIBridge, MIDIType, MIDIMapping
+from .vrchat import VRChatOSC
 
 __all__ = [
     "AbletonLive",
-    "VRChatOSC",
-    "TouchDesignerOSC",
-    "VCVController",
-    "ResolumeArena",
-    "PureDataOSC",
-    "SuperColliderOSC",
+    "MIDIBridge",
+    "MIDIMapping",
+    "MIDIType",
     "MaxMSPOSC",
-    "OSCQueryService",
     "OSCQueryBrowser",
     "OSCQueryServer",
-    "MIDIBridge",
-    "MIDIType",
-    "MIDIMapping",
+    "OSCQueryService",
+    "PureDataOSC",
+    "ResolumeArena",
+    "SuperColliderOSC",
+    "TouchDesignerOSC",
+    "VCVController",
+    "VRChatOSC",
 ]

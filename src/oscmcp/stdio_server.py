@@ -33,27 +33,21 @@ class OSCMessageInput(BaseModel):
 
     host: str = Field(..., description="Target hostname or IP address")
     port: int = Field(..., gt=0, le=65535, description="Target UDP port (1-65535)")
-    address: str = Field(
-        ..., pattern=r"^/.*", description="OSC address pattern starting with /"
-    )
+    address: str = Field(..., pattern=r"^/.*", description="OSC address pattern starting with /")
     values: List[Any] = Field(..., description="List of values to send")
 
 
 class OSCListenerInput(BaseModel):
     """Input model for starting OSC listener."""
 
-    port: int = Field(
-        ..., gt=0, le=65535, description="UDP port to listen on (1-65535)"
-    )
+    port: int = Field(..., gt=0, le=65535, description="UDP port to listen on (1-65535)")
     address: str = Field(default="0.0.0.0", description="Network interface to bind to")
 
 
 class OSCEchoTestInput(BaseModel):
     """Input model for OSC echo test."""
 
-    port: int = Field(
-        default=9000, gt=0, le=65535, description="Test port to use (1-65535)"
-    )
+    port: int = Field(default=9000, gt=0, le=65535, description="Test port to use (1-65535)")
 
 
 # Lifespan management removed - FastMCP 2.13.1 doesn't support lifespan decorator
@@ -89,9 +83,7 @@ async def server_lifespan():
 
 
 @server.tool()
-async def send_osc_message(
-    host: str, port: int, address: str, values: List[Any]
-) -> Dict[str, Any]:
+async def send_osc_message(host: str, port: int, address: str, values: List[Any]) -> Dict[str, Any]:
     """Send OSC message to target application.
 
     Args:
@@ -119,7 +111,7 @@ async def send_osc_message(
             "values": values,
         }
     except Exception as e:
-        error_msg = f"Failed to send OSC message: {str(e)}"
+        error_msg = f"Failed to send OSC message: {e!s}"
         logger.error(error_msg)
         return {"status": "error", "message": error_msg, "error": str(e)}
 
@@ -166,7 +158,7 @@ async def start_osc_listener(port: int, address: str = "0.0.0.0") -> Dict[str, A
         }
 
     except Exception as e:
-        error_msg = f"Failed to start OSC listener: {str(e)}"
+        error_msg = f"Failed to start OSC listener: {e!s}"
         logger.error(error_msg)
         return {"status": "error", "message": error_msg, "error": str(e)}
 
@@ -193,9 +185,7 @@ async def test_osc_echo(port: int = 9000) -> Dict[str, Any]:
         test_address = "/test/echo"
         test_values = [1, 2.0, "test"]
 
-        send_result = await send_osc_message(
-            "127.0.0.1", port, test_address, test_values
-        )
+        send_result = await send_osc_message("127.0.0.1", port, test_address, test_values)
         if send_result["status"] != "success":
             return {
                 "status": "error",
@@ -216,7 +206,7 @@ async def test_osc_echo(port: int = 9000) -> Dict[str, Any]:
     except Exception as e:
         return {
             "status": "error",
-            "message": f"OSC echo test failed: {str(e)}",
+            "message": f"OSC echo test failed: {e!s}",
             "error": str(e),
         }
 

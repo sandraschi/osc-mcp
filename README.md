@@ -84,8 +84,28 @@ Pre-configured support for 10+ professional applications:
 - **QLab** - Show control
 - **OSCQuery** - Service discovery
 
-## 📦 Installation
+## 🚀 Installation
 
+### Prerequisites
+- [uv](https://docs.astral.sh/uv/) installed (RECOMMENDED)
+- Python 3.12+
+
+### 📦 Quick Start
+Run immediately via `uvx`:
+```bash
+uvx oscmcp
+```
+
+### 🎯 Claude Desktop Integration
+Add to your `claude_desktop_config.json`:
+```json
+"mcpServers": {
+  "oscmcp": {
+    "command": "uv",
+    "args": ["--directory", "D:/Dev/repos/osc-mcp", "run", "oscmcp"]
+  }
+}
+```
 ### Prerequisites
 - **Python 3.8+** (Python 3.11 recommended)
 - **pip** package manager
@@ -99,7 +119,7 @@ git clone https://github.com/sandraschi/osc-mcp.git
 cd osc-mcp
 
 # Create virtual environment (recommended)
-python -m venv venv
+uv venv
 
 # Activate virtual environment
 # Windows:
@@ -527,3 +547,15 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Made with ❤️ for the creative technology community**
 
 *Control your creative tools with natural language through OSC-MCP*
+
+
+## 🌐 Webapp Dashboard
+
+This MCP server includes a free, premium web interface for monitoring and control.
+By default, the web dashboard runs on port **10766**.
+*(Assigned ports: **10766** (Web dashboard frontend), **10767** (Web dashboard backend))*
+
+To start the webapp:
+1. Navigate to the `webapp` (or `web`, `frontend`) directory.
+2. Run `start.bat` (Windows) or `./start.ps1` (PowerShell).
+3. Open `http://localhost:10766` in your browser.

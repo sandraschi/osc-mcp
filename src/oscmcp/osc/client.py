@@ -5,6 +5,7 @@ This module provides functionality to send OSC messages to OSC servers.
 
 import logging
 from typing import Any
+
 from pythonosc import udp_client
 
 logger = logging.getLogger(__name__)

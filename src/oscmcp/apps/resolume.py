@@ -5,7 +5,7 @@ control of video mixing and composition.
 """
 
 import logging
-from typing import Dict, List, Callable, Any
+from typing import Any, Callable, Dict, List
 
 from ..osc.client import OSCClient
 from ..osc.server import OSCServer
@@ -186,9 +186,7 @@ class ResolumeArena:
         if visible is None:
             self.send(f"/composition/layers/{layer}/toggle")
         else:
-            self.send(
-                f"/composition/layers/{layer}/video/opacity", 1.0 if visible else 0.0
-            )
+            self.send(f"/composition/layers/{layer}/video/opacity", 1.0 if visible else 0.0)
 
     # Clip control
 
@@ -243,9 +241,7 @@ class ResolumeArena:
 
     # Effect control
 
-    def set_effect_parameter(
-        self, layer: int, effect: int, parameter: int, value: float
-    ) -> None:
+    def set_effect_parameter(self, layer: int, effect: int, parameter: int, value: float) -> None:
         """Set an effect parameter.
 
         Args:
@@ -259,9 +255,7 @@ class ResolumeArena:
             float(value),
         )
 
-    def toggle_effect_bypass(
-        self, layer: int, effect: int, bypassed: bool = None
-    ) -> None:
+    def toggle_effect_bypass(self, layer: int, effect: int, bypassed: bool = None) -> None:
         """Toggle or set effect bypass.
 
         Args:

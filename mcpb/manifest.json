@@ -1,96 +1,109 @@
 {
-  "manifest_version": "0.2",
-  "name": "oscmcp",
-  "version": "1.0.0",
-  "description": "Open Source Content Management Platform MCP server for managing CMS platforms through a standardized interface with Austrian precision",
+  "manifest_version": "0.3",
+  "name": "osc-mcp",
+  "version": "0.3.0",
+  "description": "FastMCP 2.14.3 OSC Server with conversational AI and LLM sampling for audio/visual automation",
   "author": {
     "name": "Sandra",
-    "email": "dev@oscmcp.example.com"
+    "email": "dev@osc-mcp.example.com"
   },
   "license": "MIT",
-  "homepage": "https://github.com/sandraschi/oscmcp",
+  "homepage": "https://github.com/sandraschi/osc-mcp",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sandraschi/oscmcp"
+    "url": "https://github.com/sandraschi/osc-mcp"
   },
   "server": {
-    "type": "python",
-    "entry_point": "server/server.py",
-    "mcp_config": {
-      "command": "python",
-      "args": ["server/server.py"],
-      "env": {
-        "PYTHONPATH": "${PWD}",
-        "PYTHONUNBUFFERED": "1",
-        "CMS_API_URL": "${user_config.cms_api_url}",
-        "CMS_API_KEY": "${user_config.cms_api_key}"
-      }
+    "type": "fastmcp",
+    "entry_point": "oscmcp.server:server",
+    "capabilities": ["conversational_tools", "llm_sampling", "osc_automation"],
+    "fastmcp_config": {
+      "transport": "stdio",
+      "sampling_enabled": true,
+      "conversational_returns": true
     }
   },
   "user_config": {
-    "cms_api_url": {
+    "default_host": {
       "type": "string",
-      "title": "CMS API URL",
-      "description": "Base URL for the CMS platform API",
-      "required": true,
-      "default": ""
+      "title": "Default OSC Host",
+      "description": "Default IP address for OSC message sending",
+      "required": false,
+      "default": "127.0.0.1"
     },
-    "cms_api_key": {
+    "default_port": {
+      "type": "integer",
+      "title": "Default OSC Port",
+      "description": "Default UDP port for OSC communication",
+      "required": false,
+      "default": 8000,
+      "min": 1024,
+      "max": 65535
+    },
+    "sampling_provider": {
       "type": "string",
-      "title": "CMS API Key",
-      "description": "API key for CMS platform authentication",
-      "required": true,
-      "sensitive": true,
-      "default": ""
+      "title": "LLM Sampling Provider",
+      "description": "LLM provider for workflow generation (anthropic/openai/auto)",
+      "required": false,
+      "default": "auto",
+      "enum": ["anthropic", "openai", "auto"]
     }
   },
   "tools": [
     {
-      "name": "content_create",
-      "description": "Create new content in the CMS"
+      "name": "send_osc_message",
+      "description": "Send OSC messages with AI validation and conversational guidance",
+      "capabilities": ["conversational", "validation"]
     },
     {
-      "name": "content_update",
-      "description": "Update existing content in the CMS"
+      "name": "start_osc_listener",
+      "description": "Start OSC listeners with intelligent monitoring",
+      "capabilities": ["monitoring", "conversational"]
     },
     {
-      "name": "content_publish",
-      "description": "Publish content in the CMS"
+      "name": "generate_osc_workflow",
+      "description": "Generate complex OSC workflows using LLM sampling",
+      "capabilities": ["llm_sampling", "conversational", "ai_generation"]
     },
     {
-      "name": "content_delete",
-      "description": "Delete content from the CMS"
+      "name": "execute_osc_workflow",
+      "description": "Execute AI-generated OSC workflows with validation",
+      "capabilities": ["execution", "validation", "conversational"]
     },
     {
-      "name": "user_create",
-      "description": "Create new users in the CMS"
-    },
-    {
-      "name": "user_update_permissions",
-      "description": "Update user permissions in the CMS"
-    },
-    {
-      "name": "workflow_status",
-      "description": "Check workflow status of content"
-    },
-    {
-      "name": "platform_sync",
-      "description": "Synchronize content across platforms"
+      "name": "test_osc_echo",
+      "description": "Test OSC connectivity with comprehensive analysis",
+      "capabilities": ["testing", "conversational", "analysis"]
     }
   ],
+  "features": {
+    "conversational_tools": true,
+    "llm_sampling": true,
+    "osc_automation": true,
+    "real_time_monitoring": true,
+    "workflow_generation": true
+  },
   "compatibility": {
     "platforms": ["win32", "darwin", "linux"],
-    "python": ">=3.8"
+    "python": ">=3.8",
+    "fastmcp": ">=2.14.3,<3.0.0"
   },
   "keywords": [
-    "cms",
-    "content-management",
-    "wordpress",
-    "drupal",
-    "automation",
-    "fastapi",
+    "osc",
     "mcp",
-    "austria"
+    "automation",
+    "audio",
+    "visual",
+    "fastmcp",
+    "conversational-ai",
+    "llm-sampling",
+    "real-time",
+    "udp",
+    "music-production",
+    "live-performance",
+    "vj",
+    "dmx",
+    "midi"
   ]
 }
 

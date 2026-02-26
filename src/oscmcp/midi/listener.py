@@ -4,8 +4,9 @@ This module provides functionality to listen for MIDI messages and convert them 
 """
 
 import logging
-import mido
 from typing import Callable, Dict, Optional
+
+import mido
 
 logger = logging.getLogger(__name__)
 
@@ -58,17 +59,13 @@ class MIDIListener:
 
         try:
             if self.port_name:
-                self.port = mido.open_input(
-                    self.port_name, callback=self._handle_message
-                )
+                self.port = mido.open_input(self.port_name, callback=self._handle_message)
             else:
                 # Use the first available input port
                 input_names = mido.get_input_names()
                 if not input_names:
                     raise RuntimeError("No MIDI input ports available")
-                self.port = mido.open_input(
-                    input_names[0], callback=self._handle_message
-                )
+                self.port = mido.open_input(input_names[0], callback=self._handle_message)
 
             self.running = True
             logger.info(f"MIDI listener started on port: {self.port.name}")

@@ -11,11 +11,13 @@ Requirements:
 """
 
 import asyncio
-import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src.oscmcp.osc.client import OSCClient
+
 
 async def vcv_rack_demo():
     """Demonstrate VCV Rack OSC integration."""
@@ -33,7 +35,7 @@ async def vcv_rack_demo():
         print("   Playing middle C (note 60) on channel 1")
         client.send("/midi/note", 1, 60, 100)  # Note on
         await asyncio.sleep(0.5)
-        client.send("/midi/note", 1, 60, 0)   # Note off
+        client.send("/midi/note", 1, 60, 0)  # Note off
 
         print("   Sending CC 7 (volume) value 64")
         client.send("/midi/cc", 1, 7, 64)
@@ -96,6 +98,7 @@ async def vcv_rack_demo():
     except Exception as e:
         print(f"Error during demo: {e}")
         print("Make sure VCV Rack is running with an OSC module installed.")
+
 
 if __name__ == "__main__":
     asyncio.run(vcv_rack_demo())

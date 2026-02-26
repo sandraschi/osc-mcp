@@ -5,7 +5,7 @@ bidirectional communication for modular synthesis control.
 """
 
 import logging
-from typing import Dict, List, Callable, Any
+from typing import Any, Callable, Dict, List
 
 from ..osc.client import OSCClient
 from ..osc.server import OSCServer

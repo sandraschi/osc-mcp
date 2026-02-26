@@ -7,6 +7,7 @@ import asyncio
 import logging
 import time
 from typing import Any, Callable, Dict, List, Optional
+
 from pythonosc import dispatcher
 from pythonosc.osc_server import AsyncIOOSCUDPServer
 
@@ -34,9 +35,7 @@ class OSCMessage:
 class OSCServer:
     """Server for receiving and handling OSC messages."""
 
-    def __init__(
-        self, host: str = "0.0.0.0", port: int = 9000, max_buffer_size: int = 1000
-    ):
+    def __init__(self, host: str = "0.0.0.0", port: int = 9000, max_buffer_size: int = 1000):
         """Initialize the OSC server.
 
         Args:
@@ -142,9 +141,7 @@ class OSCServer:
 
         return messages
 
-    def get_latest_message(
-        self, address_pattern: Optional[str] = None
-    ) -> Optional[Dict[str, Any]]:
+    def get_latest_message(self, address_pattern: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """
         Get the most recent OSC message matching the pattern.
 

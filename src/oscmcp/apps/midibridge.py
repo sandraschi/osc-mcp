@@ -9,7 +9,7 @@ import asyncio
 import logging
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Dict, List, Optional, Callable, Union, Tuple
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import mido
 from mido import Message as MidiMessage
@@ -173,9 +173,7 @@ class MIDIBridge:
                 logger.warning(f"MIDI input port not found: {self.midi_in_port_name}")
         elif input_ports:
             # Auto-connect to first available input port
-            self.midi_in = mido.open_input(
-                input_ports[0], callback=self._handle_midi_message
-            )
+            self.midi_in = mido.open_input(input_ports[0], callback=self._handle_midi_message)
             logger.info(f"Connected to MIDI input: {input_ports[0]}")
 
         # Connect to output port
@@ -396,16 +394,12 @@ class MIDIBridge:
             try:
                 # Get value from OSC message
                 if len(args) <= mapping.osc_arg_index:
-                    logger.warning(
-                        f"OSC message has too few arguments for mapping: {address}"
-                    )
+                    logger.warning(f"OSC message has too few arguments for mapping: {address}")
                     continue
 
                 value = args[mapping.osc_arg_index]
                 if not isinstance(value, (int, float)):
-                    logger.warning(
-                        f"OSC argument {mapping.osc_arg_index} is not a number: {value}"
-                    )
+                    logger.warning(f"OSC argument {mapping.osc_arg_index} is not a number: {value}")
                     continue
 
                 # Apply inversion if needed
@@ -460,29 +454,24 @@ class MIDIBridge:
                             **msg_kwargs,
                         )
                     elif mapping.midi_type == MIDIType.PROGRAM_CHANGE:
-                        msg = MidiMessage(
-                            "program_change", program=int(midi_value), **msg_kwargs
-                        )
+                        msg = MidiMessage("program_change", program=int(midi_value), **msg_kwargs)
                     else:
                         logger.warning(
                             f"Unsupported MIDI type for OSC to MIDI mapping: {mapping.midi_type}"
                         )
                         continue
+                # For messages without a control/note number
+                elif mapping.midi_type == MIDIType.PROGRAM_CHANGE:
+                    msg = MidiMessage("program_change", program=int(midi_value), **msg_kwargs)
+                elif mapping.midi_type == MIDIType.PITCH_BEND:
+                    # Convert from 0-1 to -8192-8191 (14-bit)
+                    pitch_value = int((midi_value * 16383) - 8192)
+                    msg = MidiMessage("pitchwheel", pitch=pitch_value, **msg_kwargs)
                 else:
-                    # For messages without a control/note number
-                    if mapping.midi_type == MIDIType.PROGRAM_CHANGE:
-                        msg = MidiMessage(
-                            "program_change", program=int(midi_value), **msg_kwargs
-                        )
-                    elif mapping.midi_type == MIDIType.PITCH_BEND:
-                        # Convert from 0-1 to -8192-8191 (14-bit)
-                        pitch_value = int((midi_value * 16383) - 8192)
-                        msg = MidiMessage("pitchwheel", pitch=pitch_value, **msg_kwargs)
-                    else:
-                        logger.warning(
-                            f"Unsupported MIDI type for OSC to MIDI mapping without control: {mapping.midi_type}"
-                        )
-                        continue
+                    logger.warning(
+                        f"Unsupported MIDI type for OSC to MIDI mapping without control: {mapping.midi_type}"
+                    )
+                    continue
 
                 # Send MIDI message
                 if self.midi_out and not self.midi_out.closed:

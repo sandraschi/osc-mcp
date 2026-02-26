@@ -1,0 +1,59 @@
+arazzo: 1.0.1
+info:
+  title: OSC Loopback Test Workflow
+  version: 1.0.0
+  description: Verifies OSC communication by starting a server and sending a message to itself.
+
+sourceDescriptions:
+  - name: osc-mcp
+    type: openapi
+    url: http://localhost:10815/openapi.json
+
+workflows:
+  - workflowId: osc_loopback_test
+    description: Start server, send message, and verify reception.
+    inputs:
+      type: object
+      properties:
+        test_port:
+          type: integer
+          default: 9000
+    steps:
+      - stepId: start_server
+        operationId: start_osc_server
+        parameters:
+          - name: port
+            in: body
+            value: "$inputs.test_port"
+      
+      - stepId: send_test_message
+        operationId: send_osc
+        parameters:
+          - name: host
+            in: body
+            value: "127.0.0.1"
+          - name: port
+            in: body
+            value: "$inputs.test_port"
+          - name: address
+            in: body
+            value: "/test/loopback"
+          - name: values
+            in: body
+            value: ["Arazzo Test"]
+        successActions:
+          - type: end
+            condition: "$statusCode == 200"
+
+      - stepId: verify_reception
+        operationId: get_received_messages
+        parameters:
+          - name: port
+            in: body
+            value: "$inputs.test_port"
+          - name: address_pattern
+            in: body
+            value: "/test/loopback"
+    
+    outputs:
+      received_messages: "$steps.verify_reception.outputs"

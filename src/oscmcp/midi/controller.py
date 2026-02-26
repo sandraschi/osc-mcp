@@ -4,8 +4,9 @@ This module provides functionality to send MIDI messages from OSC.
 """
 
 import logging
-import mido
 from typing import Optional
+
+import mido
 
 logger = logging.getLogger(__name__)
 
@@ -76,9 +77,7 @@ class MIDIController:
             channel: MIDI channel (0-15)
         """
         self.connect()
-        msg = mido.Message(
-            "control_change", control=control, value=value, channel=channel
-        )
+        msg = mido.Message("control_change", control=control, value=value, channel=channel)
         self.port.send(msg)
         logger.debug(f"Sent MIDI Control Change: {msg}")
 

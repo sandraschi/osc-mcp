@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Verify OSC connection to OSCelot."""
 
-import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
 from oscmcp.osc.client import OSCClient
 
@@ -50,4 +51,3 @@ print("If OSCelot shows nothing, check:")
 print("  1. OSCelot receive port = 10001")
 print("  2. OSCelot is enabled/active")
 print("  3. Firewall isn't blocking port 10001")
-

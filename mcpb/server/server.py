@@ -1,7 +1,8 @@
-'''MCP server entry point for OSCMCP.
+"""FastMCP 2.14.3 server entry point for OSC-MCP.
 
-This is the MCPB-compliant server wrapper that launches the OSCMCP server.
-'''
+This is the MCPB-compliant server wrapper that launches the OSC-MCP server
+with conversational tools and LLM sampling capabilities.
+"""
 
 import sys
 from pathlib import Path
@@ -12,11 +13,11 @@ sys.path.insert(0, str(parent_dir))
 
 # Import and run main server
 try:
-    from server import main
-except ImportError:
-    # Fallback if server.py not at root
-    from oscmcp.server import main
+    from oscmcp.server import server
 
-if __name__ == '__main__':
-    main()
-
+    # Use FastMCP 2.14.3 server.run() method
+    if __name__ == "__main__":
+        server.run()
+except ImportError as e:
+    print(f"Failed to import OSC-MCP server: {e}", file=sys.stderr)
+    sys.exit(1)
