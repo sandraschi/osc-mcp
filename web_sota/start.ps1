@@ -1,7 +1,7 @@
-# Webapp Start - Standardized SOTA
+﻿# Webapp Start - Standardized SOTA (Auto-Repaired V2.5)
 $WebPort = 10766
-$BackendPort = $WebPort + 1
-$ProjectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+$BackendPort = 10767
+$ProjectRoot = Split-Path -Parent $PSScriptRoot
 
 # 1. Kill any process squatting on the ports
 Write-Host "Checking for port squatters on $WebPort and $BackendPort..." -ForegroundColor Yellow
@@ -15,15 +15,24 @@ foreach ($p in $pids) {
 Set-Location $PSScriptRoot
 if (-not (Test-Path "node_modules")) { npm install }
 
-# 3. Start the Python backend in a new window
+# 3. Start the Python backend (Background)
 Write-Host "Starting Python backend on port $BackendPort ..." -ForegroundColor Cyan
-$env:PYTHONPATH = "$ProjectRoot;$(Join-Path $ProjectRoot 'src')"
-$backendCmd = "Set-Location '$ProjectRoot'; uv run uvicorn oscmcp.server:app --host 127.0.0.1 --port $BackendPort --log-level info"
+
+# uv --project finds package; CWD stays web_sota.
+$backendCmd = "Set-Location '$PSScriptRoot'; uv run --project '$ProjectRoot' uvicorn oscmcp.server:app --host 127.0.0.1 --port $BackendPort --log-level info"
+
 Start-Process powershell -ArgumentList "-NoExit", "-Command", $backendCmd -WindowStyle Normal
 
-# Give backend a moment to bind
-Start-Sleep -Seconds 2
-
 # 4. Run server (Vite dev)
-Write-Host "Starting Vite frontend on port $WebPort ..." -ForegroundColor Cyan
+Write-Host "Starting Vite frontend on port $WebPort ..." -ForegroundColor Green
+
+# 4b. Launch background task to open browser once frontend is ready (Auto-opened by Antigravity)
+$frontendUrl = "http://127.0.0.1:$WebPort/"
+$pollAndOpen = "for (`$i = 0; `$i -lt 60; `$i++) { try { `$null = Invoke-WebRequest -Uri '$frontendUrl' -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop; Start-Process '$frontendUrl'; exit } catch { Start-Sleep -Seconds 1 } }"
+Start-Process powershell -ArgumentList "-NoProfile", "-WindowStyle", "Hidden", "-Command", $pollAndOpen
+
+Write-Host "Browser will open automatically when Vite is ready." -ForegroundColor Gray
 npm run dev -- --port $WebPort --host
+
+
+

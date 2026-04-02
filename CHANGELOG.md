@@ -5,14 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.3.0] - 2026-04-02
 
-### Planned
-- Consolidate duplicate server implementations
-- Persistent storage for OSC client/server state
-- OSC connection health monitoring
-- OSCQuery service discovery
-- Enhanced docstrings with examples for all tools
+### Added
+- **SOTA v13.1 Compliance** - Upgraded documentation and standards for 2026 baseline
+- **SAMPLING Support** - Added conversational tool sampling and generate/execute workflows
+- **Fleet Discovery Integration** - Standardized integration with central MCP webapps registry
+
+### Changed
+- **FastMCP Upgrade** - Bumped minimum version to `3.1.1` (FastMCP 3.1 GA)
+- **Web Dashboard Restoration** - Fully restored `web_sota` dashboard functionality:
+  - Fixed React 19 / Vite 7 build resolution for Shadcn components
+  - Implemented missing `DropdownMenu` component and fixed `Input` imports
+  - Resolved `useCallback` and `useEffect` cascading render patterns in Settings
+  - Fixed TypeScript `unknown` casts for `Badge` component in all orchestration pages
+  - Cleaned up unused imports and variables across the frontend
+- **Port Allocation** - Standardized on port portmanteau: **10766** (Frontend) / **10767** (Backend)
+
+### Fixed
+- **Build Failures** - Restored production build capability (Verified 1833 modules transformed)
+- **Settings Synchronization** - Corrected async state updates for Ollama connection checks
 
 ## [0.2.2] - 2025-12-14
 

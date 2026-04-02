@@ -1,3 +1,34 @@
+# FastMCP 3.1+ (SOTA v13.1) Upgrade Notes
+
+## Overview
+
+This update (April 2026) brings OSC-MCP into compliance with the **SOTA v13.1** standard, featuring **FastMCP 3.1.1** integration and a fully restored, high-performance web dashboard.
+
+## Key Changes
+
+### 1. FastMCP 3.1 GA Integration
+- **LLM Sampling**: Added support for `ctx.sample()` via `generate_osc_workflow` and `execute_osc_workflow`.
+- **Conversational Tools**: All 19 tools now support enriched docstrings and conversational guidance.
+- **Root FastAPI App**: The backend now uses a unified FastAPI root to prevent 404s on discovery endpoints (`llms.txt`, `glama.json`).
+
+### 2. SOTA Dashboard Restoration (`web_sota`)
+- **React 19 / Vite 7 Integration**: Resolved dependency conflicts and build-time resolution errors.
+- **Shadcn/UI Hardening**: Implemented missing components (`DropdownMenu`) and corrected accessibility (`aria-label`).
+- **TypeScript Strictness**: Resolved all `any` and `unknown` type errors in the orchestration layer.
+
+### 3. Port Portmanteau
+Follows the **SOTA Port Registry**:
+- **Frontend**: `10766`
+- **Backend**: `10767`
+
+## Migration Checklist
+- [x] Bump `pyproject.toml` to `fastmcp[all]>=3.1.1`
+- [x] Implement missing Shadcn dependencies in `web_sota`
+- [x] Verify production build (`npm run build`)
+- [x] Update `verification_matrix.json` status
+
+---
+
 # FastMCP 2.13 Upgrade Notes
 
 ## Overview

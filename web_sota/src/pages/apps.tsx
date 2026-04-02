@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Search, Server, ExternalLink, Activity } from 'lucide-react';
@@ -27,7 +27,7 @@ export function Apps() {
             const response = await fetch('http://localhost:10794/api/registry');
             if (response.ok) {
                 const data = await response.json();
-                const formattedApps = Object.entries(data).map(([name, info]: [string, any]) => ({
+                const formattedApps = Object.entries(data as Record<string, { port: number; description?: string }>).map(([name, info]) => ({
                     name,
                     port: info.port,
                     description: info.description || `MCP Server Webapp for ${name}`,
@@ -102,8 +102,10 @@ export function Apps() {
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-slate-500 hover:text-white transition-colors"
+                                        aria-label={`Open ${app.name} in new tab`}
+                                        title={`Open ${app.name}`}
                                     >
-                                        <ExternalLink className="h-4 w-4" />
+                                        <ExternalLink className="h-4 w-4" aria-hidden="true" />
                                     </a>
                                 </div>
                                 <CardDescription className="text-slate-400 line-clamp-2">

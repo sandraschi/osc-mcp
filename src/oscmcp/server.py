@@ -439,6 +439,10 @@ async def list_arazzo_workflows() -> Dict[str, Any]:
     return {"status": "success", "count": len(found_workflows), "workflows": found_workflows}
 
 
+# ASGI app for uvicorn (web_sota/start.ps1): uvicorn oscmcp.server:app
+app = server.http_app()
+
+
 # FastMCP 2.14.3 Server Runner
 # This allows running the server directly with: python -m oscmcp.server
 if __name__ == "__main__":

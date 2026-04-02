@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,23 +12,13 @@ export function Settings() {
     const [selectedModel, setSelectedModel] = useState("");
     const [ollamaStatus, setOllamaStatus] = useState<"checking" | "online" | "offline">("checking");
 
-    useEffect(() => {
-        if (provider === "ollama") {
-            checkOllama();
-        } else {
-            setModels(["gpt-4o", "gpt-3.5-turbo"]); // Mock fallback
-            if (provider === "anthropic") setModels(["claude-3-5-sonnet-20241022", "claude-3-haiku-20240307"]);
-            if (provider === "gemini") setModels(["gemini-2.5-flash", "gemini-3-pro"]);
-        }
-    }, [provider]);
-
-    const checkOllama = async () => {
+    const checkOllama = useCallback(async () => {
         setOllamaStatus("checking");
         try {
             const res = await fetch("http://localhost:11434/api/tags");
             if (res.ok) {
                 const data = await res.json();
-                const modelNames = data.models.map((m: any) => m.name);
+                const modelNames = data.models.map((m: { name: string }) => m.name);
                 setModels(modelNames);
                 if (modelNames.length > 0) setSelectedModel(modelNames[0]);
                 setOllamaStatus("online");
@@ -36,11 +26,37 @@ export function Settings() {
                 setOllamaStatus("offline");
                 setModels([]);
             }
-        } catch (e) {
+        } catch {
             setOllamaStatus("offline");
             setModels([]);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        let isCancelled = false;
+
+        const syncModels = async () => {
+            if (provider === "ollama") {
+                await checkOllama();
+            } else {
+                if (isCancelled) return;
+                const mockModels = (provider === "anthropic") 
+                    ? ["claude-3-5-sonnet-20241022", "claude-3-haiku-20240307"]
+                    : (provider === "gemini")
+                    ? ["gemini-2.5-flash", "gemini-3-pro"]
+                    : ["gpt-4o", "gpt-3.5-turbo"];
+                
+                setModels(mockModels);
+                if (mockModels.length > 0) setSelectedModel(mockModels[0]);
+            }
+        };
+
+        syncModels();
+
+        return () => {
+            isCancelled = true;
+        };
+    }, [provider, checkOllama]);
 
     return (
         <div className="space-y-6">
@@ -62,6 +78,7 @@ export function Settings() {
                                 className="bg-slate-900 border border-slate-800 text-slate-100 rounded-md p-2 outline-none"
                                 value={provider}
                                 onChange={(e) => setProvider(e.target.value)}
+                                title="Select AI Provider"
                             >
                                 <option value="ollama">Ollama (Local Inference)</option>
                                 <option value="openai">OpenAI</option>
@@ -97,6 +114,7 @@ export function Settings() {
                                 value={selectedModel}
                                 onChange={(e) => setSelectedModel(e.target.value)}
                                 disabled={models.length === 0}
+                                title="Select Model"
                             >
                                 {models.length === 0 && <option value="">No models available</option>}
                                 {models.map(m => (

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -144,7 +144,7 @@ export function Tools() {
                                                     if (param.type === 'integer' || param.type === 'number') {
                                                         val = Number(val);
                                                     } else if (param.type === 'array') {
-                                                        try { val = JSON.parse(val); } catch (_e) { }
+                                                        try { val = JSON.parse(val); } catch { }
                                                     }
                                                     setArgs(prev => ({ ...prev, [param.name]: val }));
                                                 }}

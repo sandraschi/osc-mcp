@@ -3,14 +3,14 @@
 **By FlowEngineer sandraschi**
 
 [![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![FastMCP](https://img.shields.io/badge/FastMCP-2.13.1-green.svg)](https://github.com/jlowin/fastmcp)
+[![FastMCP](https://img.shields.io/badge/FastMCP-3.1.1-green.svg)](https://github.com/jlowin/fastmcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Status: Beta](https://img.shields.io/badge/status-beta-orange.svg)](https://github.com/sandraschi/osc-mcp)
+[![Status: Production](https://img.shields.io/badge/status-production-brightgreen.svg)](https://github.com/sandraschi/osc-mcp)
 
-A **FastMCP 2.13 compliant** MCP server that enables natural language control of professional audio/visual applications through the **Open Sound Control (OSC)** protocol. Control Ableton Live, TouchDesigner, VRChat, Max/MSP, and other OSC-enabled applications directly from Claude Desktop or any MCP client.
+A **FastMCP 3.1 compliant (SOTA v13.1)** MCP server that enables natural language control of professional audio/visual applications through the **Open Sound Control (OSC)** protocol and **LLM Sampling**. Control Ableton Live, TouchDesigner, VRChat, Max/MSP, and other OSC-enabled applications directly from Antigravity, Cursor, or Claude Desktop.
 
-> **⚠️ Beta Status:** This project is currently in **beta**. Core functionality is stable and production-ready, but some advanced features may change. We welcome feedback and contributions!
+> **🚀 Status Update (2026-04-02):** Version **0.3.0** is now production ready. The SOTA web dashboard is fully restored and verified.
 
 ## 🎯 What is OSC-MCP?
 
@@ -56,13 +56,14 @@ stats = await get_osc_server_stats(9001)
 ## ✨ Features
 
 ### Core Capabilities
-- ✅ **FastMCP 2.13 Compliant** - Latest protocol support with server lifespans and caching
+- ✅ **FastMCP 3.1+ (SOTA)** - Latest protocol support with sampling and conversational tools
 - ✅ **Bidirectional Communication** - Send and receive OSC messages
+- ✅ **LLM Sampling** - Autonomous workflow generation and execution
 - ✅ **Response Caching** - 60-second TTL for improved performance
 - ✅ **Input Validation** - Pydantic models with port range and address pattern validation
 - ✅ **Resource Management** - Automatic cleanup with server lifespan hooks
 - ✅ **Multiple Transports** - Stdio (primary) and HTTP options
-- ✅ **Extensive Documentation** - Comprehensive docstrings with examples
+- ✅ **Aesthetic Dashboard** - SOTA v13.1 compliant monitoring interface
 
 ### Protocol Support
 - 🔌 **OSC 1.0 Protocol** - Full Open Sound Control specification support
@@ -549,13 +550,18 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 *Control your creative tools with natural language through OSC-MCP*
 
 
-## 🌐 Webapp Dashboard
+## 🌐 Webapp Dashboard (SOTA)
 
-This MCP server includes a free, premium web interface for monitoring and control.
+OSC-MCP includes a premium, verified SOTA web interface for monitoring and control.
 By default, the web dashboard runs on port **10766**.
-*(Assigned ports: **10766** (Web dashboard frontend), **10767** (Web dashboard backend))*
 
-To start the webapp:
-1. Navigate to the `webapp` (or `web`, `frontend`) directory.
+**Verified SOTA Ports:**
+- **Frontend**: `10766`
+- **Backend**: `10767`
+
+To start the dashboard:
+1. Navigate to the `web_sota` directory.
 2. Run `start.bat` (Windows) or `./start.ps1` (PowerShell).
 3. Open `http://localhost:10766` in your browser.
+
+*The dashboard features real-time OSC monitoring, application-specific controllers, and integrated chat for natural language command orchestration.*

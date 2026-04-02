@@ -29,7 +29,7 @@ export function MaxMSP() {
                     if (data.content[0].type === 'text') {
                         resultStatus = JSON.parse(data.content[0].text);
                     }
-                } catch (_e) {
+                } catch {
                     resultStatus = { status: 'raw', message: data.content[0].text };
                 }
             }
@@ -50,7 +50,7 @@ export function MaxMSP() {
                     <h1 className="text-3xl font-bold tracking-tight">Max/MSP & Pure Data</h1>
                     {status && (
                         <Badge variant={status.status === 'error' ? 'destructive' : status.status === 'success' ? 'default' : 'secondary'} className="font-mono text-xs">
-                            {status.status}
+                            {String(status.status)}
                         </Badge>
                     )}
                 </div>
@@ -129,7 +129,7 @@ export function MaxMSP() {
                     <CardContent>
                         <div className="h-[120px] w-full bg-slate-900/50 rounded flex items-end justify-between p-2 gap-1 border border-slate-800">
                             {[40, 60, 45, 90, 100, 80, 30, 45, 50, 70, 85, 40, 20, 60].map((h, i) => (
-                                <div key={i} className="bg-emerald-500/40 w-full rounded-t-sm" style={{ height: `${h}%` }}></div>
+                                <div key={i} className="bg-emerald-500/40 w-full rounded-t-sm" style={{ height: `${h}%` } as React.CSSProperties}></div>
                             ))}
                         </div>
                     </CardContent>

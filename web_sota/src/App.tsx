@@ -11,10 +11,10 @@ import { VRChat } from '@/pages/vrchat';
 import { MaxMSP } from '@/pages/maxmsp';
 import { SuperCollider } from '@/pages/supercollider';
 import { Tools } from '@/pages/tools';
-import { Apps } from './apps';
-import { Help } from './help';
-import { Status } from './status';
-import { VCVRack } from './vcvrack';
+import { Apps } from '@/pages/apps';
+import { Help } from '@/pages/help';
+import { Status } from '@/pages/status';
+import { VCVRack } from '@/pages/vcvrack';
 
 function App() {
   return (

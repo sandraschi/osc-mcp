@@ -1,13 +1,10 @@
 import {
-    Github,
     Bot,
     Brain,
     LayoutGrid,
-    Scan,
     MonitorPlay,
     Box,
     Activity,
-    Archive
 } from 'lucide-react';
 
 export interface AppEntry {
