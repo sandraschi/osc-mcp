@@ -10,20 +10,20 @@
 
 A **FastMCP 3.1 compliant (SOTA v13.1)** MCP server that enables natural language control of professional audio/visual applications through the **Open Sound Control (OSC)** protocol and **LLM Sampling**. Control Ableton Live, TouchDesigner, VRChat, Max/MSP, and other OSC-enabled applications directly from Antigravity, Cursor, or Claude Desktop.
 
-> **🚀 Status Update (2026-04-02):** Version **0.3.0** is now production ready. The SOTA web dashboard is fully restored and verified.
+> ** Status Update (2026-04-02):** Version **0.3.0** is now production ready. The SOTA web dashboard is fully restored and verified.
 
-## 🎯 What is OSC-MCP?
+##  What is OSC-MCP?
 
 OSC-MCP bridges the gap between AI language models and professional creative tools by translating natural language commands into OSC messages. It enables:
 
-- 🎵 **DAW Control**: Automate Ableton Live, Logic Pro, and other music production software
-- 🎨 **Visual Programming**: Control TouchDesigner, Resolume Arena, and VJ software
-- 🎮 **VR/Gaming**: Manipulate VRChat avatars and game parameters
-- 🔊 **Audio Synthesis**: Program SuperCollider, Max/MSP, and Pure Data
-- 🎛️ **Hardware Control**: Interface with MIDI controllers and modular synths (VCV Rack)
-- 🌐 **Creative Coding**: Integrate with Processing, openFrameworks, and other platforms
+-  **DAW Control**: Automate Ableton Live, Logic Pro, and other music production software
+-  **Visual Programming**: Control TouchDesigner, Resolume Arena, and VJ software
+-  **VR/Gaming**: Manipulate VRChat avatars and game parameters
+-  **Audio Synthesis**: Program SuperCollider, Max/MSP, and Pure Data
+-  **Hardware Control**: Interface with MIDI controllers and modular synths (VCV Rack)
+-  **Creative Coding**: Integrate with Processing, openFrameworks, and other platforms
 
-## 🔄 Bidirectional OSC Communication
+##  Bidirectional OSC Communication
 
 OSC-MCP now supports **true bidirectional OSC communication**:
 
@@ -53,24 +53,24 @@ stats = await get_osc_server_stats(9001)
 - **TouchDesigner**: Receive operator value updates
 - **Any OSC app**: Capture and respond to user interactions
 
-## ✨ Features
+##  Features
 
 ### Core Capabilities
-- ✅ **FastMCP 3.1+ (SOTA)** - Latest protocol support with sampling and conversational tools
-- ✅ **Bidirectional Communication** - Send and receive OSC messages
-- ✅ **LLM Sampling** - Autonomous workflow generation and execution
-- ✅ **Response Caching** - 60-second TTL for improved performance
-- ✅ **Input Validation** - Pydantic models with port range and address pattern validation
-- ✅ **Resource Management** - Automatic cleanup with server lifespan hooks
-- ✅ **Multiple Transports** - Stdio (primary) and HTTP options
-- ✅ **Aesthetic Dashboard** - SOTA v13.1 compliant monitoring interface
+-  **FastMCP 3.1+ (SOTA)** - Latest protocol support with sampling and conversational tools
+-  **Bidirectional Communication** - Send and receive OSC messages
+-  **LLM Sampling** - Autonomous workflow generation and execution
+-  **Response Caching** - 60-second TTL for improved performance
+-  **Input Validation** - Pydantic models with port range and address pattern validation
+-  **Resource Management** - Automatic cleanup with server lifespan hooks
+-  **Multiple Transports** - Stdio (primary) and HTTP options
+-  **Aesthetic Dashboard** - SOTA v13.1 compliant monitoring interface
 
 ### Protocol Support
-- 🔌 **OSC 1.0 Protocol** - Full Open Sound Control specification support
-- 📡 **UDP Transport** - Low-latency, fire-and-forget messaging
-- 🔀 **Multiple Receivers** - Send to multiple applications simultaneously
-- 📥 **OSC Server** - Receive messages from applications
-- 🏷️ **Type Support** - Int, float, string, bool values
+-  **OSC 1.0 Protocol** - Full Open Sound Control specification support
+-  **UDP Transport** - Low-latency, fire-and-forget messaging
+-  **Multiple Receivers** - Send to multiple applications simultaneously
+-  **OSC Server** - Receive messages from applications
+-  **Type Support** - Int, float, string, bool values
 
 ### Application Integration
 Pre-configured support for 10+ professional applications:
@@ -85,19 +85,19 @@ Pre-configured support for 10+ professional applications:
 - **QLab** - Show control
 - **OSCQuery** - Service discovery
 
-## 🚀 Installation
+##  Installation
 
 ### Prerequisites
 - [uv](https://docs.astral.sh/uv/) installed (RECOMMENDED)
 - Python 3.12+
 
-### 📦 Quick Start
+###  Quick Start
 Run immediately via `uvx`:
 ```bash
 uvx oscmcp
 ```
 
-### 🎯 Claude Desktop Integration
+###  Claude Desktop Integration
 Add to your `claude_desktop_config.json`:
 ```json
 "mcpServers": {
@@ -148,7 +148,7 @@ Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/
 }
 ```
 
-## 🚀 Usage
+##  Usage
 
 ### Starting the Server
 
@@ -234,28 +234,28 @@ OSC-MCP provides **19 tools** (11 managers + 8 core) for comprehensive bidirecti
 
 #### Application Manager Tools (11 portmanteau tools)
 
-**🎛️ `vcv_manager`** - VCV Rack modular synthesis (18+ operations)
+** `vcv_manager`** - VCV Rack modular synthesis (18+ operations)
 - MIDI control, CV modulation, parameter automation, module-specific controls
 - Operations: `set_parameter`, `trigger`, `send_cv`, `set_light`, `play_midi`, `set_vco_frequency`, etc.
 
-**🎼 `osc_recorder_manager`** - OSC automation recording (6 operations)
+** `osc_recorder_manager`** - OSC automation recording (6 operations)
 - Record and playback OSC message sequences
 - Operations: `start_recording`, `stop_recording`, `playback_recording`, etc.
 
-**🎵 `music_orchestrator`** - High-level music production workflows (6 operations)
+** `music_orchestrator`** - High-level music production workflows (6 operations)
 - Complex multi-step orchestration (Bach organ setup, performance control)
 - Operations: `bach_organ_setup`, `performance_start`, `organ_voice_setup`, etc.
 
-**🎵 `ableton_manager`** - Ableton Live DAW (6 operations)
+** `ableton_manager`** - Ableton Live DAW (6 operations)
 - Playback control, tempo, clip triggering, mixing
 - Operations: `play`, `stop`, `set_tempo`, `play_clip`, `set_volume`, `set_pan`
 
-**🎮 `vrchat_manager`** - VRChat avatar control (3 basic operations)
+** `vrchat_manager`** - VRChat avatar control (3 basic operations)
 - Parameter setting, chat, haptic feedback
 - Operations: `set_parameter`, `send_chat`, `trigger_haptic`
-- ⚠️ **Note:** For advanced VRChat features (avatar management, monitoring, complex animations), use the dedicated [vrchat-mcp](https://github.com/sandraschi/vrchat-mcp) repository
+-  **Note:** For advanced VRChat features (avatar management, monitoring, complex animations), use the dedicated [vrchat-mcp](https://github.com/sandraschi/vrchat-mcp) repository
 
-**🎨 `touchdesigner_manager`** - TouchDesigner visual programming (40+ operations)
+** `touchdesigner_manager`** - TouchDesigner visual programming (40+ operations)
 - Comprehensive operator control across all families: COMP, CHOP, SOP, TOP, DAT, MAT
 - Basic controls: parameters, constants, sliders, toggles, buttons
 - CHOP: audio processing, waveforms, filters, math operations
@@ -265,29 +265,29 @@ OSC-MCP provides **19 tools** (11 managers + 8 core) for comprehensive bidirecti
 - MAT: materials, shaders, lighting
 - COMP: containers, UI components, windows
 
-**🔊 `supercollider_manager`** - SuperCollider audio synthesis (3 operations)
+** `supercollider_manager`** - SuperCollider audio synthesis (3 operations)
 - Synth creation, node management, control setting
 - Operations: `create_synth`, `free_node`, `set_control`
 
-**🎼 `maxmsp_manager`** - Max/MSP audio/visual programming (3 operations)
+** `maxmsp_manager`** - Max/MSP audio/visual programming (3 operations)
 - Message sending, DSP control
 - Operations: `send_bang`, `send_float`, `toggle_dsp`
 
-**📺 `resolume_manager`** - Resolume Arena VJ software (3 operations)
+** `resolume_manager`** - Resolume Arena VJ software (3 operations)
 - Clip playback, layer control, tempo
 - Operations: `play_clip`, `set_layer_opacity`, `set_bpm`
 
-**🎛️ `puredata_manager`** - Pure Data visual programming (3 operations)
+** `puredata_manager`** - Pure Data visual programming (3 operations)
 - Message routing, DSP control
 - Operations: `send_bang`, `send_float`, `toggle_dsp`
 
-**🎵 `audio_workflow_manager`** - Multi-app orchestration (5 operations)
+** `audio_workflow_manager`** - Multi-app orchestration (5 operations)
 - Coordinate transport across REAPER, VCV Rack, etc.
 - Operations: `sync_tempo_all`, `start_all`, `stop_all`, etc.
 
 **See [Application Tools Analysis](docs/APPLICATION_TOOLS_ANALYSIS.md) for complete documentation.**
 
-## 🎵 Application-Specific Usage
+##  Application-Specific Usage
 
 ### Ableton Live (port 11000)
 ```python
@@ -370,32 +370,32 @@ messages = await get_received_messages(10002, address_pattern="/param")  # Get k
 latest = await get_latest_message(10002)                           # Get most recent change
 ```
 
-## 🔧 Development
+##  Development
 
 ### Project Structure
 ```
 osc-mcp/
-├── src/oscmcp/
-│   ├── mcp_server.py        # Primary stdio server (19 tools)
-│   ├── stdio_server.py      # Alternative stdio server
-│   ├── server.py            # HTTP server variant
-│   ├── osc/                 # OSC protocol implementation
-│   │   ├── client.py        # OSC client for sending
-│   │   └── server.py        # OSC server with message buffering
-│   ├── apps/                # Application integrations (10+ apps)
-│   │   ├── ableton.py
-│   │   ├── touchdesigner.py
-│   │   ├── vrchat.py
-│   │   └── ... (7 more)
-│   └── midi/                # MIDI integration
-├── tests/                   # Test suite
-├── docs/                    # Documentation (84+ files)
-│   ├── APPLICATION_TOOLS_ANALYSIS.md  # Tool analysis
-│   ├── PROJECT_ANALYSIS.md  # Project maturity assessment
-│   └── adn-notes/           # ADN documentation for each controlee
-├── pyproject.toml          # Project configuration
-├── UPGRADE_NOTES.md        # FastMCP 2.13 migration guide
-└── README.md               # This file
+ src/oscmcp/
+    mcp_server.py        # Primary stdio server (19 tools)
+    stdio_server.py      # Alternative stdio server
+    server.py            # HTTP server variant
+    osc/                 # OSC protocol implementation
+       client.py        # OSC client for sending
+       server.py        # OSC server with message buffering
+    apps/                # Application integrations (10+ apps)
+       ableton.py
+       touchdesigner.py
+       vrchat.py
+       ... (7 more)
+    midi/                # MIDI integration
+ tests/                   # Test suite
+ docs/                    # Documentation (84+ files)
+    APPLICATION_TOOLS_ANALYSIS.md  # Tool analysis
+    PROJECT_ANALYSIS.md  # Project maturity assessment
+    adn-notes/           # ADN documentation for each controlee
+ pyproject.toml          # Project configuration
+ UPGRADE_NOTES.md        # FastMCP 2.13 migration guide
+ README.md               # This file
 ```
 
 ### Running Tests
@@ -425,9 +425,9 @@ flake8 src tests
 mypy src
 ```
 
-## 📚 Documentation
+##  Documentation
 
-- **[UPGRADE_NOTES.md](UPGRADE_NOTES.md)** - FastMCP 2.10 → 2.13 migration guide
+- **[UPGRADE_NOTES.md](UPGRADE_NOTES.md)** - FastMCP 2.10  2.13 migration guide
 - **[docs/PROJECT_ANALYSIS.md](docs/PROJECT_ANALYSIS.md)** - Project maturity assessment and beta status analysis
 - **[docs/APPLICATION_TOOLS_ANALYSIS.md](docs/APPLICATION_TOOLS_ANALYSIS.md)** - Comprehensive analysis of application-specific tools
 - **[.claude/REPO_STATUS_AND_ROADMAP.md](.claude/REPO_STATUS_AND_ROADMAP.md)** - Repository status and improvement roadmap
@@ -444,19 +444,19 @@ All MCP tools have comprehensive docstrings including:
 - Security considerations
 - Troubleshooting guides
 
-## 🔄 What's New in FastMCP 2.13
+##  What's New in FastMCP 2.13
 
 OSC-MCP has been upgraded to FastMCP 2.13 with:
 
-✅ **Server Lifespan Hooks** - Proper resource cleanup on shutdown
-✅ **Response Caching** - 60s TTL for improved performance
-✅ **Pydantic Validation** - Port ranges (1-65535) and address patterns
-✅ **Enhanced Documentation** - 400+ lines of comprehensive docstrings
-✅ **Production Ready** - Resource management and error handling
+ **Server Lifespan Hooks** - Proper resource cleanup on shutdown
+ **Response Caching** - 60s TTL for improved performance
+ **Pydantic Validation** - Port ranges (1-65535) and address patterns
+ **Enhanced Documentation** - 400+ lines of comprehensive docstrings
+ **Production Ready** - Resource management and error handling
 
 See [UPGRADE_NOTES.md](UPGRADE_NOTES.md) for full migration details.
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 ### Common Issues
 
@@ -486,35 +486,35 @@ netstat -an | grep 8000  # Replace with your port
 pip install --upgrade "fastmcp[all]>=2.13.1"
 ```
 
-## 🗺️ Roadmap
+##  Roadmap
 
 See [.claude/REPO_STATUS_AND_ROADMAP.md](.claude/REPO_STATUS_AND_ROADMAP.md) for detailed roadmap.
 
 ### Phase 1: Beta Stabilization (Current)
-- ✅ FastMCP 2.13 compliance
-- ✅ Server lifespan hooks
-- ✅ Response caching
-- ✅ Comprehensive docstrings
-- ✅ Beta status achieved
-- 🎯 Gather community feedback
-- 🎯 Address beta feedback
-- 🎯 Expand test coverage
+-  FastMCP 2.13 compliance
+-  Server lifespan hooks
+-  Response caching
+-  Comprehensive docstrings
+-  Beta status achieved
+-  Gather community feedback
+-  Address beta feedback
+-  Expand test coverage
 
 ### Phase 2: Enhanced Functionality
-- ✅ Message buffer with `get_received_messages()` - **Implemented!**
-- 🎯 Consolidate server implementations
-- 🎯 OSC connection health monitoring
-- 🎯 Persistent storage for OSC state
-- 🎯 Circuit breaker for unreachable hosts
-- 🎯 Metrics and telemetry
+-  Message buffer with `get_received_messages()` - **Implemented!**
+-  Consolidate server implementations
+-  OSC connection health monitoring
+-  Persistent storage for OSC state
+-  Circuit breaker for unreachable hosts
+-  Metrics and telemetry
 
 ### Phase 3: Application Integration
-- ✅ Expose app-specific tools (Ableton, VRChat, etc.) - **19 tools implemented!**
-- 🎯 Expand tool coverage for existing applications
-- 🎯 OSCQuery service discovery
-- 🎯 MIDI bridge tools
+-  Expose app-specific tools (Ableton, VRChat, etc.) - **19 tools implemented!**
+-  Expand tool coverage for existing applications
+-  OSCQuery service discovery
+-  MIDI bridge tools
 
-## 🤝 Contributing
+##  Contributing
 
 Contributions welcome! Please:
 
@@ -526,18 +526,18 @@ Contributions welcome! Please:
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
-## 📄 License
+##  License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 - **[FastMCP](https://github.com/jlowin/fastmcp)** - MCP protocol framework by @jlowin
 - **[python-osc](https://github.com/attwad/python-osc)** - OSC protocol implementation
 - **[python-rtmidi](https://github.com/SpotlightKid/python-rtmidi)** - MIDI integration
 - **OSC Community** - For the Open Sound Control protocol
 
-## 📞 Support
+##  Support
 
 - **GitHub Issues**: https://github.com/sandraschi/osc-mcp/issues
 - **FastMCP Docs**: https://gofastmcp.com
@@ -545,12 +545,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Made with ❤️ for the creative technology community**
+**Made with  for the creative technology community**
 
 *Control your creative tools with natural language through OSC-MCP*
 
 
-## 🌐 Webapp Dashboard (SOTA)
+##  Webapp Dashboard (SOTA)
 
 OSC-MCP includes a premium, verified SOTA web interface for monitoring and control.
 By default, the web dashboard runs on port **10766**.
