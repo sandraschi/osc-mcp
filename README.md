@@ -1,5 +1,7 @@
 # OSC-MCP - Open Sound Control MCP Server
 
+[![FastMCP Version](https://img.shields.io/badge/FastMCP-3.1.0-blue?style=flat-square&logo=python&logoColor=white)](https://github.com/sandraschi/fastmcp) [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) [![Linted with Biome](https://img.shields.io/badge/Linted_with-Biome-60a5fa?style=flat-square&logo=biome&logoColor=white)](https://biomejs.dev/) [![Built with Just](https://img.shields.io/badge/Built_with-Just-000000?style=flat-square&logo=gnu-bash&logoColor=white)](https://github.com/casey/just)
+
 **By FlowEngineer sandraschi**
 
 [![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
@@ -8,7 +10,7 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Status: Production](https://img.shields.io/badge/status-production-brightgreen.svg)](https://github.com/sandraschi/osc-mcp)
 
-A **FastMCP 3.1 compliant (SOTA v13.1)** MCP server that enables natural language control of professional audio/visual applications through the **Open Sound Control (OSC)** protocol and **LLM Sampling**. Control Ableton Live, TouchDesigner, VRChat, Max/MSP, and other OSC-enabled applications directly from Antigravity, Cursor, or Claude Desktop.
+A **FastMCP 3.1.0 compliant (SOTA v13.1)** MCP server that enables natural language control of professional audio/visual applications through the **Open Sound Control (OSC)** protocol and **LLM Sampling**. Control Ableton Live, TouchDesigner, VRChat, Max/MSP, and other OSC-enabled applications directly from Antigravity, Cursor, or Claude Desktop.
 
 > ** Status Update (2026-04-02):** Version **0.3.0** is now production ready. The SOTA web dashboard is fully restored and verified.
 
@@ -56,7 +58,7 @@ stats = await get_osc_server_stats(9001)
 ##  Features
 
 ### Core Capabilities
--  **FastMCP 3.1+ (SOTA)** - Latest protocol support with sampling and conversational tools
+-  **FastMCP 3.1.0+ (SOTA)** - Latest protocol support with sampling and conversational tools
 -  **Bidirectional Communication** - Send and receive OSC messages
 -  **LLM Sampling** - Autonomous workflow generation and execution
 -  **Response Caching** - 60-second TTL for improved performance
@@ -394,7 +396,7 @@ osc-mcp/
     PROJECT_ANALYSIS.md  # Project maturity assessment
     adn-notes/           # ADN documentation for each controlee
  pyproject.toml          # Project configuration
- UPGRADE_NOTES.md        # FastMCP 2.13 migration guide
+ UPGRADE_NOTES.md        # FastMCP 3.1.0 migration guide
  README.md               # This file
 ```
 
@@ -427,7 +429,7 @@ mypy src
 
 ##  Documentation
 
-- **[UPGRADE_NOTES.md](UPGRADE_NOTES.md)** - FastMCP 2.10  2.13 migration guide
+- **[UPGRADE_NOTES.md](UPGRADE_NOTES.md)** - FastMCP 3.1.0  2.13 migration guide
 - **[docs/PROJECT_ANALYSIS.md](docs/PROJECT_ANALYSIS.md)** - Project maturity assessment and beta status analysis
 - **[docs/APPLICATION_TOOLS_ANALYSIS.md](docs/APPLICATION_TOOLS_ANALYSIS.md)** - Comprehensive analysis of application-specific tools
 - **[.claude/REPO_STATUS_AND_ROADMAP.md](.claude/REPO_STATUS_AND_ROADMAP.md)** - Repository status and improvement roadmap
@@ -444,9 +446,9 @@ All MCP tools have comprehensive docstrings including:
 - Security considerations
 - Troubleshooting guides
 
-##  What's New in FastMCP 2.13
+##  What's New in FastMCP 3.1.0
 
-OSC-MCP has been upgraded to FastMCP 2.13 with:
+OSC-MCP has been upgraded to FastMCP 3.1.0 with:
 
  **Server Lifespan Hooks** - Proper resource cleanup on shutdown
  **Response Caching** - 60s TTL for improved performance
@@ -482,7 +484,7 @@ netstat -an | grep 8000  # Replace with your port
 
 **FastMCP import errors**
 ```bash
-# Upgrade to FastMCP 2.13.1
+# Upgrade to FastMCP 3.1.0
 pip install --upgrade "fastmcp[all]>=2.13.1"
 ```
 
@@ -491,7 +493,7 @@ pip install --upgrade "fastmcp[all]>=2.13.1"
 See [.claude/REPO_STATUS_AND_ROADMAP.md](.claude/REPO_STATUS_AND_ROADMAP.md) for detailed roadmap.
 
 ### Phase 1: Beta Stabilization (Current)
--  FastMCP 2.13 compliance
+-  FastMCP 3.1.0 compliance
 -  Server lifespan hooks
 -  Response caching
 -  Comprehensive docstrings
@@ -526,6 +528,17 @@ Contributions welcome! Please:
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
+
+## 🛡️ Industrial Quality Stack
+
+This project adheres to **SOTA 14.1** industrial standards for high-fidelity agentic orchestration:
+
+- **Python (Core)**: [Ruff](https://astral.sh/ruff) for linting and formatting. Zero-tolerance for `print` statements in core handlers (`T201`).
+- **Webapp (UI)**: [Biome](https://biomejs.dev/) for sub-millisecond linting. Strict `noConsoleLog` enforcement.
+- **Protocol Compliance**: Hardened `stdout/stderr` isolation to ensure crash-resistant JSON-RPC communication.
+- **Automation**: [Justfile](./justfile) recipes for all fleet operations (`just lint`, `just fix`, `just dev`).
+- **Security**: Automated audits via `bandit` and `safety`.
+
 ##  License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -540,7 +553,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ##  Support
 
 - **GitHub Issues**: https://github.com/sandraschi/osc-mcp/issues
-- **FastMCP Docs**: https://gofastmcp.com
+- **FastMCP Docs**: https://goFastMCP 3.1.0com
 - **OSC Specification**: http://opensoundcontrol.org/spec-1_0
 
 ---

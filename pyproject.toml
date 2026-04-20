@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "oscmcp"
 version = "0.3.0"
-description = "FastMCP 2.14.3 OSC Server with conversational AI and LLM sampling"
+description = "FastMCP 3.1.0 OSC Server with conversational AI and LLM sampling"
 readme = "README.md"
 requires-python = ">=3.12"
 license = {text = "MIT"}
@@ -72,7 +72,7 @@ skips = ["B101", "B601"]  # Skip assert checks and shell usage
 [tool.fastmcp]
 name = "OSC-MCP"
 version = "0.3.0"
-description = "FastMCP 3.1+ OSC Server with conversational AI and LLM sampling"
+description = "FastMCP 3.1.0+ OSC Server with conversational AI and LLM sampling"
 entry_point = "oscmcp.server:server"
 transport = "stdio"
 capabilities = ["conversational_tools", "llm_sampling", "osc_automation"]
