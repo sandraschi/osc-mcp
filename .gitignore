@@ -191,3 +191,5 @@ site/
 # Temporary files
 *.tmp
 *.bak
+
+_dashboard/

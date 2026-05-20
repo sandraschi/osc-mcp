@@ -1,6 +1,11 @@
 # OSC-MCP - Open Sound Control MCP Server
 
-[![FastMCP Version](https://img.shields.io/badge/FastMCP-3.1.0-blue?style=flat-square&logo=python&logoColor=white)](https://github.com/sandraschi/fastmcp) [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) [![Linted with Biome](https://img.shields.io/badge/Linted_with-Biome-60a5fa?style=flat-square&logo=biome&logoColor=white)](https://biomejs.dev/) [![Built with Just](https://img.shields.io/badge/Built_with-Just-000000?style=flat-square&logo=gnu-bash&logoColor=white)](https://github.com/casey/just)
+<p align="center">
+  <a href="https://github.com/casey/just"><img src="https://img.shields.io/badge/just-ready_to_go-7c5cfc?style=flat-square&logo=just&logoColor=white" alt="Just"></a>
+  <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff"></a>
+  <a href="https://python.org"><img src="https://img.shields.io/badge/Python-3.13+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python"></a>
+  <a href="https://github.com/PrefectHQ/fastmcp"><img src="https://img.shields.io/badge/FastMCP-3.2-7c5cfc?style=flat-square" alt="FastMCP"></a>
+</p>
 
 **By FlowEngineer sandraschi**
 
@@ -13,6 +18,20 @@
 A **FastMCP 3.1.0 compliant (SOTA v13.1)** MCP server that enables natural language control of professional audio/visual applications through the **Open Sound Control (OSC)** protocol and **LLM Sampling**. Control Ableton Live, TouchDesigner, VRChat, Max/MSP, and other OSC-enabled applications directly from Antigravity, Cursor, or Claude Desktop.
 
 > ** Status Update (2026-04-02):** Version **0.3.0** is now production ready. The SOTA web dashboard is fully restored and verified.
+
+## Quick Start
+
+```powershell
+git clone https://github.com/sandraschi/osc-mcp
+cd osc-mcp
+just
+```
+
+This opens an interactive dashboard showing all available commands. Run `just bootstrap` to install dependencies, then `just serve` or `just dev` to start.
+
+### Manual Setup
+
+If you don't have `just` installed:
 
 ##  What is OSC-MCP?
 
