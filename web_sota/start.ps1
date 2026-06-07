@@ -18,6 +18,8 @@ $FleetStart = Initialize-FleetStartMode @PSBoundParameters
 Enter-FleetHeadlessConsole -Headless:$Headless -BackendOnly:$BackendOnly
 Stop-FleetPortSquatters -Ports @($WebPort, $BackendPort) -Label "osc-mcp"
 
+if (-not (Assert-FleetPortsAvailable -Ports @($WebPort, $BackendPort) -Label "osc-mcp")) { exit 1 }
+
 Set-Location $ProjectRoot
 uv sync --project $ProjectRoot
 if ($LASTEXITCODE -ne 0) {
@@ -57,4 +59,5 @@ if (-not $NoBrowser) {
 
 Write-Host "Starting Vite frontend on port $WebPort ..." -ForegroundColor Green
 npm run dev -- --port $WebPort --host 127.0.0.1 --strictPort
+
 
