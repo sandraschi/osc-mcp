@@ -1,51 +1,60 @@
-Param([switch]$Headless)
-$SkipFrontend = $Headless
+﻿param(
+    [switch]$Headless,
+    [switch]$BackendOnly,
+    [switch]$NoBrowser
+)
 
-# --- SOTA Headless Standard ---
-if ($Headless -and ($Host.UI.RawUI.WindowTitle -notmatch 'Hidden')) {
-    Start-Process pwsh -ArgumentList '-NoProfile', '-File', $PSCommandPath, '-Headless' -WindowStyle Hidden
-    exit
-}
-$WindowStyle = if ($Headless) { 'Hidden' } else { 'Normal' }
-# ------------------------------
-
-# Webapp Start - Standardized SOTA (Auto-Repaired V2.5)
 $WebPort = 10766
 $BackendPort = 10767
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 
-# 1. Kill any process squatting on the ports
-Write-Host "Checking for port squatters on $WebPort and $BackendPort..." -ForegroundColor Yellow
-$pids = Get-NetTCPConnection -LocalPort $WebPort, $BackendPort -ErrorAction SilentlyContinue | Where-Object { $_.OwningProcess -gt 4 } | Select-Object -ExpandProperty OwningProcess -Unique
-foreach ($p in $pids) {
-    Write-Host "Found squatter (PID: $p). Terminating..." -ForegroundColor Red
-    try { Stop-Process -Id $p -Force -ErrorAction Stop } catch { Write-Host "Warning: Could not terminate PID $p." -ForegroundColor Gray }
+$FleetStartPath = Join-Path $ProjectRoot "scripts\FleetStartMode.ps1"
+if (-not (Test-Path -LiteralPath $FleetStartPath)) {
+    Write-Host "ERROR: Missing vendored launcher helper: $FleetStartPath" -ForegroundColor Red
+    exit 1
+}
+. $FleetStartPath
+$FleetStart = Initialize-FleetStartMode @PSBoundParameters
+Enter-FleetHeadlessConsole -Headless:$Headless -BackendOnly:$BackendOnly
+Stop-FleetPortSquatters -Ports @($WebPort, $BackendPort) -Label "osc-mcp"
+
+Set-Location $ProjectRoot
+uv sync --project $ProjectRoot
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "ERROR: uv sync failed for osc-mcp." -ForegroundColor Red
+    exit 1
 }
 
-# 2. Setup
 Set-Location $PSScriptRoot
 if (-not (Test-Path "node_modules")) { npm install }
 
-# 3. Start the Python backend (Background)
 Write-Host "Starting Python backend on port $BackendPort ..." -ForegroundColor Cyan
+$backendCmd = "Set-Location '$ProjectRoot'; uv run --project '$ProjectRoot' uvicorn oscmcp.api.main:app --host 127.0.0.1 --port $BackendPort --log-level info"
+Start-Process powershell -ArgumentList "-NoProfile", "-WindowStyle", "Normal", "-Command", $backendCmd
 
-# uv --project finds package; CWD stays web_sota.
-$backendCmd = "Set-Location '$PSScriptRoot'; uv run --project '$ProjectRoot' uvicorn oscmcp.server:app --host 127.0.0.1 --port $BackendPort --log-level info"
+$healthUrl = "http://127.0.0.1:$BackendPort/health"
+$attempt = 0
+while ($attempt -lt 45) {
+    try {
+        $null = Invoke-WebRequest -Uri $healthUrl -UseBasicParsing -TimeoutSec 3 -ErrorAction Stop
+        Write-Host "Backend ready at $healthUrl" -ForegroundColor Green
+        break
+    } catch {
+        Start-Sleep -Seconds 2
+        $attempt++
+    }
+}
 
-Start-Process powershell -ArgumentList "-NoExit", "-Command", $backendCmd -WindowStyle Normal
+if (-not $FleetStart.RunFrontend) {
+    while ($true) { Start-Sleep -Seconds 60 }
+}
 
-# 4. Run server (Vite dev)
+if (-not $NoBrowser) {
+    $frontendUrl = "http://127.0.0.1:$WebPort/"
+    $pollAndOpen = "for (`$i = 0; `$i -lt 60; `$i++) { try { `$null = Invoke-WebRequest -Uri '$frontendUrl' -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop; Start-Process '$frontendUrl'; exit } catch { Start-Sleep -Seconds 1 } }"
+    Start-Process powershell -ArgumentList "-NoProfile", "-WindowStyle", "Hidden", "-Command", $pollAndOpen
+}
+
 Write-Host "Starting Vite frontend on port $WebPort ..." -ForegroundColor Green
-
-# 4b. Launch background task to open browser once frontend is ready (Auto-opened by Antigravity)
-$frontendUrl = "http://127.0.0.1:$WebPort/"
-$pollAndOpen = "for (`$i = 0; `$i -lt 60; `$i++) { try { `$null = Invoke-WebRequest -Uri '$frontendUrl' -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop; Start-Process '$frontendUrl'; exit } catch { Start-Sleep -Seconds 1 } }"
-Start-Process powershell -ArgumentList "-NoProfile", "-WindowStyle", "Hidden", "-Command", $pollAndOpen
-
-Write-Host "Browser will open automatically when Vite is ready." -ForegroundColor Gray
-if ($SkipFrontend) { return }
-npm run dev -- --port $WebPort --host
-
-
-
+npm run dev -- --port $WebPort --host 127.0.0.1 --strictPort
 
