@@ -1,62 +1,50 @@
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
+
+function LLMSettings() {
+    const [providers, setProviders] = useState<Record<string, {name:string}[]>>({});
+    const [selectedProvider, setSelectedProvider] = useState("ollama");
+    const [selectedModel, setSelectedModel] = useState("");
+    useEffect(() => {
+        fetch("/api/llm/providers").then(r => r.json()).then(d => {
+            setProviders(d);
+            const savedP = localStorage.getItem("llm_provider") || "ollama";
+            const savedM = localStorage.getItem("llm_model") || "";
+            setSelectedProvider(savedP);
+            const models = d[savedP === "ollama" ? "ollama" : "lm_studio"] || [];
+            setSelectedModel(savedM && models.some((m:{name:string}) => m.name === savedM) ? savedM : (models[0]?.name || ""));
+        }).catch(() => {
+            setProviders({ ollama: [{name:"llama3.2:3b"}] });
+            setSelectedModel(localStorage.getItem("llm_model") || "llama3.2:3b");
+        });
+    }, []);
+    const save = (p:string, m:string) => { localStorage.setItem("llm_provider", p); localStorage.setItem("llm_model", m); };
+    const models = providers[selectedProvider === "ollama" ? "ollama" : "lm_studio"] || [];
+    return (
+        <div className="space-y-3">
+            <select
+                className="h-9 w-full rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-200"
+                value={selectedProvider}
+                onChange={(e) => { setSelectedProvider(e.target.value); save(e.target.value, ""); }}
+            >
+                <option value="ollama">Ollama</option>
+                <option value="lm_studio">LM Studio</option>
+            </select>
+            <select
+                className="h-9 w-full rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-200"
+                value={selectedModel}
+                onChange={(e) => { setSelectedModel(e.target.value); save(selectedProvider, e.target.value); }}
+            >
+                {models.map((m) => <option key={m.name} value={m.name}>{m.name}</option>)}
+            </select>
+        </div>
+    );
+}
 
 export function Settings() {
-    const [provider, setProvider] = useState("ollama");
-    const [apiKey, setApiKey] = useState("");
-    const [models, setModels] = useState<string[]>([]);
-    const [selectedModel, setSelectedModel] = useState("");
-    const [ollamaStatus, setOllamaStatus] = useState<"checking" | "online" | "offline">("checking");
-
-    const checkOllama = useCallback(async () => {
-        setOllamaStatus("checking");
-        try {
-            const res = await fetch("http://localhost:11434/api/tags");
-            if (res.ok) {
-                const data = await res.json();
-                const modelNames = data.models.map((m: { name: string }) => m.name);
-                setModels(modelNames);
-                if (modelNames.length > 0) setSelectedModel(modelNames[0]);
-                setOllamaStatus("online");
-            } else {
-                setOllamaStatus("offline");
-                setModels([]);
-            }
-        } catch {
-            setOllamaStatus("offline");
-            setModels([]);
-        }
-    }, []);
-
-    useEffect(() => {
-        let isCancelled = false;
-
-        const syncModels = async () => {
-            if (provider === "ollama") {
-                await checkOllama();
-            } else {
-                if (isCancelled) return;
-                const mockModels = (provider === "anthropic") 
-                    ? ["claude-3-5-sonnet-20241022", "claude-3-haiku-20240307"]
-                    : (provider === "gemini")
-                    ? ["gemini-2.5-flash", "gemini-3-pro"]
-                    : ["gpt-4o", "gpt-3.5-turbo"];
-                
-                setModels(mockModels);
-                if (mockModels.length > 0) setSelectedModel(mockModels[0]);
-            }
-        };
-
-        syncModels();
-
-        return () => {
-            isCancelled = true;
-        };
-    }, [provider, checkOllama]);
 
     return (
         <div className="space-y-6">
@@ -69,63 +57,10 @@ export function Settings() {
                 <Card className="border-slate-800 bg-slate-950/50">
                     <CardHeader>
                         <CardTitle className="text-white">LLM Provider Configuration</CardTitle>
-                        <CardDescription className="text-slate-400">Configure the AI engine for orchestrations and workflow generations</CardDescription>
+                        <CardDescription className="text-slate-400">Provider and model selection</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="grid gap-2">
-                            <Label className="text-slate-300">AI Provider</Label>
-                            <select
-                                className="bg-slate-900 border border-slate-800 text-slate-100 rounded-md p-2 outline-none"
-                                value={provider}
-                                onChange={(e) => setProvider(e.target.value)}
-                                title="Select AI Provider"
-                            >
-                                <option value="ollama">Ollama (Local Inference)</option>
-                                <option value="openai">OpenAI</option>
-                                <option value="anthropic">Anthropic</option>
-                                <option value="gemini">Google Gemini</option>
-                            </select>
-                        </div>
-
-                        {provider !== "ollama" && (
-                            <div className="grid gap-2">
-                                <Label className="text-slate-300">API Key</Label>
-                                <Input
-                                    type="password"
-                                    className="bg-slate-900 border-slate-800 text-slate-100 placeholder:text-slate-500"
-                                    placeholder="Enter your API Key"
-                                    value={apiKey}
-                                    onChange={(e) => setApiKey(e.target.value)}
-                                />
-                            </div>
-                        )}
-
-                        <div className="grid gap-2">
-                            <Label className="text-slate-300 flex items-center justify-between">
-                                Model Selection
-                                {provider === "ollama" && (
-                                    <Badge variant={ollamaStatus === "online" ? "default" : ollamaStatus === "checking" ? "secondary" : "destructive"}>
-                                        {ollamaStatus === "online" ? "Ollama Online" : ollamaStatus === "checking" ? "Checking..." : "Ollama Offline"}
-                                    </Badge>
-                                )}
-                            </Label>
-                            <select
-                                className="bg-slate-900 border border-slate-800 text-slate-100 rounded-md p-2 outline-none disabled:opacity-50"
-                                value={selectedModel}
-                                onChange={(e) => setSelectedModel(e.target.value)}
-                                disabled={models.length === 0}
-                                title="Select Model"
-                            >
-                                {models.length === 0 && <option value="">No models available</option>}
-                                {models.map(m => (
-                                    <option key={m} value={m}>{m}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <Button variant="default" className="w-full mt-4 bg-blue-600 hover:bg-blue-500 text-white border-none">
-                            Save LLM Settings
-                        </Button>
+                    <CardContent>
+                        <LLMSettings />
                     </CardContent>
                 </Card>
 
