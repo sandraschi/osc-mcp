@@ -1,109 +1,51 @@
 {
-  "manifest_version": "0.3",
-  "name": "osc-mcp",
+  "manifest_version": "0.2",
+  "name": "oscmcp",
   "version": "0.3.0",
-  "description": "FastMCP 2.14.3 OSC Server with conversational AI and LLM sampling for audio/visual automation",
-  "author": {
-    "name": "Sandra",
-    "email": "dev@osc-mcp.example.com"
-  },
-  "license": "MIT",
-  "homepage": "https://github.com/sandraschi/osc-mcp",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/sandraschi/osc-mcp"
-  },
+  "description": "FastMCP 3.1.0 OSC Server with conversational AI and LLM sampling",
+  "author": { "name": "sandraschi" },
   "server": {
-    "type": "fastmcp",
-    "entry_point": "oscmcp.server:server",
-    "capabilities": ["conversational_tools", "llm_sampling", "osc_automation"],
-    "fastmcp_config": {
-      "transport": "stdio",
-      "sampling_enabled": true,
-      "conversational_returns": true
-    }
-  },
-  "user_config": {
-    "default_host": {
-      "type": "string",
-      "title": "Default OSC Host",
-      "description": "Default IP address for OSC message sending",
-      "required": false,
-      "default": "127.0.0.1"
-    },
-    "default_port": {
-      "type": "integer",
-      "title": "Default OSC Port",
-      "description": "Default UDP port for OSC communication",
-      "required": false,
-      "default": 8000,
-      "min": 1024,
-      "max": 65535
-    },
-    "sampling_provider": {
-      "type": "string",
-      "title": "LLM Sampling Provider",
-      "description": "LLM provider for workflow generation (anthropic/openai/auto)",
-      "required": false,
-      "default": "auto",
-      "enum": ["anthropic", "openai", "auto"]
+    "type": "python",
+    "entry_point": "run_server.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": ["run","--directory","${PWD}","run_server.py"],
+      "env": {
+        "PYTHONPATH": "${PWD}/src",
+        "PYTHONUNBUFFERED": "1"
+      }
     }
   },
   "tools": [
-    {
-      "name": "send_osc_message",
-      "description": "Send OSC messages with AI validation and conversational guidance",
-      "capabilities": ["conversational", "validation"]
-    },
-    {
-      "name": "start_osc_listener",
-      "description": "Start OSC listeners with intelligent monitoring",
-      "capabilities": ["monitoring", "conversational"]
-    },
-    {
-      "name": "generate_osc_workflow",
-      "description": "Generate complex OSC workflows using LLM sampling",
-      "capabilities": ["llm_sampling", "conversational", "ai_generation"]
-    },
-    {
-      "name": "execute_osc_workflow",
-      "description": "Execute AI-generated OSC workflows with validation",
-      "capabilities": ["execution", "validation", "conversational"]
-    },
-    {
-      "name": "test_osc_echo",
-      "description": "Test OSC connectivity with comprehensive analysis",
-      "capabilities": ["testing", "conversational", "analysis"]
-    }
-  ],
-  "features": {
-    "conversational_tools": true,
-    "llm_sampling": true,
-    "osc_automation": true,
-    "real_time_monitoring": true,
-    "workflow_generation": true
-  },
-  "compatibility": {
-    "platforms": ["win32", "darwin", "linux"],
-    "python": ">=3.8",
-    "fastmcp": ">=2.14.3,<3.0.0"
-  },
-  "keywords": [
-    "osc",
-    "mcp",
-    "automation",
-    "audio",
-    "visual",
-    "fastmcp",
-    "conversational-ai",
-    "llm-sampling",
-    "real-time",
-    "udp",
-    "music-production",
-    "live-performance",
-    "vj",
-    "dmx",
-    "midi"
+    { "name": "send_osc", "description": "send_osc" },
+    { "name": "start_osc_server", "description": "start_osc_server" },
+    { "name": "stop_osc_server", "description": "stop_osc_server" },
+    { "name": "get_received_messages", "description": "get_received_messages" },
+    { "name": "get_latest_message", "description": "get_latest_message" },
+    { "name": "get_osc_server_stats", "description": "get_osc_server_stats" },
+    { "name": "clear_osc_message_buffer", "description": "clear_osc_message_buffer" },
+    { "name": "test_osc_echo", "description": "test_osc_echo" },
+    { "name": "ableton_manager", "description": "ableton_manager" },
+    { "name": "vrchat_manager", "description": "vrchat_manager" },
+    { "name": "touchdesigner_manager", "description": "touchdesigner_manager" },
+    { "name": "vcv_manager", "description": "vcv_manager" },
+    { "name": "osc_recorder_manager", "description": "osc_recorder_manager" },
+    { "name": "music_loader_manager", "description": "music_loader_manager" },
+    { "name": "music_orchestrator", "description": "music_orchestrator" },
+    { "name": "supercollider_manager", "description": "supercollider_manager" },
+    { "name": "maxmsp_manager", "description": "maxmsp_manager" },
+    { "name": "resolume_manager", "description": "resolume_manager" },
+    { "name": "audio_workflow_manager", "description": "audio_workflow_manager" },
+    { "name": "puredata_manager", "description": "puredata_manager" },
+    { "name": "send_osc_message", "description": "send_osc_message" },
+    { "name": "start_osc_listener", "description": "start_osc_listener" },
+    { "name": "generate_osc_workflow", "description": "generate_osc_workflow" },
+    { "name": "execute_osc_workflow", "description": "execute_osc_workflow" },
+    { "name": "list_arazzo_workflows", "description": "list_arazzo_workflows" },
+    { "name": "main_stdio", "description": "main(stdio)" },
+    { "name": "main_http", "description": "main(http)" },
+    { "name": "main_sse", "description": "main(sse)" },
+    { "name": "health", "description": "health" },
+    { "name": "stats", "description": "stats" }
   ]
 }
-
