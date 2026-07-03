@@ -24,7 +24,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-    "fastmcp[all]>=3.1.0,<4",
+    "fastmcp[all]>=3.4.2,<4",
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.32.0",
     "python-osc>=1.8.0",
