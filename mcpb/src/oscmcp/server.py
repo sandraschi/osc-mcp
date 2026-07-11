@@ -14,7 +14,7 @@ import yaml
 from typing import Any, Dict, List, Optional, Union
 from pathlib import Path
 
-from fastmcp import FastMCP
+from fastmcp import FastMCP, Context
 from pydantic import BaseModel, Field
 from pythonosc import dispatcher, osc_server
 from pythonosc.udp_client import SimpleUDPClient
@@ -85,7 +85,9 @@ class OSCEchoTestInput(BaseModel):
 
 
 @server.tool()
-async def send_osc_message(host: str, port: int, address: str, values: List[Any]) -> Dict[str, Any]:
+async def send_osc_message(
+    host: str, port: int, address: str, values: List[Any], ctx: Context
+) -> Dict[str, Any]:
     """Send OSC message to target application with conversational guidance.
 
     This tool sends OSC messages and provides intelligent follow-up suggestions
@@ -96,12 +98,7 @@ async def send_osc_message(host: str, port: int, address: str, values: List[Any]
         port: Target port number
         address: OSC address pattern (e.g., "/volume")
         values: List of values to send (will be converted to appropriate OSC types)
-
-    Returns:
-        Conversational response with status, suggestions, and next steps
-
-    Example:
-        await send_osc_message("127.0.0.1", 8000, "/volume", [0.8])
+        ctx: FastMCP Context for native client-side LLM sampling
     """
     try:
         client = SimpleUDPClient(host, port)
@@ -109,7 +106,7 @@ async def send_osc_message(host: str, port: int, address: str, values: List[Any]
         logger.info("Sent OSC message to %s:%s - %s: %s", host, port, address, values)
 
         # Validate the message using LLM sampling
-        validation = await osc_sampler.validate_osc_message(address, values)
+        validation = await osc_sampler.validate_osc_message(address, values, ctx)
 
         # Generate conversational response
         response = {
@@ -217,6 +214,7 @@ async def start_osc_listener(port: int, address: str = "0.0.0.0") -> Dict[str, A
 @server.tool()
 async def generate_osc_workflow(
     workflow_description: str,
+    ctx: Context,
     target_application: Optional[str] = None,
     host: str = "127.0.0.1",
     port: int = 8000,
@@ -229,20 +227,15 @@ async def generate_osc_workflow(
 
     Args:
         workflow_description: Natural language description of the desired workflow
+        ctx: FastMCP Context for native client-side LLM sampling
         target_application: Target application name (optional, for better suggestions)
         host: Default target host
         port: Default target port
-
-    Returns:
-        Conversational response with generated workflow and implementation guidance
-
-    Example:
-        await generate_osc_workflow("Create a volume fade-out over 5 seconds", "Ableton Live")
     """
     try:
         # Use sampling to generate the workflow
         workflow = await osc_sampler.generate_osc_workflow(
-            workflow_description, target_application, host, port
+            workflow_description, ctx, [target_application] if target_application else None
         )
 
         # Enhance with conversational elements
@@ -284,7 +277,7 @@ async def generate_osc_workflow(
 
 @server.tool()
 async def execute_osc_workflow(
-    workflow_data: Dict[str, Any], validate_first: bool = True
+    workflow_data: Dict[str, Any], ctx: Context, validate_first: bool = True
 ) -> Dict[str, Any]:
     """Execute a generated OSC workflow with intelligent validation.
 
@@ -293,19 +286,13 @@ async def execute_osc_workflow(
 
     Args:
         workflow_data: Workflow dictionary from generate_osc_workflow
+        ctx: FastMCP Context for native client-side LLM sampling
         validate_first: Whether to validate workflow before execution
-
-    Returns:
-        Conversational response with execution results and analysis
-
-    Example:
-        workflow = await generate_osc_workflow("Fade volume to 0 over 3 seconds")
-        result = await execute_osc_workflow(workflow["workflow"])
     """
     try:
         # Validate workflow if requested
         if validate_first:
-            validation = await osc_sampler.validate_osc_workflow(workflow_data)
+            validation = await osc_sampler.validate_osc_workflow(workflow_data, ctx)
             if not validation.get("valid", False):
                 return {
                     "status": "validation_failed",
@@ -362,17 +349,15 @@ async def execute_osc_workflow(
 
 
 @server.tool()
-async def test_osc_echo(port: int = 9000) -> Dict[str, Any]:
+async def test_osc_echo(ctx: Context, port: int = 9000) -> Dict[str, Any]:
     """Test OSC functionality with conversational guidance and intelligent validation.
 
     This enhanced test function uses LLM sampling to validate OSC connectivity
     and provides detailed troubleshooting guidance.
 
     Args:
+        ctx: FastMCP Context for native client-side LLM sampling
         port: Test port to use (default: 9000)
-
-    Returns:
-        Conversational response with test results and next steps
     """
     # Start the server
     server_result = await start_osc_listener(port)
@@ -394,7 +379,7 @@ async def test_osc_echo(port: int = 9000) -> Dict[str, Any]:
     test_address = "/test/echo"
     test_values = [1, 2.0, "three", True]
 
-    send_result = await send_osc_message("127.0.0.1", port, test_address, test_values)
+    send_result = await send_osc_message("127.0.0.1", port, test_address, test_values, ctx)
     if send_result["status"] != "success":
         return {
             "status": "error",
@@ -410,7 +395,7 @@ async def test_osc_echo(port: int = 9000) -> Dict[str, Any]:
         }
 
     # Use LLM sampling to analyze the test
-    test_analysis = await osc_sampler.analyze_osc_test(server_result, send_result)
+    test_analysis = await osc_sampler.analyze_osc_test(server_result, send_result, ctx)
 
     # Generate comprehensive conversational response
     return {
@@ -605,6 +590,94 @@ async def set_vrchat_expression(
         }
     except Exception as e:
         return {"status": "error", "message": f"Failed to set expression: {e}"}
+
+
+# FastMCP 3.4.2 Native Prompts
+PROMPTS_DIR = Path(__file__).parent.parent.parent / "assets" / "prompts"
+
+def read_prompt_file(name: str) -> str:
+    path = PROMPTS_DIR / f"{name}.md"
+    if path.exists():
+        return path.read_text(encoding="utf-8")
+    alt_path = Path(__file__).parent.parent / "assets" / "prompts" / f"{name}.md"
+    if alt_path.exists():
+        return alt_path.read_text(encoding="utf-8")
+    return f"Prompt {name} not found"
+
+@server.prompt(description="Core system prompts for guiding LLM interactions with OSC-MCP")
+def system() -> str:
+    return read_prompt_file("system")
+
+@server.prompt(description="Prompts for managing dynamic OSC contents and parameters")
+def content_management() -> str:
+    return read_prompt_file("content_management")
+
+@server.prompt(description="Prompts for designing and executing multi-step OSC workflows")
+def workflow_automation() -> str:
+    return read_prompt_file("workflow_automation")
+
+@server.prompt(description="Guidelines and specs for integrating with third-party software")
+def platform_integration() -> str:
+    return read_prompt_file("platform_integration")
+
+@server.prompt(description="Troubleshooting checklists and networking guides")
+def troubleshooting() -> str:
+    return read_prompt_file("troubleshooting")
+
+
+# FastMCP 3.4.2 Prefab UI Components
+from prefab_ui.app import PrefabApp
+from prefab_ui.components import DataTable, DataTableColumn
+
+@server.tool(app=True)
+def show_active_mappings() -> PrefabApp:
+    """Display an interactive data table of active MIDI and reactive trigger mappings."""
+    from .routing.triggers import global_trigger_engine
+    from .apps.midi_tools import _active_bridge
+
+    mappings_data = []
+
+    # Add reactive triggers
+    for t in global_trigger_engine.get_triggers():
+        mappings_data.append({
+            "type": "Reactive Trigger",
+            "source": t["pattern"],
+            "target": t["tool"],
+            "details": str(t["template"])
+        })
+
+    # Add MIDI mappings
+    if _active_bridge:
+        for m in _active_bridge.midi_to_osc_mappings:
+            mappings_data.append({
+                "type": "MIDI -> OSC",
+                "source": f"Ch {m.channel} CC {m.control}",
+                "target": m.osc_address,
+                "details": f"Range: {m.osc_range}"
+            })
+        for addr, mappings in _active_bridge.osc_to_midi_mappings.items():
+            for m in mappings:
+                mappings_data.append({
+                    "type": "OSC -> MIDI",
+                    "source": addr,
+                    "target": f"Ch {m.channel} CC {m.control}",
+                    "details": f"Range: {m.midi_range}"
+                })
+
+    if not mappings_data:
+        mappings_data = [{"type": "None", "source": "N/A", "target": "N/A", "details": "No active mappings found"}]
+
+    with PrefabApp() as app:
+        DataTable(
+            data=mappings_data,
+            columns=[
+                DataTableColumn(name="type", label="Mapping Type"),
+                DataTableColumn(name="source", label="Source Signal"),
+                DataTableColumn(name="target", label="Target Destination"),
+                DataTableColumn(name="details", label="Configuration Details")
+            ]
+        )
+    return app
 
 
 # ASGI app for uvicorn (web_sota/start.ps1): uvicorn oscmcp.server:app
