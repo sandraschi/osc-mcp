@@ -20,12 +20,34 @@ from pythonosc import dispatcher, osc_server
 from pythonosc.udp_client import SimpleUDPClient
 
 from .sampling import osc_sampler
+from .apps.dynamic_mapper import DynamicToolMapper
+from .apps.midi_tools import register_midi_tools
+from .routing.triggers import global_trigger_engine
 
 # Set up logging
 logger = logging.getLogger(__name__)
 
 # Create FastMCP instance with conversational capabilities
 server = FastMCP("OSC-MCP")
+
+# Register MIDI Bridge tools on server
+register_midi_tools(server)
+
+# Setup Reactive Triggers server reference
+global_trigger_engine.set_server(server)
+
+# Instantiate Dynamic OSCQuery Mapper
+dynamic_mapper = DynamicToolMapper(server)
+
+@server.lifespan()
+async def lifespan(app):
+    # Startup
+    logger.info("OSC-MCP Lifespan: starting discovery mapper...")
+    await dynamic_mapper.start()
+    yield
+    # Shutdown
+    logger.info("OSC-MCP Lifespan: stopping discovery mapper...")
+    await dynamic_mapper.stop()
 
 # Import legacy/integration tools from mcp_server
 from . import mcp_server
@@ -150,8 +172,8 @@ async def start_osc_listener(port: int, address: str = "0.0.0.0") -> Dict[str, A
     def default_handler(addr: str, *args: Any) -> None:
         """Handle incoming OSC messages."""
         logger.info(f"Received OSC message: {addr} {args}")
-        # Here you can add custom message handling logic
-        # For example, you could emit events or call other functions
+        # Process message in reactive triggers
+        global_trigger_engine.handle_message(addr, args)
 
     # Set default handler for all addresses
     osc_dispatcher.set_default_handler(default_handler)
@@ -440,6 +462,149 @@ async def list_arazzo_workflows() -> Dict[str, Any]:
             logger.error(f"Error parsing workflow {yaml_file}: {e}")
 
     return {"status": "success", "count": len(found_workflows), "workflows": found_workflows}
+
+
+@server.tool()
+async def oscquery_list_services() -> Dict[str, Any]:
+    """List dynamically discovered OSCQuery devices on the local network."""
+    try:
+        services = dynamic_mapper.get_services()
+        return {"status": "success", "count": len(services), "services": services}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@server.tool()
+async def oscquery_get_parameters(service_name: str) -> Dict[str, Any]:
+    """Retrieve full parameter tree for a discovered OSCQuery device.
+
+    Args:
+        service_name: Name of the discovered service.
+    """
+    try:
+        params = await dynamic_mapper.get_service_parameters(service_name)
+        return {"status": "success", "count": len(params), "parameters": params}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@server.tool()
+async def register_reactive_trigger(
+    address_pattern: str,
+    target_tool: str,
+    args_template: Dict[str, Any]
+) -> Dict[str, Any]:
+    """Register an event action triggering an MCP tool when an OSC message matches a pattern.
+
+    Args:
+        address_pattern: Glob pattern to match incoming OSC addresses (e.g. '/live/beat', '/vco/*')
+        target_tool: Tool name to execute (e.g. 'send_osc_message', 'execute_osc_workflow')
+        args_template: Arguments dictionary matching target tool schema. Supports variable substitution (e.g. {"value": "$value", "port": "$0"})
+    """
+    try:
+        global_trigger_engine.register_trigger(address_pattern, target_tool, args_template)
+        return {
+            "status": "success",
+            "message": f"Successfully mapped incoming {address_pattern} to execute {target_tool}"
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@server.tool()
+async def get_reactive_triggers() -> Dict[str, Any]:
+    """Retrieve list of all active reactive trigger actions."""
+    try:
+        triggers = global_trigger_engine.get_triggers()
+        return {"status": "success", "count": len(triggers), "triggers": triggers}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@server.tool()
+async def remove_reactive_trigger(address_pattern: str) -> Dict[str, Any]:
+    """Remove a reactive trigger action matching the specified pattern."""
+    try:
+        global_trigger_engine.remove_trigger(address_pattern)
+        return {"status": "success", "message": f"Removed trigger for pattern {address_pattern}"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@server.tool()
+async def trigger_vrchat_haptic_lfo(
+    device: str = "both",
+    pattern: str = "sine",
+    duration: float = 2.0,
+    frequency_hz: float = 2.0
+) -> Dict[str, Any]:
+    """Trigger VRChat haptic feedback modulated by an LFO waveform.
+
+    Args:
+        device: Haptic output device - 'left', 'right', or 'both'
+        pattern: Waveform pattern - 'sine', 'sawtooth', or 'square'
+        duration: Pulse train duration in seconds (default: 2.0)
+        frequency_hz: Modulation frequency in Hz (default: 2.0)
+    """
+    import math
+    steps = int(duration * 30)
+    interval = 1.0 / 30.0
+
+    async def run_pattern():
+        from .apps.vrchat import VRChatOSC
+        client = VRChatOSC()
+        # VRChat input_port/output_port match defaults
+        await client.start()
+        
+        for step in range(steps):
+            t = step * interval
+            phase = 2 * math.pi * frequency_hz * t
+            
+            if pattern == "sine":
+                amplitude = (math.sin(phase) + 1.0) / 2.0
+            elif pattern == "sawtooth":
+                amplitude = (t * frequency_hz) % 1.0
+            elif pattern == "square":
+                amplitude = 1.0 if (t * frequency_hz) % 1.0 < 0.5 else 0.0
+            else:
+                amplitude = 0.5
+                
+            client.trigger_haptic(device=device, duration=interval, amplitude=amplitude)
+            await asyncio.sleep(interval)
+            
+        await client.stop()
+
+    asyncio.create_task(run_pattern())
+    return {
+        "status": "success",
+        "message": f"Started haptic LFO pattern '{pattern}' on {device} for {duration}s"
+    }
+
+
+@server.tool()
+async def set_vrchat_expression(
+    expression: str,
+    intensity: float = 1.0
+) -> Dict[str, Any]:
+    """Set VRChat avatar Unified Expressions (face/eye tracking) parameters.
+
+    Args:
+        expression: Expression name (e.g. 'EyeLidLeft', 'JawOpen', 'Smile')
+        intensity: Expression intensity scale from 0.0 to 1.0 (default: 1.0)
+    """
+    from .apps.vrchat import VRChatOSC
+    try:
+        vr = VRChatOSC()
+        # VRChat Unified Expressions namespace mapping (v2)
+        param_name = f"FT/v2/{expression}"
+        vr.set_parameter(param_name, intensity)
+        return {
+            "status": "success",
+            "parameter": param_name,
+            "intensity": intensity
+        }
+    except Exception as e:
+        return {"status": "error", "message": f"Failed to set expression: {e}"}
 
 
 # ASGI app for uvicorn (web_sota/start.ps1): uvicorn oscmcp.server:app
