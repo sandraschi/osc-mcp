@@ -27,6 +27,9 @@ logger = logging.getLogger(__name__)
 # Create FastMCP instance with conversational capabilities
 server = FastMCP("OSC-MCP")
 
+# Import legacy/integration tools from mcp_server
+from . import mcp_server
+
 # Store OSC server instances and transports for cleanup
 _osc_transports: List[Any] = []
 

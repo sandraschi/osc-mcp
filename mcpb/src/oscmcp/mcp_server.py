@@ -70,7 +70,7 @@ if _is_stdio_mode:
     sys.stdout = DevNullStdout(sys.stdout)
 
 # Create FastMCP instance with stdio transport
-server = FastMCP("OSC-MCP")
+from .server import server
 
 # CRITICAL: After server initialization, restore stdout for stdio mode
 # This allows the server to communicate via JSON-RPC while preventing initialization logging
@@ -800,7 +800,8 @@ async def clear_osc_message_buffer(port: int) -> Dict[str, Any]:
     return {"status": "success", "messages_cleared": cleared_count}
 
 
-@server.tool()
+# Disabled duplicate - FastMCP 3.1+ conversational/sampling version is defined in server.py
+# @server.tool()
 async def test_osc_echo(port: int = 9000) -> Dict[str, Any]:
     """Test OSC functionality by sending and receiving a message.
 
