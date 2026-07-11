@@ -322,6 +322,11 @@ OSC-MCP provides **25 tools** (11 managers + 14 core/advanced) for comprehensive
 - Coordinate transport across REAPER, VCV Rack, etc.
 - Operations: `sync_tempo_all`, `start_all`, `stop_all`, etc.
 
+** `Arazzo Workflow Engine`** - Multi-step workflow automation (4 operations)
+- Discovery and execution of Arazzo v1.0.1 mission descriptors
+- Operations: `list_arazzo_workflows`, `show_available_workflows` (Prefab UI), `execute_osc_workflow`, `generate_osc_workflow`
+- **See [Arazzo Workflow Guide](docs/ARAZZO_WORKFLOWS_GUIDE.md) for full specification.**
+
 **See [Application Tools Analysis](docs/APPLICATION_TOOLS_ANALYSIS.md) for complete documentation.**
 
 ##  Application-Specific Usage

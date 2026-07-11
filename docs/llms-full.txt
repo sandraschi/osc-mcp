@@ -124,3 +124,55 @@ This document provides complete API, tool schemas, code module structures, and w
 - **Description**: Returns an interactive Prefab UI `DataTable` rendering active MIDI CC paths and Reactive Trigger rules directly in compatible LLM client chat views.
 - **Arguments**: None.
 - **Return Type**: `PrefabApp` (UI Component).
+
+#### `show_discovered_devices`
+- **Description**: Returns an interactive Prefab UI `DataTable` rendering discovered OSCQuery devices on the network.
+- **Arguments**: None.
+- **Return Type**: `PrefabApp` (UI Component).
+
+#### `show_recent_messages`
+- **Description**: Returns an interactive Prefab UI `DataTable` rendering recently received OSC messages on a port.
+- **Arguments**:
+  - `port` (integer): Port of the OSC server to query.
+  - `limit` (integer, default: `20`): Maximum number of messages to return.
+- **Return Type**: `PrefabApp` (UI Component).
+
+#### `show_available_workflows`
+- **Description**: Returns an interactive Prefab UI `DataTable` of available Arazzo automation workflows.
+- **Arguments**: None.
+- **Return Type**: `PrefabApp` (UI Component).
+
+---
+
+### 7. Arazzo Workflow Integration
+
+Arazzo is a specification for defining multi-step, complex workflows and automations. This MCP server supports discovering and executing Arazzo 1.0.1 mission descriptors for OSC automation sequences.
+
+#### `list_arazzo_workflows`
+- **Description**: List all available Arazzo mission descriptors in this server (raw JSON format).
+- **Arguments**: None.
+- **Return Format**:
+  ```json
+  {
+    "workflows": [
+      {
+        "id": "vcv-rack-init",
+        "title": "VCV Rack Initializer",
+        "description": "Sets up standard parameters for a new VCV Rack patch",
+        "steps": 5
+      }
+    ]
+  }
+  ```
+
+#### `generate_osc_workflow`
+- **Description**: Ask the native FastMCP Context to plan a multi-step sequence of OSC messages to achieve a complex goal.
+- **Arguments**:
+  - `goal` (string): The description of what needs to be achieved (e.g., "Fade out volume while panning left").
+  - `target_app` (string, optional): The application this workflow is targeting (e.g., "Ableton").
+
+#### `execute_osc_workflow`
+- **Description**: Executes a pre-defined Arazzo workflow or a dynamically generated sequence of OSC messages.
+- **Arguments**:
+  - `workflow_id` (string): The ID of the Arazzo workflow to execute.
+  - `parameters` (object, optional): Input parameters for the workflow steps.
