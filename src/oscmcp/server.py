@@ -680,6 +680,110 @@ def show_active_mappings() -> PrefabApp:
     return app
 
 
+@server.tool(app=True)
+def show_discovered_devices() -> PrefabApp:
+    """Display an interactive data table of discovered OSCQuery devices on the network."""
+    services = dynamic_mapper.get_services()
+    
+    data = []
+    for s in services:
+        data.append({
+            "name": s.get("name", "Unknown"),
+            "host": s.get("host", "N/A"),
+            "osc_port": str(s.get("osc_port", "N/A")),
+            "ws_port": str(s.get("ws_port", "N/A"))
+        })
+        
+    if not data:
+        data = [{"name": "None", "host": "N/A", "osc_port": "N/A", "ws_port": "N/A"}]
+        
+    with PrefabApp() as app:
+        DataTable(
+            data=data,
+            columns=[
+                DataTableColumn(name="name", label="Device Name"),
+                DataTableColumn(name="host", label="IP Address"),
+                DataTableColumn(name="osc_port", label="OSC Port"),
+                DataTableColumn(name="ws_port", label="OSCQuery WS Port")
+            ]
+        )
+    return app
+
+
+@server.tool(app=True)
+def show_recent_messages(port: int, limit: int = 20) -> PrefabApp:
+    """Display an interactive data table of recently received OSC messages on a port."""
+    from .mcp_server import osc_servers
+    
+    data = []
+    if port in osc_servers:
+        osc_server_instance = osc_servers[port]
+        messages = osc_server_instance.get_received_messages(limit=limit)
+        for idx, m in enumerate(messages):
+            import datetime
+            time_str = datetime.datetime.fromtimestamp(m.get("timestamp", 0)).strftime("%H:%M:%S.%f")[:-3]
+            data.append({
+                "time": time_str,
+                "address": m.get("address", "N/A"),
+                "values": str(m.get("args", [])),
+                "age": f"{m.get('age_seconds', 0.0):.2f}s"
+            })
+            
+    if not data:
+        data = [{"time": "N/A", "address": "N/A", "values": "[]", "age": "N/A"}]
+        
+    with PrefabApp() as app:
+        DataTable(
+            data=data,
+            columns=[
+                DataTableColumn(name="time", label="Timestamp"),
+                DataTableColumn(name="address", label="OSC Address"),
+                DataTableColumn(name="values", label="Values"),
+                DataTableColumn(name="age", label="Age")
+            ]
+        )
+    return app
+
+
+@server.tool(app=True)
+def show_available_workflows() -> PrefabApp:
+    """Display an interactive data table of available Arazzo automation workflows."""
+    workflows_dir = Path(__file__).parent / "workflows"
+    found_workflows = []
+    if workflows_dir.exists():
+        for yaml_file in workflows_dir.glob("*.yaml"):
+            try:
+                import yaml
+                with open(yaml_file, "r") as f:
+                    data = yaml.safe_load(f)
+                    info = data.get("info", {})
+                    # Count steps/actions
+                    steps = len(data.get("workflows", {}).get("test_run", {}).get("steps", []))
+                    found_workflows.append({
+                        "id": yaml_file.stem,
+                        "title": info.get("title", yaml_file.stem),
+                        "description": info.get("description", "No description provided"),
+                        "steps": str(steps)
+                    })
+            except Exception:
+                pass
+                
+    if not found_workflows:
+        found_workflows = [{"id": "None", "title": "N/A", "description": "No workflows found", "steps": "0"}]
+        
+    with PrefabApp() as app:
+        DataTable(
+            data=found_workflows,
+            columns=[
+                DataTableColumn(name="id", label="Workflow ID"),
+                DataTableColumn(name="title", label="Workflow Title"),
+                DataTableColumn(name="description", label="Description Summary"),
+                DataTableColumn(name="steps", label="Steps Count")
+            ]
+        )
+    return app
+
+
 # ASGI app for uvicorn (web_sota/start.ps1): uvicorn oscmcp.server:app
 app = server.http_app()
 
