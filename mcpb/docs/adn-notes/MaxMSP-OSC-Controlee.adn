@@ -1,0 +1,130 @@
+# Max/MSP OSC Controlee
+
+**Type:** OSC Controlee
+**Category:** Audio/Visual Programming
+**Status:** Active
+**Last Updated:** 2025-12-14
+
+## Overview
+
+Max/MSP is a visual programming language for music and multimedia. It provides OSC support for interactive audio/visual applications, live performance, and media control systems.
+
+## OSC Integration
+
+### Native Support
+- **Full native OSC support** via udpreceive/send objects
+- **Port:** 4000 (default)
+- **Protocol:** OSC 1.0
+- **Object-based:** OSC routing through Max objects
+
+### Setup
+- Add `udpreceive 4000` object to receive OSC
+- Add `udpsend` objects to send OSC
+- Route messages to desired parts of patch
+
+## Available Operations
+
+### Message Types
+- `send_bang` - Send bang messages to receivers
+- `send_float` - Send float values to receivers
+- `toggle_dsp` - Toggle audio processing on/off
+
+## Usage Examples
+
+### Bang Messages
+```
+maxmsp_manager("send_bang", receiver="play")        # Trigger play button
+maxmsp_manager("send_bang", receiver="stop")        # Trigger stop button
+maxmsp_manager("send_bang", receiver="record")      # Start recording
+```
+
+### Float Values
+```
+maxmsp_manager("send_float", receiver="volume", value=0.8)    # Set volume to 80%
+maxmsp_manager("send_float", receiver="frequency", value=440.0) # Set frequency
+maxmsp_manager("send_float", receiver="pan", value=0.0)      # Center pan
+```
+
+### DSP Control
+```
+maxmsp_manager("toggle_dsp")  # Toggle audio on/off
+```
+
+## Receiver System
+
+### Common Receivers
+- **Transport:** play, stop, record, pause
+- **Parameters:** volume, pan, frequency, resonance
+- **Effects:** delay_time, feedback, reverb_mix
+- **Visual:** opacity, position_x, position_y
+- **Custom:** User-defined receiver names
+
+### Message Routing
+- Receivers connect to various Max objects
+- Route to audio effects, visual elements, control logic
+- Enable complex interactive systems
+
+## Integration Patterns
+
+### Live Performance
+- Real-time parameter control
+- Interactive music systems
+- Live coding environments
+- Performance control interfaces
+
+### Interactive Installations
+- Sensor-driven audio/visual responses
+- Audience interaction systems
+- Environmental control systems
+- Multi-modal experiences
+
+### Media Control
+- Automated playback systems
+- Interactive video installations
+- Sound design control interfaces
+- Real-time mixing consoles
+
+## Technical Notes
+
+### OSC Addresses
+- Format: `/{receiver_name}`
+- Examples: `/volume`, `/play`, `/frequency`
+- Receivers defined in Max patch
+
+### Message Types
+- **Bang:** Trigger events, no data
+- **Float:** Numeric values, automatic routing
+- **DSP Toggle:** Audio engine control
+
+### Timing
+- Real-time capable (< 5ms latency)
+- Suitable for live performance
+- Synchronized with audio engine
+
+## Common Workflows
+
+### Performance Control
+```
+# Real-time performance control
+maxmsp_manager("send_float", receiver="master_volume", value=0.9)
+maxmsp_manager("send_bang", receiver="scene_change")
+maxmsp_manager("send_float", receiver="effect_intensity", value=0.7)
+```
+
+### Interactive Systems
+```
+# Sensor integration
+maxmsp_manager("send_float", receiver="light_level", value=sensor_reading)
+maxmsp_manager("send_bang", receiver="motion_detected")
+```
+
+## Related Notes
+- [[Visual-Programming-Systems]]
+- [[Interactive-Audio-Visual-Systems]]
+- [[Live-Performance-Technology]]
+- [[Sensor-Integration-Patterns]]
+
+## References
+- Max/MSP Documentation: OSC
+- Cycling '74: https://cycling74.com
+- Max/MSP OSC Examples

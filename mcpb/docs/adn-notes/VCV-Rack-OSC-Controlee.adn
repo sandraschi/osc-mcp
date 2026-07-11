@@ -1,0 +1,139 @@
+# VCV Rack OSC Controlee
+
+**Type:** OSC Controlee
+**Category:** Modular Synthesis
+**Status:** Active
+**Last Updated:** 2025-12-14
+
+## Overview
+
+VCV Rack is an open-source virtual modular synthesizer platform that supports OSC (Open Sound Control) protocol through third-party modules. It enables comprehensive modular synthesis control via natural language commands.
+
+## OSC Integration
+
+### Native Support
+- **No native OSC support** - Requires third-party OSC modules
+- **Port:** 10001 (default)
+- **Protocol:** OSC 1.0
+
+### Required Modules
+- **OSCelot** (TheModularMind) - Primary OSC mapping module
+- **cvOSCcv** (trowaSoft) - Bidirectional OSC with 8 channels
+- **Holonic Source** (Holonic Systems) - iOS app integration
+
+## Available Operations
+
+### MIDI Control
+- `play_midi` - Play MIDI notes (0-127) with velocity and channel
+- `stop_midi` - Stop MIDI notes
+- `send_midi_cc` - Send MIDI CC messages (controller 0-127, value 0-127)
+
+### CV Modulation
+- `send_cv` - Send control voltages (-10.0 to +10.0V)
+- Range: Eurorack standard (-10V to +10V)
+
+### Parameter Control
+- `set_parameter` - Set module parameters (0.0-1.0 normalized)
+- `trigger` - Trigger events and gates
+
+### Light Control
+- `set_light` - Control module LEDs/brightness (0.0-1.0)
+
+### Module-Specific Controls
+- **VCO:** `set_vco_frequency` - Set oscillator frequency in Hz
+- **VCA:** `set_vca_level` - Set amplifier level (0.0-1.0)
+- **LFO:** `set_lfo_rate` - Set modulation rate (0.0-1.0)
+- **Filter:** `set_filter_cutoff` - Set filter cutoff (0.0-1.0)
+- **Envelope:** ADSR controls (`attack`, `decay`, `sustain`, `release`)
+
+## Usage Examples
+
+### Basic MIDI Control
+```
+vcv_manager("play_midi", note=60, velocity=100, channel=1)  # Play C4
+vcv_manager("send_midi_cc", controller=7, value=64, channel=1)  # Volume CC
+```
+
+### Modular Synthesis
+```
+vcv_manager("set_vco_frequency", module_id=1, frequency=440.0)  # 440Hz oscillator
+vcv_manager("send_cv", module_id=2, cv_id=0, voltage=5.0)      # 5V modulation
+vcv_manager("set_envelope_attack", module_id=3, attack=0.1)    # Fast attack
+```
+
+### Visual Feedback
+```
+vcv_manager("set_light", module_id=1, light_id=0, brightness=0.8)  # Bright LED
+vcv_manager("trigger", module_id=2, trigger_id=0)                 # Gate trigger
+```
+
+## Setup Requirements
+
+### Hardware
+- Computer with sufficient CPU/GPU for real-time audio
+- Audio interface (recommended for professional use)
+
+### Software
+1. **Install VCV Rack** from vcvrack.com
+2. **Create VCV account** and log in to Rack
+3. **Install OSC module:**
+   - Search for "OSCelot" in VCV Library
+   - Click "Add" then "Update all" in Rack
+4. **Configure OSC module:**
+   - Add OSCelot to your patch
+   - Set listening port to 10001
+   - Configure address patterns as needed
+
+### Module IDs
+- Start from 1 (not 0)
+- Correspond to module positions in rack
+- May change when rearranging modules
+
+## Common Issues
+
+### No Response
+- **Check:** OSC module installed and configured
+- **Check:** Port 10001 not blocked by firewall
+- **Check:** Module IDs match your patch layout
+
+### Parameter Ranges
+- **MIDI:** 0-127 (note, velocity, CC values)
+- **CV:** -10.0 to +10.0 volts
+- **Parameters:** 0.0 to 1.0 (normalized)
+- **Lights:** 0.0 to 1.0 (brightness)
+
+### Module-Specific Notes
+- **VCO Frequency:** Converted from Hz to 0-1 range (0-10kHz typical)
+- **Envelope Parameters:** Attack/Decay/Release are time-based (0.0-1.0)
+- **Filter Cutoff:** Frequency response varies by filter type
+
+## Integration Patterns
+
+### Live Performance
+- Real-time parameter control
+- MIDI note triggering
+- CV modulation routing
+- Visual feedback via lights
+
+### Algorithmic Composition
+- Automated patch exploration
+- Parameter sweeps and modulation
+- Complex signal routing
+- Generative music systems
+
+### Educational Use
+- Interactive synthesis tutorials
+- Parameter visualization
+- Real-time patching demonstrations
+- Sound design exploration
+
+## Related Notes
+- [[OSC-Protocol-Fundamentals]]
+- [[Modular-Synthesis-Basics]]
+- [[Real-time-Audio-Processing]]
+- [[Creative-Coding-Environments]]
+
+## References
+- VCV Rack Official: https://vcvrack.com
+- OSCelot Module: https://library.vcvrack.com/OSCelot
+- cvOSCcv Module: https://github.com/j4s0n-c/trowaSoft-VCV

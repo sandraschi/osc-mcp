@@ -1,0 +1,154 @@
+# TouchDesigner OSC Controlee
+
+**Type:** OSC Controlee
+**Category:** Visual Programming
+**Status:** Active
+**Last Updated:** 2025-12-14
+
+## Overview
+
+TouchDesigner is a node-based visual programming language for real-time interactive media. It provides comprehensive OSC support for parameter control, interactive installations, and media server applications.
+
+## OSC Integration
+
+### Native Support
+- **Full native OSC support** built-in
+- **Port:** 9000 (default)
+- **Protocol:** OSC 1.0
+- **Bidirectional:** Send and receive OSC messages
+
+### Setup
+- Enable OSC In/Out CHOPs or DATs in your project
+- Set listening port to 9000
+- Configure OSC routing to desired operators
+
+## Available Operations
+
+### Parameter Control
+- `set_parameter` - Set operator parameters
+- Format: `{operator_path}/{parameter_name}`
+- Example: `/project1/movie1/play` or `/geo1/translatex`
+
+### Constants
+- `set_constant` - Set Constant CHOP values
+- Targets: `value1`, `value2`, etc. channels
+- Format: `{constant_path}/value{index}`
+
+### Interactive Control
+- `trigger_button` - Trigger Button COMP presses
+- Sends pulse to button's input
+- Format: `{button_path}/pulse`
+
+## Usage Examples
+
+### Parameter Control
+```
+touchdesigner_manager("set_parameter", component_path="/movie1", parameter="play", value=1.0)
+touchdesigner_manager("set_parameter", component_path="/geo1", parameter="tx", value=100.0)
+touchdesigner_manager("set_parameter", component_path="/light1", parameter="dimmer", value=0.8)
+```
+
+### Constants
+```
+touchdesigner_manager("set_constant", component_path="/constant1", value=3.14159)
+touchdesigner_manager("set_constant", component_path="/speed_control", value=0.5)
+```
+
+### Button Triggers
+```
+touchdesigner_manager("trigger_button", component_path="/play_button")
+touchdesigner_manager("trigger_button", component_path="/reset_trigger")
+```
+
+## Operator Path System
+
+### Path Structure
+- Root: `/` (project root)
+- Operators: `/opname` (direct children)
+- Nested: `/parent/child/grandchild`
+- Parameters: `/opname/parameter_name`
+
+### Common Patterns
+- **Movie Players:** `/movie1/play`, `/movie1/speed`
+- **Geometry:** `/geo1/translatex`, `/geo1/rotatey`
+- **Lights:** `/light1/dimmer`, `/light1/colorr`
+- **Audio:** `/audio1/volume`, `/audio1/pan`
+- **Effects:** `/level1/opacity`, `/blur1/blurradius`
+
+## Integration Patterns
+
+### Interactive Installations
+- Real-time parameter control via sensors
+- Audience interaction systems
+- Environmental response systems
+- Multi-screen synchronization
+
+### Live Visuals
+- VJ performance control
+- Concert visualization
+- Interactive projections
+- Media server automation
+
+### Generative Art
+- Algorithmic parameter modulation
+- Real-time procedural generation
+- Interactive art installations
+- Data visualization systems
+
+### Media Servers
+- Automated content playback
+- Remote control interfaces
+- Multi-display coordination
+- Live event production
+
+## Technical Notes
+
+### Parameter Types
+- **Float:** Most common (0.0-1.0 or custom ranges)
+- **Integer:** Toggle states, menu selections
+- **String:** Text inputs, file paths
+- **Pulse:** Trigger events (buttons)
+
+### Timing
+- Real-time capable (< 5ms latency)
+- Suitable for 60fps+ applications
+- Frame-synchronized parameter updates
+
+### Error Handling
+- Invalid paths are ignored
+- Type mismatches may cause errors
+- Network issues break connections
+
+## Common Workflows
+
+### Sensor Integration
+```
+# External sensors → OSC → TouchDesigner parameters
+# Example: Proximity sensor controls opacity
+touchdesigner_manager("set_parameter", component_path="/fade_comp", parameter="opacity", value=sensor_value)
+```
+
+### Live Performance
+```
+# VJ control during performance
+touchdesigner_manager("set_parameter", component_path="/effect1", parameter="intensity", value=0.9)
+touchdesigner_manager("trigger_button", component_path="/scene_change")
+```
+
+### Automated Shows
+```
+# Pre-programmed sequences
+touchdesigner_manager("set_constant", component_path="/timing", value=current_time)
+touchdesigner_manager("set_parameter", component_path="/sequence", parameter="position", value=sequence_pos)
+```
+
+## Related Notes
+- [[Visual-Programming-Systems]]
+- [[Real-time-Graphics]]
+- [[Interactive-Installations]]
+- [[Live-Visual-Performance]]
+
+## References
+- TouchDesigner Documentation: OSC
+- Derivative: https://derivative.ca
+- TouchDesigner Learning Resources

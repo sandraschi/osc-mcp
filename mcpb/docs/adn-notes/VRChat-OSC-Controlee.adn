@@ -1,0 +1,168 @@
+# VRChat OSC Controlee
+
+**Type:** OSC Controlee
+**Category:** Virtual Reality
+**Status:** Active
+**Last Updated:** 2025-12-14
+
+## Overview
+
+VRChat is a social VR platform with extensive OSC support for avatar control, world interactions, and accessibility features. It enables natural language control of avatar parameters, chat systems, and haptic feedback.
+
+## OSC Integration
+
+### Native Support
+- **Full native OSC support** built-in
+- **Port:** 9000 (input), 9001 (output)
+- **Protocol:** OSC 1.0
+- **Bidirectional:** Send and receive OSC messages
+
+### Setup
+- Enable OSC in VRChat → Settings → OSC
+- Set input port to 9000 (for receiving commands)
+- Set output port to 9001 (for sending data)
+- Works with all VRChat avatars and worlds
+
+## Available Operations
+
+### Avatar Control
+- `set_parameter` - Set avatar parameters (float values)
+- Parameters: Voice, Viseme, Gesture, etc.
+- Range: Typically 0.0-1.0 (parameter-dependent)
+
+### Communication
+- `send_chat` - Send text messages to chatbox
+- Supports typed messages with formatting
+- Immediate display in VRChat interface
+
+### Haptic Feedback
+- `trigger_haptic` - Trigger controller vibration
+- Devices: 'left', 'right', or 'both' controllers
+- Parameters: duration (seconds), amplitude (0.0-1.0), frequency (Hz)
+
+## Usage Examples
+
+### Avatar Parameters
+```
+vrchat_manager("set_parameter", param_name="Voice", value=0.8)      # Voice volume
+vrchat_manager("set_parameter", param_name="Viseme", value=3.0)    # Lip sync
+vrchat_manager("set_parameter", param_name="GestureLeft", value=1.0) # Left gesture
+```
+
+### Chat Control
+```
+vrchat_manager("send_chat", message="Hello from OSC!")             # Send message
+vrchat_manager("send_chat", message="System: Welcome to the world") # System message
+```
+
+### Haptic Feedback
+```
+vrchat_manager("trigger_haptic", device="both", duration=0.5, amplitude=0.8)
+vrchat_manager("trigger_haptic", device="left", duration=0.2, amplitude=1.0, frequency=100.0)
+```
+
+## Avatar Parameter System
+
+### Common Parameters
+- **Voice** (0.0-1.0): Voice volume/amplitude
+- **Viseme** (0-14): Lip sync phoneme selection
+- **GestureLeft/GestureRight** (0.0-1.0): Hand gestures
+- **VelocityX/Y/Z**: Movement velocity
+- **AngularY**: Rotation speed
+
+### Custom Parameters
+- Avatar creators can define custom OSC parameters
+- Typically prefixed with avatar name or function
+- Documentation provided by avatar creators
+
+## Integration Patterns
+
+### Accessibility Features
+- Voice control for users with mobility impairments
+- Automated avatar responses
+- Custom control interfaces
+
+### Interactive Installations
+- VRChat world automation
+- Real-time parameter control
+- Multi-user interaction systems
+
+### Performance Systems
+- Live avatar control during performances
+- Synchronized avatar movements
+- Interactive storytelling
+
+### Chat Automation
+- Automated welcome messages
+- System announcements
+- Interactive NPC behaviors
+
+## Technical Notes
+
+### OSC Addresses
+- Input: `/avatar/parameters/{name}` - Set parameters
+- Input: `/chatbox/input` - Send chat messages
+- Input: `/avatar/parameters/{device}Haptic` - Trigger haptics
+- Output: Various avatar and world parameters
+
+### Message Format
+- Chat: `[message, is_typed, should_hide]` (bool flags)
+- Haptics: `[duration, amplitude, frequency]` (float values)
+- Parameters: Single float value
+
+### Timing
+- Low latency (< 10ms) for parameter changes
+- Immediate chat message display
+- Haptic feedback has slight delay (~50ms)
+
+## Common Issues
+
+### Parameter Not Working
+- Check parameter name spelling (case-sensitive)
+- Verify avatar supports the parameter
+- Some parameters require specific avatar configurations
+
+### Chat Not Appearing
+- Check VRChat chat settings
+- Messages may be filtered by VRChat's systems
+- Some worlds disable external chat input
+
+### Haptic Not Triggering
+- Ensure VR controllers are connected and recognized
+- Check VRChat haptic settings
+- Some VR systems may have haptic disabled
+
+## Limitations in osc-mcp
+
+This ADN note covers only the basic VRChat OSC operations available in osc-mcp. VRChat has extensive OSC capabilities including:
+
+- **Advanced Avatar Management:** Loading, monitoring, parameter interpolation
+- **OSC Inspection:** Real-time message monitoring and debugging
+- **Complex Animations:** Multi-parameter animation sequences
+- **Plugin System:** Extensible tool architecture
+- **Web Interface:** Browser-based control and monitoring
+- **WebSocket Support:** Real-time bidirectional communication
+
+## Recommended Alternative
+
+For comprehensive VRChat control, use the dedicated [vrchat-mcp](https://github.com/sandraschi/vrchat-mcp) repository, which provides:
+
+- 20+ specialized tools for avatar control
+- OSC inspection and debugging tools
+- Plugin system for custom functionality
+- Web interface for remote control
+- Advanced parameter monitoring
+- Animation interpolation systems
+
+## Related Notes
+- [[Virtual-Reality-Systems]]
+- [[Accessibility-Technology]]
+- [[OSC-Protocol-Fundamentals]]
+- [[Advanced-VRChat-Control]] (in vrchat-mcp repo)
+- [[Real-time-Interaction-Design]]
+
+## References
+- VRChat OSC Documentation
+- VRChat Developer Resources
+- VRChat: https://vrchat.com
+- vrchat-mcp: https://github.com/sandraschi/vrchat-mcp
