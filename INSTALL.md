@@ -44,10 +44,10 @@ If you prefer not to use `just`:
 4. Start the server:
    ```powershell
    # stdio mode (for MCP clients like Claude Desktop)
-   uv run python -m osc_mcp.server
+   uv run python -m oscmcp.server
 
    # HTTP mode (for web dashboard)
-   uv run uvicorn osc_mcp.server:app --port 10767
+   uv run uvicorn oscmcp.server:app --port 10767
    ```
 5. Open `http://localhost:10767` or the frontend URL.
 
