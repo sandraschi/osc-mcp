@@ -1,0 +1,117 @@
+# osc-mcp - Full Reference Manual for LLMs
+
+This document provides complete API, tool schemas, code module structures, and workflow integration manuals for `osc-mcp` (Open Sound Control Model Context Protocol).
+
+---
+
+## 🛠️ Complete MCP Tool Catalog (25 Tools)
+
+### 1. Core OSC & Networking Tools
+
+#### `send_osc_message`
+- **Description**: Send a standard OSC message to a specified host and port.
+- **Arguments**:
+  - `host` (string, default: `"127.0.0.1"`): Target host IP address.
+  - `port` (integer, default: `8000`): Target OSC port.
+  - `address` (string): OSC address pattern (starts with `/`).
+  - `args` (array): List of arguments (ints, floats, strings, booleans).
+- **Return Format**:
+  ```json
+  { "status": "success", "address": "/path", "values": [...] }
+  ```
+
+#### `start_osc_listener`
+- **Description**: Binds a UDP server to start receiving OSC messages on a specified port.
+- **Arguments**:
+  - `port` (integer): Port to listen on.
+  - `address` (string, default: `"0.0.0.0"`): Bind interface IP.
+- **Return Format**:
+  ```json
+  { "status": "success", "port": 9000, "address": "0.0.0.0" }
+  ```
+
+---
+
+### 2. OSCQuery Service Discovery (Zeroconf)
+
+#### `oscquery_list_services`
+- **Description**: Lists discovered local OSCQuery nodes found using MDNS on the network.
+- **Arguments**: None.
+- **Return Format**:
+  ```json
+  {
+    "status": "success",
+    "count": 1,
+    "services": [
+      { "name": "Resolume", "host": "192.168.1.50", "osc_port": 7000, "ws_port": 8080 }
+    ]
+  }
+  ```
+
+#### `oscquery_get_parameters`
+- **Description**: Inspects parameter trees of discovered OSCQuery devices.
+- **Arguments**:
+  - `service_name` (string): Discovered service name.
+- **Return Format**:
+  ```json
+  {
+    "status": "success",
+    "parameters": [
+      { "path": "/composition/selectedclip/transport/position", "type": "f", "value": 0.35 }
+    ]
+  }
+  ```
+
+---
+
+### 3. Bidirectional MIDI Bridge
+
+#### `get_midi_ports`
+- **Description**: Lists physical and virtual MIDI input and output ports.
+- **Arguments**: None.
+
+#### `start_midi_bridge`
+- **Description**: Launches loopback bridge thread linking MIDI input to OSC targets.
+- **Arguments**:
+  - `osc_host` (string): Target host IP.
+  - `osc_port` (integer): Target port.
+  - `midi_in` (string): Name of input interface.
+  - `midi_out` (string): Name of output interface.
+
+#### `add_midi_mapping`
+- **Description**: Adds dynamic scale translation rule.
+- **Arguments**:
+  - `direction` (string): `"midi_to_osc"` or `"osc_to_midi"`.
+  - `osc_address` (string): OSC route.
+  - `midi_type` (string): `"control_change"` or `"note_on"`.
+  - `channel` (integer): MIDI channel (1-16).
+  - `control` (integer): CC/Note index.
+  - `min_val` (float): Minimum value boundary.
+  - `max_val` (float): Maximum value boundary.
+
+---
+
+### 4. Reactive Trigger Engine
+
+#### `register_reactive_trigger`
+- **Description**: Maps incoming listener address globs to target tools with variables.
+- **Arguments**:
+  - `address_pattern` (string): e.g., `"/live/beat"` or `"/avatar/*"`.
+  - `target_tool` (string): Tool to run.
+  - `args_template` (object): Arguments dictionary with variables like `"$0"`, `"$value"`.
+
+#### `get_reactive_triggers`
+- **Description**: Returns all active trigger bindings.
+
+#### `remove_reactive_trigger`
+- **Description**: Unregisters trigger glob.
+
+---
+
+### 5. Application Managers
+
+- **`vcv_manager`**: Modulate pitch, triggers, and CV signals on VCV Rack modular instances.
+- **`ableton_manager`**: Start playback, adjust BPM tempo, and trigger scene clips.
+- **`vrchat_manager`**: VRChat parameter bindings, text chatboxes, and haptic triggers.
+- **`trigger_vrchat_haptic_lfo`**: Modulates wearable controllers at 30Hz using Sine, Sawtooth, or Square wave envelopes.
+- **`set_vrchat_expression`**: Maps face/eye coordinates directly to Unified Expressions v2 standard namespaces.

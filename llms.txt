@@ -1,0 +1,30 @@
+# osc-mcp
+
+Open Sound Control Model Context Protocol (OSC-MCP) server built with FastMCP 3.x. Enables LLMs to interact with professional audio/visual and synthesis applications via a bidirectional OSC protocol wrapper, a MIDI CC loopback bridge, Zeroconf OSCQuery auto-mapping, and event-driven reactive triggers.
+
+## Key Information
+- **Main Entry Point**: `python -m oscmcp`
+- **MCPB Package**: `dist/oscmcp.mcpb`
+- **Dashboard Port**: `10767`
+- **API Base**: `http://localhost:10767`
+
+## Module Structure
+- `src/oscmcp/server.py`: Core FastMCP server instance and tool declarations.
+- `src/oscmcp/mcp_server.py`: Legacy and app-specific integrations.
+- `src/oscmcp/apps/dynamic_mapper.py`: OSCQuery service discovery browser.
+- `src/oscmcp/apps/midi_tools.py`: MIDI input/output control and mapping interface.
+- `src/oscmcp/routing/triggers.py`: Event-driven reactive trigger runner.
+- `src/oscmcp/sampling.py`: LLM sampling-based workflow generator.
+
+## Key MCP Tools
+- `send_osc_message`: Universal OSC message sender.
+- `start_osc_listener`: Bind listener port to receive incoming OSC packets.
+- `oscquery_list_services`: Discover local OSCQuery devices.
+- `oscquery_get_parameters`: Introspect parameters of discovered devices.
+- `get_midi_ports`: Get list of active MIDI inputs and outputs.
+- `start_midi_bridge`: Start MIDI-OSC bidirectional loopback.
+- `register_reactive_trigger`: Bind incoming OSC patterns to target MCP tools.
+- `trigger_vrchat_haptic_lfo`: Modulate avatar haptic parameters over LFO waves.
+- `set_vrchat_expression`: Set facial parameters in the Unified Expressions v2 namespace.
+
+For comprehensive tool schemas and workflow examples, see `docs/llms-full.txt`.

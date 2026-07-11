@@ -218,7 +218,7 @@ await send_osc("127.0.0.1", 9000, "/avatar/parameters/Voice", [0.5])
 
 ### MCP Tools Available
 
-OSC-MCP provides **19 tools** (11 managers + 8 core) for comprehensive bidirectional control of professional audio/visual applications:
+OSC-MCP provides **25 tools** (11 managers + 14 core/advanced) for comprehensive bidirectional control of professional audio/visual applications:
 
 #### Core OSC Tools (8 tools)
 
@@ -252,9 +252,28 @@ OSC-MCP provides **19 tools** (11 managers + 8 core) for comprehensive bidirecti
    - Reset message buffer for fresh start
    - Free memory in long-running servers
 
-8. **`test_osc_echo`** - OSC functionality testing
-   - End-to-end validation
-   - Self-testing capability
+8. **`test_osc_echo`** - OSC functionality testing (Sampling-based)
+   - End-to-end validation with conversational guidance
+
+#### Summer 2026 Advanced Features (6 tools)
+
+1. **`oscquery_list_services`** - OSCQuery Service Discovery
+   - Lists dynamically discovered OSCQuery devices on the local network using Zeroconf/MDNS.
+
+2. **`oscquery_get_parameters`** - Introspect OSCQuery Parameters
+   - Retrieves the full parameter tree (paths, types, access rights, current values) from a discovered OSCQuery service.
+
+3. **`get_midi_ports`** - Query System MIDI Interfaces
+   - Lists all physical and virtual MIDI input and output ports available on the host.
+
+4. **`start_midi_bridge`** - Start Bidirectional MIDI-OSC Bridge
+   - Starts the loopback bridge linking selected MIDI CC/notes to target OSC paths.
+
+5. **`add_midi_mapping`** - Register MIDI Mapping Rule
+   - Binds a specific MIDI channel and CC knob/note to an OSC path with range scaling.
+
+6. **`register_reactive_trigger`** - Add Event-Driven Trigger Action
+   - Binds incoming OSC listener packets matching a glob pattern to trigger target MCP tools with variable templates.
 
 #### Application Manager Tools (11 portmanteau tools)
 
@@ -277,17 +296,11 @@ OSC-MCP provides **19 tools** (11 managers + 8 core) for comprehensive bidirecti
 ** `vrchat_manager`** - VRChat avatar control (3 basic operations)
 - Parameter setting, chat, haptic feedback
 - Operations: `set_parameter`, `send_chat`, `trigger_haptic`
--  **Note:** For advanced VRChat features (avatar management, monitoring, complex animations), use the dedicated [vrchat-mcp](https://github.com/sandraschi/vrchat-mcp) repository
+- **Advanced Tools**: `trigger_vrchat_haptic_lfo` (waveform LFO train) and `set_vrchat_expression` (Unified Expressions mapping) are exposed as specialized tools.
 
 ** `touchdesigner_manager`** - TouchDesigner visual programming (40+ operations)
 - Comprehensive operator control across all families: COMP, CHOP, SOP, TOP, DAT, MAT
 - Basic controls: parameters, constants, sliders, toggles, buttons
-- CHOP: audio processing, waveforms, filters, math operations
-- TOP: video processing, effects, compositing, transforms
-- SOP: 3D geometry, primitives, transformations
-- DAT: data manipulation, tables, text, scripting
-- MAT: materials, shaders, lighting
-- COMP: containers, UI components, windows
 
 ** `supercollider_manager`** - SuperCollider audio synthesis (3 operations)
 - Synth creation, node management, control setting
