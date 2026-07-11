@@ -15,7 +15,7 @@ def test_mcp_server():
         # Start the server
         print("Starting OSC-MCP server...")
         proc = subprocess.Popen(
-            [sys.executable, "-m", "oscmcp.mcp_server"],
+            [sys.executable, "-m", "oscmcp"],
             cwd="D:\\Dev\\repos\\osc-mcp",
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,

@@ -164,7 +164,7 @@ class MCPProcess:
     def start(self):
         """Start the MCP server process."""
         self.process = subprocess.Popen(
-            [sys.executable, "-m", "oscmcp.mcp_server"],
+            [sys.executable, "-m", "oscmcp"],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

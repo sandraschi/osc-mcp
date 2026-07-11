@@ -68,7 +68,7 @@ async def test_osc_functionality():
     server_process = await asyncio.create_subprocess_exec(
         sys.executable,
         "-m",
-        "oscmcp.mcp_server",
+        "oscmcp",
         stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
