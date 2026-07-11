@@ -8,7 +8,6 @@ import {
   Gamepad2,
   GitMerge,
   Guitar,
-  MessageCircle,
   Monitor,
   Music,
   Radio,

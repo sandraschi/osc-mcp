@@ -9,7 +9,6 @@ import {
   Monitor,
   Music,
   Radio,
-  Wand2,
 } from "lucide-react";
 import { useState } from "react";
 
