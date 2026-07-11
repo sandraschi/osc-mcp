@@ -1,5 +1,20 @@
+# Changelog
 
-## [Unreleased] — 2026-06-14
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.3.1] — 2026-07-11
+
+### Fixed
+- **Tool Registration**: Unified `server.py` and `mcp_server.py` to register all 25 creative app integration tools (Ableton, TouchDesigner, VRChat, etc.) on a single FastMCP instance, correcting the frontend integration tool failures.
+- **MCPB Dual Transport**: Overhauled `run_server.py` and `mcpb/run_server.py` to run stdio transport under Claude Desktop/MCPB, preventing uvicorn stdout logs from corrupting the JSON-RPC channel.
+- **Documentation Errors**: Corrected package name references (`osc_mcp` -> `oscmcp`) in `INSTALL.md` execution guidelines.
+- **Package Restructuring**: Updated `mcpb/src` to nest code under the correct `oscmcp` package directory to avoid `ModuleNotFoundError` during MCPB import.
+- **Metadata Sync**: Updated `glama.json` framework mapping to `FastMCP 3.4` and tool count.
+
+## [0.3.0] - 2026-06-14
 
 ### Added
 - Tauri 2.0 native wrapper with `bundle.resources` + `std::process::Command`
@@ -8,19 +23,6 @@
 - `just cua-nsis-test` recipe
 - Tauri CORS: `tauri://localhost` origins for WebView API access
 - `GET /api/v1/diagnostics` endpoint for CUA verification
-# Changelog
-
-All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-## [0.3.0] - 2026-04-02
-
-### Added
-- **SOTA v13.1 Compliance** - Upgraded documentation and standards for 2026 baseline
-- **SAMPLING Support** - Added conversational tool sampling and generate/execute workflows
-- **Fleet Discovery Integration** - Standardized integration with central MCP webapps registry
 
 ### Changed
 - **FastMCP Upgrade** - Bumped minimum version to `3.1.1` (FastMCP 3.1 GA)
