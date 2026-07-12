@@ -80,6 +80,7 @@ docs/
 │
 ├── DOCUMENTATION_INDEX.md     📚 This file - Complete doc index
 ├── ORGANIZATION_SUMMARY.md    📋 Documentation organization log
+├── OBS_PLUGINS_GUIDE.md       🎨 OBS Studio OSC/WebSocket Guide
 │
 src/notepadpp_mcp/docs/
 ├── README.md                  📘 Complete API documentation
@@ -555,6 +556,27 @@ Overview of all automation scripts.
 **Result**: Ready to distribute! ✅
 
 ---
+
+## 🎨 **Creative Automation & OBS Studio**
+
+**Location**: `docs/`
+
+### **Purpose**
+Deep guides on controlling, automating, and integrating OBS Studio with the OSC protocol.
+
+### **Documents**
+
+#### **1. OBS Studio OSC Integration & Plugin Landscape Guide**
+📄 [OBS_PLUGINS_GUIDE.md](OBS_PLUGINS_GUIDE.md)
+
+**Detailed analysis of OBS Studio automation**:
+- Native C++ plugins vs WebSocket middleware.
+- Retrospective on Streamlabs OBS vs OBS Studio trademark dispute (2018–2021).
+- VTuber community tracking parameters and event-driven scene transitions.
+- References and bibliography.
+
+---
+
 
 ## 🆘 **Getting Help**
 
