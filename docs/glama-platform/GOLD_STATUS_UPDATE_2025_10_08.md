@@ -4,7 +4,7 @@
 
 **Status**: ✅ **GOLD STATUS MAINTAINED AND ENHANCED**
 
-The Notepad++ MCP Server has not only maintained its Gold Status (85/100) but has been significantly enhanced with new features, bringing the score to an estimated **90/100** with the v1.2.0 release.
+The OSC MCP Server has not only maintained its Gold Status (85/100) but has been significantly enhanced with new features, bringing the score to an estimated **90/100** with the v1.2.0 release.
 
 ---
 
@@ -41,7 +41,7 @@ The Notepad++ MCP Server has not only maintained its Gold Status (85/100) but ha
 
 #### New Tools Added (6)
 - ✅ `fix_invisible_text` - Comprehensive display fix for white-on-white text
-- ✅ `fix_display_issue` - General Notepad++ display problem resolution
+- ✅ `fix_display_issue` - General OSC display problem resolution
 - ✅ `discover_plugins` - Plugin discovery from official Plugin List (1,400+ plugins)
 - ✅ `install_plugin` - Automated plugin installation via Plugin Admin
 - ✅ `list_installed_plugins` - List currently installed plugins
@@ -69,7 +69,7 @@ The Notepad++ MCP Server has not only maintained its Gold Status (85/100) but ha
 - `manifest.json` - Runtime configuration (26 tools listed)
 - `scripts/build-mcpb-package.ps1` - Professional build script
 - `.github/workflows/build-mcpb.yml` - Automated CI/CD
-- `dist/notepadpp-mcp.mcpb` - Production package
+- `dist/osc-mcp.mcpb` - Production package
 
 **Impact**: **+10 points** in packaging category (8/10 → 10/10)
 
@@ -243,7 +243,7 @@ The Notepad++ MCP Server has not only maintained its Gold Status (85/100) but ha
 ## 🎯 New Capabilities Unlocked
 
 ### 1. **Plugin Ecosystem Integration**
-- Access to **1,400+ official Notepad++ plugins**
+- Access to **1,400+ official OSC plugins**
 - Automated plugin discovery from GitHub
 - Plugin installation automation
 - Plugin command execution
@@ -355,7 +355,7 @@ The Notepad++ MCP Server has not only maintained its Gold Status (85/100) but ha
 
 ## 🎊 Conclusion
 
-The Notepad++ MCP Server has successfully **maintained its Gold Status** while adding significant enhancements:
+The OSC MCP Server has successfully **maintained its Gold Status** while adding significant enhancements:
 
 1. **+6 new tools** (plugin ecosystem + display fixes)
 2. **MCPB packaging** (professional distribution)

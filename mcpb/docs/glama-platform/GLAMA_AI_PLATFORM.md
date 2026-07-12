@@ -17,12 +17,12 @@ Glama.ai is the **#1 platform for discovering every MCP server, clients, and too
 ## Our Repository Status
 
 ### Repository Discovery
-Our **notepadpp-mcp** repository has been **automatically indexed and discovered** by Glama.ai's scanning system.
+Our **osc-mcp** repository has been **automatically indexed and discovered** by Glama.ai's scanning system.
 
 ### Search Results
-- **Primary Search Term**: `notepadpp` → Returns our repository
+- **Primary Search Term**: `osc` → Returns our repository
 - **Username Search**: `sandraschi` → Returns our repository
-- **Repository Match**: `notepadpp-mcp` → Direct match in their MCP server list
+- **Repository Match**: `osc-mcp` → Direct match in their MCP server list
 
 ### Current Listing Status
 - ✅ **Indexed**: Repository appears in Glama.ai's MCP directory
@@ -151,7 +151,7 @@ Our **notepadpp-mcp** repository has been **automatically indexed and discovered
 **🔗 Platform URL**: https://glama.ai
 
 **🔍 Search for our repository**:
-- Search term: `notepadpp-mcp`
+- Search term: `osc-mcp`
 - Username search: `sandraschi`
 
 ## Conclusion
@@ -170,6 +170,6 @@ This platform discovery opens doors to increased visibility, community engagemen
 
 **Document Version**: 1.1
 **Last Updated**: September 30, 2025
-**Repository**: notepadpp-mcp
+**Repository**: osc-mcp
 **Platform**: Glama.ai MCP Directory
 **Achievement**: Gold Status (85/100)

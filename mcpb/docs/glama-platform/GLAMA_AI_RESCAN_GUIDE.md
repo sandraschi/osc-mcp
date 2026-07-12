@@ -13,7 +13,7 @@ git tag -a v1.1.0 -m "Gold status achievement with comprehensive improvements"
 git push origin v1.1.0
 
 # Then create a GitHub release
-# Go to: https://github.com/sandraschi/notepadpp-mcp/releases
+# Go to: https://github.com/sandraschi/osc-mcp/releases
 # Click "Create a new release"
 # Tag: v1.1.0
 # Title: "Gold Status Achievement - Enterprise Production Ready"
@@ -42,13 +42,13 @@ git push origin main
 ### 3. **Contact Glama.ai Support**
 **Email**: support@glama.ai
 
-**Subject**: "Request repository rescan for Gold status update - notepadpp-mcp"
+**Subject**: "Request repository rescan for Gold status update - osc-mcp"
 
 **Message**:
 ```
 Hello Glama.ai Team,
 
-Our repository (sandraschi/notepadpp-mcp) has recently achieved Gold status
+Our repository (sandraschi/osc-mcp) has recently achieved Gold status
 with significant quality improvements. Could you please trigger a rescan
 to update our listing?
 
@@ -60,7 +60,7 @@ Recent improvements include:
 - Advanced error handling and validation
 - Anthropic MCP validation passing
 
-GitHub URL: https://github.com/sandraschi/notepadpp-mcp
+GitHub URL: https://github.com/sandraschi/osc-mcp
 Current status: Bronze → Gold tier (85/100 points)
 
 Thank you for updating our repository listing!
@@ -82,7 +82,7 @@ Sandra
 
 ### Check Current Status
 1. Visit: https://glama.ai
-2. Search for: `notepadpp-mcp`
+2. Search for: `osc-mcp`
 3. Look for these indicators:
    - 🏆 Gold tier badge
    - Updated quality score (85/100)
@@ -92,7 +92,7 @@ Sandra
 ### Monitor Changes
 ```bash
 # Check repository activity
-curl -s "https://api.github.com/repos/sandraschi/notepadpp-mcp/releases/latest" | jq .published_at
+curl -s "https://api.github.com/repos/sandraschi/osc-mcp/releases/latest" | jq .published_at
 
 # Monitor for Glama.ai updates (if they have webhooks)
 # Check GitHub webhooks in repository settings
@@ -105,12 +105,12 @@ Ensure these are optimized for discovery:
 
 1. **Repository Description**:
    ```
-   FastMCP 2.12 compatible MCP server for Notepad++ automation - Gold Status Certified
+   FastMCP 2.12 compatible MCP server for OSC automation - Gold Status Certified
    ```
 
 2. **Topics/Tags**:
    - `mcp-server`
-   - `notepadpp`
+   - `osc`
    - `windows-automation`
    - `fastmcp`
    - `gold-status`
@@ -211,6 +211,6 @@ After rescan, expect to see:
 
 **Guide Version**: 1.0
 **Last Updated**: September 30, 2025
-**Repository**: notepadpp-mcp
+**Repository**: osc-mcp
 **Target**: Gold Status Recognition
 **Expected Timeline**: 24-72 hours

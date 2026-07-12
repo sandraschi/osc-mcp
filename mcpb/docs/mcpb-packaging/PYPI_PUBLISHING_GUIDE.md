@@ -1,10 +1,10 @@
 # 📦 PyPI Publishing Guide - Complete Walkthrough
 
-**Complete guide to publishing notepadpp-mcp on the Python Package Index (PyPI)**
+**Complete guide to publishing osc-mcp on the Python Package Index (PyPI)**
 
 **Date**: October 8, 2025  
 **Status**: Ready to publish  
-**Target**: Make `pip install notepadpp-mcp` work globally
+**Target**: Make `pip install osc-mcp` work globally
 
 ---
 
@@ -19,7 +19,7 @@
 - **100,000+** packages available
 
 **Why publish to PyPI**:
-- ✅ Easy installation: `pip install notepadpp-mcp`
+- ✅ Easy installation: `pip install osc-mcp`
 - ✅ Automatic dependency resolution
 - ✅ Version management
 - ✅ Discoverability (searchable on PyPI)
@@ -91,10 +91,10 @@
 2. Go to: https://pypi.org/manage/account/token/
 3. Click **"Add API token"**
 4. Fill in:
-   - **Token name**: `notepadpp-mcp-upload` (descriptive name)
+   - **Token name**: `osc-mcp-upload` (descriptive name)
    - **Scope**: 
      - **Option 1**: "Entire account" (can upload any package)
-     - **Option 2**: "Project" → Select `notepadpp-mcp` (package-specific, more secure)
+     - **Option 2**: "Project" → Select `osc-mcp` (package-specific, more secure)
 5. Click **"Add token"**
 6. ✅ **COPY THE TOKEN IMMEDIATELY!** (shown only once)
 
@@ -171,9 +171,9 @@ twine upload dist/* -u __token__ -p pypi-AgEIcHlwaS5vcmcCJGFiY...
 ### **A. Verify Package Structure**
 
 ```
-notepadpp-mcp/
+osc-mcp/
 ├── src/
-│   └── notepadpp_mcp/
+│   └── oscmcp/
 │       ├── __init__.py
 │       └── tools/
 │           └── server.py
@@ -188,9 +188,9 @@ notepadpp-mcp/
 
 ```toml
 [project]
-name = "notepadpp-mcp"
+name = "osc-mcp"
 version = "1.2.0"  # Update for each release!
-description = "MCP Server for Notepad++ automation"
+description = "MCP Server for OSC automation"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
@@ -217,13 +217,13 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/sandraschi/notepadpp-mcp"
-Repository = "https://github.com/sandraschi/notepadpp-mcp"
-Documentation = "https://github.com/sandraschi/notepadpp-mcp/blob/main/README.md"
-"Bug Tracker" = "https://github.com/sandraschi/notepadpp-mcp/issues"
+Homepage = "https://github.com/sandraschi/osc-mcp"
+Repository = "https://github.com/sandraschi/osc-mcp"
+Documentation = "https://github.com/sandraschi/osc-mcp/blob/main/README.md"
+"Bug Tracker" = "https://github.com/sandraschi/osc-mcp/issues"
 
 [project.scripts]
-notepadpp-mcp = "notepadpp_mcp.tools.server:main"
+osc-mcp = "oscmcp.tools.server:main"
 ```
 
 ---
@@ -315,8 +315,8 @@ python -m build
 
 # Output:
 # dist/
-#   notepadpp_mcp-1.2.0-py3-none-any.whl    ← Wheel (binary)
-#   notepadpp-mcp-1.2.0.tar.gz              ← Source distribution
+#   oscmcp-1.2.0-py3-none-any.whl    ← Wheel (binary)
+#   osc-mcp-1.2.0.tar.gz              ← Source distribution
 ```
 
 **What gets created**:
@@ -329,14 +329,14 @@ python -m build
 
 ```powershell
 # Check contents of wheel
-python -m zipfile -l dist/notepadpp_mcp-1.2.0-py3-none-any.whl
+python -m zipfile -l dist/oscmcp-1.2.0-py3-none-any.whl
 
 # Check package metadata
 twine check dist/*
 
 # Should show:
-# Checking dist/notepadpp-mcp-1.2.0.tar.gz: PASSED
-# Checking dist/notepadpp_mcp-1.2.0-py3-none-any.whl: PASSED
+# Checking dist/osc-mcp-1.2.0.tar.gz: PASSED
+# Checking dist/oscmcp-1.2.0-py3-none-any.whl: PASSED
 ```
 
 ---
@@ -360,13 +360,13 @@ twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 **Output**:
 ```
 Uploading distributions to https://test.pypi.org/legacy/
-Uploading notepadpp_mcp-1.2.0-py3-none-any.whl
+Uploading oscmcp-1.2.0-py3-none-any.whl
 100% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 52.3/52.3 kB • 00:01
-Uploading notepadpp-mcp-1.2.0.tar.gz
+Uploading osc-mcp-1.2.0.tar.gz
 100% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 48.5/48.5 kB • 00:01
 
 View at:
-https://test.pypi.org/project/notepadpp-mcp/1.2.0/
+https://test.pypi.org/project/osc-mcp/1.2.0/
 ```
 
 ---
@@ -379,11 +379,11 @@ python -m venv test-env
 .\test-env\Scripts\activate
 
 # Install from Test PyPI
-pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ notepadpp-mcp
+pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ osc-mcp
 
 # Test it works
-notepadpp-mcp --version
-python -m notepadpp_mcp.tools.server
+osc-mcp --version
+python -m oscmcp.tools.server
 
 # If works: ✅ Ready for production!
 # If broken: ❌ Fix and re-upload with new version
@@ -405,13 +405,13 @@ twine upload dist/*
 
 # Output:
 Uploading distributions to https://upload.pypi.org/legacy/
-Uploading notepadpp_mcp-1.2.0-py3-none-any.whl
+Uploading oscmcp-1.2.0-py3-none-any.whl
 100% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 52.3/52.3 kB • 00:02
-Uploading notepadpp-mcp-1.2.0.tar.gz
+Uploading osc-mcp-1.2.0.tar.gz
 100% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 48.5/48.5 kB • 00:02
 
 View at:
-https://pypi.org/project/notepadpp-mcp/1.2.0/
+https://pypi.org/project/osc-mcp/1.2.0/
 ```
 
 **🎉 DONE! Your package is live!**
@@ -422,10 +422,10 @@ https://pypi.org/project/notepadpp-mcp/1.2.0/
 
 ```powershell
 # In fresh environment
-pip install notepadpp-mcp
+pip install osc-mcp
 
 # Test
-notepadpp-mcp --version
+osc-mcp --version
 
 # Should work globally now!
 ```
@@ -437,9 +437,9 @@ notepadpp-mcp --version
 ### **A. Add PyPI Badge to README**
 
 ```markdown
-[![PyPI version](https://img.shields.io/pypi/v/notepadpp-mcp.svg)](https://pypi.org/project/notepadpp-mcp/)
-[![Python versions](https://img.shields.io/pypi/pyversions/notepadpp-mcp.svg)](https://pypi.org/project/notepadpp-mcp/)
-[![Downloads](https://pepy.tech/badge/notepadpp-mcp)](https://pepy.tech/project/notepadpp-mcp)
+[![PyPI version](https://img.shields.io/pypi/v/osc-mcp.svg)](https://pypi.org/project/osc-mcp/)
+[![Python versions](https://img.shields.io/pypi/pyversions/osc-mcp.svg)](https://pypi.org/project/osc-mcp/)
+[![Downloads](https://pepy.tech/badge/osc-mcp)](https://pepy.tech/project/osc-mcp)
 ```
 
 ---
@@ -451,13 +451,13 @@ notepadpp-mcp --version
 ## Installation
 
 ```bash
-pip install notepadpp-mcp
+pip install osc-mcp
 ```
 
 **From source**:
 ```bash
-git clone https://github.com/sandraschi/notepadpp-mcp.git
-cd notepadpp-mcp
+git clone https://github.com/sandraschi/osc-mcp.git
+cd osc-mcp
 pip install -e .
 ```
 ```
@@ -466,12 +466,12 @@ pip install -e .
 
 ### **C. Create GitHub Release**
 
-1. Go to: https://github.com/sandraschi/notepadpp-mcp/releases
+1. Go to: https://github.com/sandraschi/osc-mcp/releases
 2. Click "Create a new release"
 3. Tag: `v1.2.0`
 4. Title: `v1.2.0 - Plugin Ecosystem & MCPB Packaging`
 5. Description: Copy from CHANGELOG.md
-6. Attach: `dist/notepadpp-mcp-1.2.0.tar.gz`
+6. Attach: `dist/osc-mcp-1.2.0.tar.gz`
 7. ✅ Publish release
 
 ---
@@ -537,12 +537,12 @@ Invalid or non-existent authentication information
 ### **Error 3: "Package name already taken"**
 
 ```
-ERROR: The name 'notepadpp-mcp' is already claimed
+ERROR: The name 'osc-mcp' is already claimed
 ```
 
 **Cause**: Someone else registered this name  
 **Solution**: 
-- Choose different name (e.g., `notepadpp-mcp-server`)
+- Choose different name (e.g., `osc-mcp-server`)
 - Contact PyPI admins if you own the name
 
 ---
@@ -579,12 +579,12 @@ ERROR: `description` is a required field
 
 **After publishing**, your package page shows:
 
-**URL**: https://pypi.org/project/notepadpp-mcp/
+**URL**: https://pypi.org/project/osc-mcp/
 
 **Displays**:
 - ✅ Package name & version
 - ✅ README (rendered from your README.md)
-- ✅ Installation command: `pip install notepadpp-mcp`
+- ✅ Installation command: `pip install osc-mcp`
 - ✅ Dependencies
 - ✅ Python version requirements
 - ✅ Download statistics
@@ -622,7 +622,7 @@ pip install -e .
 
 # 2. Test on Test PyPI
 twine upload --repository testpypi dist/*
-pip install --index-url https://test.pypi.org/simple/ notepadpp-mcp
+pip install --index-url https://test.pypi.org/simple/ osc-mcp
 # Verify works
 
 # 3. THEN upload to production
@@ -755,7 +755,7 @@ jobs:
 - [ ] Test upload: `twine upload --repository testpypi dist/*`
 - [ ] Test install from Test PyPI
 - [ ] Production upload: `twine upload dist/*`
-- [ ] Verify: `pip install notepadpp-mcp`
+- [ ] Verify: `pip install osc-mcp`
 - [ ] Create GitHub release
 - [ ] Update README badges
 
@@ -767,13 +767,13 @@ jobs:
 
 ```bash
 # Anyone in the world can now install:
-pip install notepadpp-mcp
+pip install osc-mcp
 
 # Your package is discoverable on:
-https://pypi.org/project/notepadpp-mcp/
+https://pypi.org/project/osc-mcp/
 
 # Download statistics available at:
-https://pepy.tech/project/notepadpp-mcp
+https://pepy.tech/project/osc-mcp
 ```
 
 **Congratulations! You're now a published Python package author!** 🎊
@@ -782,7 +782,7 @@ https://pepy.tech/project/notepadpp-mcp
 
 *PyPI Publishing Guide*  
 *Created: October 8, 2025*  
-*For: notepadpp-mcp v1.2.0*  
+*For: osc-mcp v1.2.0*  
 *Status: Ready to publish*
 
 **Happy publishing!** 🚀📦

@@ -16,7 +16,7 @@
 ## 📁 **Complete Directory Tree**
 
 ```
-notepadpp-mcp/
+osc-mcp/
 │
 ├── docs/                                   📚 All documentation
 │   │
@@ -39,12 +39,12 @@ notepadpp-mcp/
 │   │   ├── GLAMA_AI_RESCAN_GUIDE.md
 │   │   └── GLAMA_RESCAN_EMAIL.txt
 │   │
-│   ├── notepadpp/                          📝 Notepad++ reference (5 files, 39+ pages!)
-│   │   ├── README.md                       → Notepad++ hub
-│   │   ├── NOTEPADPP_COMPLETE_GUIDE.md     → 15+ pages complete reference
+│   ├── osc/                          📝 OSC reference (5 files, 39+ pages!)
+│   │   ├── README.md                       → OSC hub
+│   │   ├── OSC_COMPLETE_GUIDE.md     → 15+ pages complete reference
 │   │   ├── PLUGIN_ECOSYSTEM_COMPREHENSIVE.md → 12+ pages plugin guide
 │   │   ├── COMMUNITY_AND_SUPPORT.md        → 10+ pages community
-│   │   └── NOTEPADPP_COLOR_FIX_2025_10_08.md → Display fix
+│   │   └── OSC_COLOR_FIX_2025_10_08.md → Display fix
 │   │
 │   ├── development/                        💻 Development guides (7 files)
 │   │   ├── README.md                       → Development hub
@@ -72,7 +72,7 @@ notepadpp-mcp/
 │   ├── ORGANIZATION_SUMMARY.md             📋 Organization log
 │   └── COMPLETE_DOCUMENTATION_STRUCTURE.md 📊 This file
 │
-├── src/notepadpp_mcp/docs/                 📘 API documentation
+├── src/oscmcp/docs/                 📘 API documentation
 │   ├── README.md
 │   ├── PRD.md
 │   ├── PLUGIN_ECOSYSTEM.md
@@ -97,7 +97,7 @@ notepadpp-mcp/
 |--------------|-------|------------|-------|-------|
 | **repository-protection** | 4 | ✅ | 20+ | Git safety & AI workflow |
 | **glama-platform** | 11 | ✅ | 50+ | Gold Status & platform |
-| **notepadpp** | 5 | ✅ | 39+ | Notepad++ reference |
+| **osc** | 5 | ✅ | 39+ | OSC reference |
 | **development** | 7 | ✅ | 25+ | Dev practices |
 | **mcp-technical** | 6 | ✅ | 30+ | MCP technical |
 | **mcpb-packaging** | 3 | ✅ | 20+ | MCPB distribution |
@@ -111,7 +111,7 @@ notepadpp-mcp/
 
 **Start Here**:
 1. [Main README](../README.md) - Project overview (5 min)
-2. [Notepad++ Complete Guide](notepadpp/NOTEPADPP_COMPLETE_GUIDE.md) - Understanding Notepad++ (30 min)
+2. [OSC Complete Guide](osc/OSC_COMPLETE_GUIDE.md) - Understanding OSC (30 min)
 3. [Installation](#) - Get up and running (10 min)
 
 **Total time**: 45 minutes to understand the project
@@ -155,7 +155,7 @@ notepadpp-mcp/
 
 ## 📚 **Documentation Highlights**
 
-### **Notepad++ Reference** (NEW! 39+ pages)
+### **OSC Reference** (NEW! 39+ pages)
 
 **Comprehensive coverage**:
 - ✅ 22-year history (2003-2025)
@@ -167,7 +167,7 @@ notepadpp-mcp/
 - ✅ Recent updates (v8.5-8.7)
 
 **Files created**:
-1. NOTEPADPP_COMPLETE_GUIDE.md (15+ pages)
+1. OSC_COMPLETE_GUIDE.md (15+ pages)
 2. PLUGIN_ECOSYSTEM_COMPREHENSIVE.md (12+ pages)
 3. COMMUNITY_AND_SUPPORT.md (10+ pages)
 
@@ -217,7 +217,7 @@ notepadpp-mcp/
 Go directly to topic subdirectory:
 - `docs/repository-protection/` for Git safety
 - `docs/glama-platform/` for Gold Status
-- `docs/notepadpp/` for Notepad++ reference
+- `docs/osc/` for OSC reference
 - `docs/development/` for dev guides
 - `docs/mcp-technical/` for MCP technical
 - `docs/mcpb-packaging/` for packaging
@@ -254,12 +254,12 @@ Links to all major documentation sections with clear categories.
 |----------|-------|-------|---------|
 | `docs/repository-protection/` | 4 | 20+ | Git safety |
 | `docs/glama-platform/` | 11 | 50+ | Quality |
-| `docs/notepadpp/` | 5 | 39+ | Reference |
+| `docs/osc/` | 5 | 39+ | Reference |
 | `docs/development/` | 7 | 25+ | Dev guides |
 | `docs/mcp-technical/` | 6 | 30+ | MCP tech |
 | `docs/mcpb-packaging/` | 3 | 20+ | Packaging |
 | `docs/` (root) | 2 | 5+ | Indexes |
-| `src/notepadpp_mcp/docs/` | 4 | 15+ | API |
+| `src/oscmcp/docs/` | 4 | 15+ | API |
 | `scripts/` | 1 | 2+ | Scripts |
 | **Total** | **43** | **206+** | Complete |
 
@@ -324,7 +324,7 @@ Links to all major documentation sections with clear categories.
 
 ### **New Documentation Created**
 
-**39+ pages of Notepad++ reference**:
+**39+ pages of OSC reference**:
 - Complete history (22 years)
 - All features documented
 - 1,400+ plugin ecosystem
@@ -335,7 +335,7 @@ Links to all major documentation sections with clear categories.
 **11 hub READMEs** for navigation:
 - repository-protection/README.md
 - glama-platform/README.md
-- notepadpp/README.md
+- osc/README.md
 - development/README.md
 - mcp-technical/README.md
 - mcpb-packaging/README.md
@@ -353,7 +353,7 @@ Links to all major documentation sections with clear categories.
 |------|-------|------|
 | **Protect my repo** | [repository-protection/](repository-protection/README.md) | 15 min |
 | **Understand Gold Status** | [glama-platform/](glama-platform/README.md) | 20 min |
-| **Learn about Notepad++** | [notepadpp/](notepadpp/README.md) | 1 hour |
+| **Learn about OSC** | [osc/](osc/README.md) | 1 hour |
 | **Develop features** | [development/](development/README.md) | 30 min |
 | **Deploy MCP server** | [mcp-technical/](mcp-technical/README.md) | 45 min |
 | **Package for distribution** | [mcpb-packaging/](mcpb-packaging/README.md) | 3 hours |
@@ -500,7 +500,7 @@ Links to all major documentation sections with clear categories.
 
 ## 🎊 **Summary**
 
-**The notepadpp-mcp documentation is now**:
+**The osc-mcp documentation is now**:
 
 ✅ **Comprehensive** - 206+ pages covering everything  
 ✅ **Organized** - 6 logical subdirectories  
@@ -526,8 +526,8 @@ Git/GitHub/Backups?
 Quality/Gold Status?
   └─> docs/glama-platform/
 
-Notepad++ info?
-  └─> docs/notepadpp/
+OSC info?
+  └─> docs/osc/
 
 Development practices?
   └─> docs/development/

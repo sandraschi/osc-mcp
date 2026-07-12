@@ -147,7 +147,7 @@ logger = logging.getLogger(__name__)
 ### Phase 1: Critical Fixes (Week 1)
 ```bash
 # 1. Fix all test failures
-python -m pytest src/notepadpp_mcp/tests/ -v
+python -m pytest src/oscmcp/tests/ -v
 # Target: 0 test failures
 
 # 2. Replace print() statements with logging
@@ -180,7 +180,7 @@ python -m pytest src/notepadpp_mcp/tests/ -v
 ```bash
 # 1. Add code coverage reporting
 pip install pytest-cov
-pytest --cov=src/notepadpp_mcp --cov-report=html
+pytest --cov=src/oscmcp --cov-report=html
 
 # 2. Anthropic MCP validation
 mcpb validate

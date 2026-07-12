@@ -1,6 +1,6 @@
 # 📚 Complete Documentation Index
 
-**Central hub for all notepadpp-mcp documentation**
+**Central hub for all osc-mcp documentation**
 
 ---
 
@@ -46,12 +46,12 @@ docs/
 │   ├── GLAMA_AI_RESCAN_GUIDE.md → Rescan procedures
 │   └── GLAMA_RESCAN_EMAIL.txt → Support templates
 │
-├── notepadpp/                  📝 Complete Notepad++ reference (NEW!)
-│   ├── README.md              → Notepad++ documentation hub
-│   ├── NOTEPADPP_COMPLETE_GUIDE.md → History, features, config (15+ pages)
+├── osc/                  📝 Complete OSC reference (NEW!)
+│   ├── README.md              → OSC documentation hub
+│   ├── OSC_COMPLETE_GUIDE.md → History, features, config (15+ pages)
 │   ├── PLUGIN_ECOSYSTEM_COMPREHENSIVE.md → 1,400+ plugins (12+ pages)
 │   ├── COMMUNITY_AND_SUPPORT.md → Community & help (10+ pages)
-│   └── NOTEPADPP_COLOR_FIX_2025_10_08.md → White-on-white fix
+│   └── OSC_COLOR_FIX_2025_10_08.md → White-on-white fix
 │
 ├── development/                💻 Development guides & best practices (NEW!)
 │   ├── README.md              → Development documentation hub
@@ -81,7 +81,7 @@ docs/
 ├── DOCUMENTATION_INDEX.md     📚 This file - Complete doc index
 ├── ORGANIZATION_SUMMARY.md    📋 Documentation organization log
 │
-src/notepadpp_mcp/docs/
+src/oscmcp/docs/
 ├── README.md                  📘 Complete API documentation
 ├── PRD.md                     📋 Product requirements
 ├── PLUGIN_ECOSYSTEM.md        🔌 Plugin integration (1,400+)
@@ -212,17 +212,17 @@ Complete documentation for achieving, maintaining, and enhancing Gold Status on 
 
 ---
 
-## 📝 **Notepad++ Reference Documentation**
+## 📝 **OSC Reference Documentation**
 
-**Location**: `docs/notepadpp/`
+**Location**: `docs/osc/`
 
 ### **Purpose**
-Complete reference documentation for Notepad++ - history, features, plugins, and community.
+Complete reference documentation for OSC - history, features, plugins, and community.
 
 ### **Documents**
 
-#### **1. Notepad++ Complete Guide** ⭐
-📄 [NOTEPADPP_COMPLETE_GUIDE.md](notepadpp/NOTEPADPP_COMPLETE_GUIDE.md)
+#### **1. OSC Complete Guide** ⭐
+📄 [OSC_COMPLETE_GUIDE.md](osc/OSC_COMPLETE_GUIDE.md)
 
 **15+ page comprehensive reference** covering:
 - History & evolution (2003-2025, 22 years)
@@ -234,7 +234,7 @@ Complete reference documentation for Notepad++ - history, features, plugins, and
 - Best practices by user type
 
 #### **2. Plugin Ecosystem Guide**
-📄 [PLUGIN_ECOSYSTEM_COMPREHENSIVE.md](notepadpp/PLUGIN_ECOSYSTEM_COMPREHENSIVE.md)
+📄 [PLUGIN_ECOSYSTEM_COMPREHENSIVE.md](osc/PLUGIN_ECOSYSTEM_COMPREHENSIVE.md)
 
 **12+ page plugin reference** covering:
 - 1,400+ official plugins
@@ -245,7 +245,7 @@ Complete reference documentation for Notepad++ - history, features, plugins, and
 - Security & signing
 
 #### **3. Community & Support**
-📄 [COMMUNITY_AND_SUPPORT.md](notepadpp/COMMUNITY_AND_SUPPORT.md)
+📄 [COMMUNITY_AND_SUPPORT.md](osc/COMMUNITY_AND_SUPPORT.md)
 
 **10+ page community guide** covering:
 - Official channels (forum, GitHub, docs)
@@ -255,7 +255,7 @@ Complete reference documentation for Notepad++ - history, features, plugins, and
 - 100M+ users worldwide
 
 #### **4. Color Fix Documentation**
-📄 [NOTEPADPP_COLOR_FIX_2025_10_08.md](notepadpp/NOTEPADPP_COLOR_FIX_2025_10_08.md)
+📄 [OSC_COLOR_FIX_2025_10_08.md](osc/OSC_COLOR_FIX_2025_10_08.md)
 
 **White-on-white text fix**:
 - Problem diagnosis
@@ -269,7 +269,7 @@ Complete reference documentation for Notepad++ - history, features, plugins, and
 **Location**: `docs/development/`
 
 ### **Purpose**
-Development guides, best practices, and lessons learned from building notepadpp-mcp.
+Development guides, best practices, and lessons learned from building osc-mcp.
 
 ### **Documents**
 
@@ -422,10 +422,10 @@ Complete guide to professional MCP server packaging and distribution.
 
 ## 📘 **API & Development Documentation**
 
-**Location**: `src/notepadpp_mcp/docs/`
+**Location**: `src/oscmcp/docs/`
 
 ### **Complete API Documentation**
-📄 [src/notepadpp_mcp/docs/README.md](../src/notepadpp_mcp/docs/README.md)
+📄 [src/oscmcp/docs/README.md](../src/oscmcp/docs/README.md)
 
 **Comprehensive MCP server guide**:
 - All 26 tools documented
@@ -434,7 +434,7 @@ Complete guide to professional MCP server packaging and distribution.
 - Architecture
 
 ### **Product Requirements Document**
-📄 [src/notepadpp_mcp/docs/PRD.md](../src/notepadpp_mcp/docs/PRD.md)
+📄 [src/oscmcp/docs/PRD.md](../src/oscmcp/docs/PRD.md)
 
 **Vision and roadmap**:
 - Business objectives
@@ -443,7 +443,7 @@ Complete guide to professional MCP server packaging and distribution.
 - Success metrics
 
 ### **Plugin Ecosystem Guide**
-📄 [src/notepadpp_mcp/docs/PLUGIN_ECOSYSTEM.md](../src/notepadpp_mcp/docs/PLUGIN_ECOSYSTEM.md)
+📄 [src/oscmcp/docs/PLUGIN_ECOSYSTEM.md](../src/oscmcp/docs/PLUGIN_ECOSYSTEM.md)
 
 **Integration with 1,400+ official plugins**:
 - Plugin discovery
@@ -498,7 +498,7 @@ Overview of all automation scripts.
 | Branch strategy | [Branch Strategy](repository-protection/BRANCH_STRATEGY_AND_AI_WORKFLOW.md) | Workflow |
 | AI collaboration | [Branch Strategy](repository-protection/BRANCH_STRATEGY_AND_AI_WORKFLOW.md) | AI Prompts |
 | Create release | [MCPB Guide](MCPB_BUILDING_GUIDE.md) | Releases |
-| Run tests | [API Docs](../src/notepadpp_mcp/docs/README.md) | Testing |
+| Run tests | [API Docs](../src/oscmcp/docs/README.md) | Testing |
 
 ### **Troubleshooting**
 
@@ -507,7 +507,7 @@ Overview of all automation scripts.
 | Can't push to main | [Branch Protection](repository-protection/BRANCH_PROTECTION_SETTINGS.md) | Common Issues |
 | Lost work | [Backup Guide](repository-protection/BACKUP_AND_RECOVERY_GUIDE.md) | Recovery |
 | Build fails | [MCPB Guide](MCPB_BUILDING_GUIDE.md) | Troubleshooting |
-| Tool errors | [API Docs](../src/notepadpp_mcp/docs/README.md) | Tools |
+| Tool errors | [API Docs](../src/oscmcp/docs/README.md) | Tools |
 
 ---
 
@@ -528,8 +528,8 @@ Overview of all automation scripts.
 1. [README.md](../README.md) - Overview
 2. [CONTRIBUTING.md](../CONTRIBUTING.md) - Guidelines
 3. [Repository Protection](repository-protection/README.md) - Strategy
-4. [API Documentation](../src/notepadpp_mcp/docs/README.md) - Tools
-5. [PRD](../src/notepadpp_mcp/docs/PRD.md) - Vision
+4. [API Documentation](../src/oscmcp/docs/README.md) - Tools
+5. [PRD](../src/oscmcp/docs/PRD.md) - Vision
 
 **Result**: Ready to contribute! ✅
 
@@ -576,9 +576,9 @@ If you find errors or missing information:
 
 ### **Contact**
 
-- **GitHub Issues**: https://github.com/sandraschi/notepadpp-mcp/issues
-- **Pull Requests**: https://github.com/sandraschi/notepadpp-mcp/pulls
-- **Discussions**: https://github.com/sandraschi/notepadpp-mcp/discussions
+- **GitHub Issues**: https://github.com/sandraschi/osc-mcp/issues
+- **Pull Requests**: https://github.com/sandraschi/osc-mcp/pulls
+- **Discussions**: https://github.com/sandraschi/osc-mcp/discussions
 
 ---
 
@@ -607,7 +607,7 @@ Based on what you need:
 ### **I Want to Develop**
 → Read [CONTRIBUTING.md](../CONTRIBUTING.md)  
 → Review [Branch Strategy](repository-protection/BRANCH_STRATEGY_AND_AI_WORKFLOW.md)  
-→ Check [API Docs](../src/notepadpp_mcp/docs/README.md)
+→ Check [API Docs](../src/oscmcp/docs/README.md)
 
 ### **I Want to Release**
 → Read [MCPB Guide](MCPB_BUILDING_GUIDE.md)  
@@ -617,7 +617,7 @@ Based on what you need:
 ### **I Need Help**
 → Check [Repository Protection](repository-protection/README.md)  
 → See [Backup Guide](repository-protection/BACKUP_AND_RECOVERY_GUIDE.md)  
-→ Create [GitHub Issue](https://github.com/sandraschi/notepadpp-mcp/issues)
+→ Create [GitHub Issue](https://github.com/sandraschi/osc-mcp/issues)
 
 ---
 
@@ -629,5 +629,5 @@ Based on what you need:
 *Status: Complete*  
 *Coverage: 100%*
 
-**Everything you need to know about notepadpp-mcp!** 📚✨
+**Everything you need to know about osc-mcp!** 📚✨
 

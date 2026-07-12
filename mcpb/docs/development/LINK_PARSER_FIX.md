@@ -589,7 +589,7 @@ Warnings: "Large number of links (2000)"
 
 ## Files Created
 
-### 1. **`src/notepadpp_mcp/link_parser.py`** (600+ lines)
+### 1. **`src/oscmcp/link_parser.py`** (600+ lines)
 - Complete parser implementation
 - Non-greedy regex patterns
 - Timeout enforcement

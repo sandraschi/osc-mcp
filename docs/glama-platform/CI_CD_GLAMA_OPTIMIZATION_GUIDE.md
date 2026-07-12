@@ -17,7 +17,7 @@
 
 ## 🎯 Overview
 
-This document provides a comprehensive guide to our **enterprise-grade CI/CD pipeline** and **Glama.ai platform optimization** for the `notepadpp-mcp` repository. Our setup achieves **Gold Status certification** with a quality score of **85/100 points** on the Glama.ai platform.
+This document provides a comprehensive guide to our **enterprise-grade CI/CD pipeline** and **Glama.ai platform optimization** for the `osc-mcp` repository. Our setup achieves **Gold Status certification** with a quality score of **85/100 points** on the Glama.ai platform.
 
 ### Key Achievements
 - 🏆 **Gold Status** on Glama.ai platform (85/100 points)
@@ -116,7 +116,7 @@ strategy:
 3. **Testing**
    ```bash
    # Comprehensive test suite
-   python -m pytest -v --cov=src/notepadpp_mcp --cov-report=term-missing --cov-report=html --cov-report=xml
+   python -m pytest -v --cov=src/oscmcp --cov-report=term-missing --cov-report=html --cov-report=xml
    ```
 
 4. **Build Validation**
@@ -344,9 +344,9 @@ on:
 
 #### 1. `glama.yml` - Platform Metadata
 ```yaml
-name: notepadpp-mcp
+name: osc-mcp
 version: "0.1.0"
-description: "FastMCP 2.12 compatible MCP server for Notepad++ automation - Gold Status Certified"
+description: "FastMCP 2.12 compatible MCP server for OSC automation - Gold Status Certified"
 
 quality:
   status: "gold"
@@ -368,19 +368,19 @@ features:
 
 #### 2. Repository Topics (GitHub)
 ```
-mcp-server, notepadpp, windows-automation, fastmcp, gold-status, production-ready, text-editor, file-operations, linting, code-quality, enterprise, claude-desktop
+mcp-server, osc, windows-automation, fastmcp, gold-status, production-ready, text-editor, file-operations, linting, code-quality, enterprise, claude-desktop
 ```
 
 #### 3. Repository Description
 ```
-FastMCP 2.12 compatible MCP server for Notepad++ automation - Gold Status Certified
+FastMCP 2.12 compatible MCP server for OSC automation - Gold Status Certified
 ```
 
 ### GitHub App Integration
 
 #### Installation Process
 1. **Visit**: https://github.com/apps/glama-ai
-2. **Install**: Select `sandraschi/notepadpp-mcp` repository
+2. **Install**: Select `sandraschi/osc-mcp` repository
 3. **Permissions**: Grant metadata, contents, releases, workflows access
 4. **Webhooks**: Configure automatic update notifications
 
@@ -393,7 +393,7 @@ FastMCP 2.12 compatible MCP server for Notepad++ automation - Gold Status Certif
 ### Platform Visibility Optimization
 
 #### Search Optimization
-- **Primary Keywords**: `notepadpp-mcp`, `mcp-server`, `windows-automation`
+- **Primary Keywords**: `osc-mcp`, `mcp-server`, `windows-automation`
 - **Secondary Keywords**: `fastmcp`, `gold-status`, `production-ready`
 - **Long-tail Keywords**: `notepad++ automation`, `text editor mcp`, `windows file operations`
 
@@ -424,7 +424,7 @@ bandit -r src/
 #### Test Coverage Analysis
 ```bash
 # Coverage reporting
-pytest --cov=src/notepadpp_mcp --cov-report=term-missing --cov-report=html --cov-report=xml
+pytest --cov=src/oscmcp --cov-report=term-missing --cov-report=html --cov-report=xml
 ```
 
 **Current Coverage**: 23% (965 statements, 746 missed)
@@ -648,7 +648,7 @@ analytics:
 pytest -v --tb=short --maxfail=1
 
 # Check specific test
-pytest src/notepadpp_mcp/tests/test_server.py::TestMCPTools::test_open_file_success -v
+pytest src/oscmcp/tests/test_server.py::TestMCPTools::test_open_file_success -v
 ```
 
 #### 2. Build Issues
@@ -803,7 +803,7 @@ curl -X POST \
 ## 📞 Support & Resources
 
 ### Documentation
-- **Repository**: https://github.com/sandraschi/notepadpp-mcp
+- **Repository**: https://github.com/sandraschi/osc-mcp
 - **CI/CD Guide**: This document
 - **Glama.ai Integration**: `GLAMA_INTEGRATION.md`
 - **GitHub App Setup**: `docs/GLAMA_GITHUB_APP_SETUP.md`
@@ -844,7 +844,7 @@ curl -X POST \
 
 **Document Version**: 1.0  
 **Last Updated**: October 5, 2025  
-**Repository**: notepadpp-mcp  
+**Repository**: osc-mcp  
 **Status**: 🏆 Gold Tier (85/100)  
 **Platform**: Glama.ai MCP Directory  
 **CI/CD**: Enterprise Production Ready

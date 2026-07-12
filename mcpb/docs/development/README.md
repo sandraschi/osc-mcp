@@ -1,6 +1,6 @@
 # 💻 Development Documentation
 
-**Guides, best practices, and lessons learned for developing notepadpp-mcp**
+**Guides, best practices, and lessons learned for developing osc-mcp**
 
 ---
 
@@ -150,7 +150,7 @@ This directory contains **development-focused documentation** including:
 ## 🏆 **Development Quality**
 
 **This documentation reflects**:
-- ✅ Real-world experience from building notepadpp-mcp
+- ✅ Real-world experience from building osc-mcp
 - ✅ Lessons learned achieving Gold Status (85/100 → 90/100)
 - ✅ Best practices for MCP server development
 - ✅ Effective AI collaboration techniques

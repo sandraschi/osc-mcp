@@ -201,7 +201,7 @@ This directory contains **MCP server technical documentation** including:
 
 - **Claude Desktop** - Primary client
 - **Windows API** - Native integration (pywin32)
-- **Notepad++** - Target application
+- **OSC** - Target application
 - **GitHub Actions** - CI/CD
 - **Docker** - Optional containerization
 

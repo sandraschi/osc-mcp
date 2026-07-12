@@ -43,7 +43,7 @@ TypeError: 'function' object is not subscriptable
 ```
 
 **Affected servers**:
-- ❌ notepadpp-mcp
+- ❌ osc-mcp
 - ❌ advanced-memory-mcp
 - ❌ rtorrent-mcp
 - ❌ Most other MCP servers
@@ -141,7 +141,7 @@ requires-python = ">=3.10"
 
 **Update `requirements.txt`**:
 ```python
-# Notepad++ MCP Server Requirements
+# OSC MCP Server Requirements
 # Compatible with Python 3.10+
 # Windows only
 
@@ -188,7 +188,7 @@ pip install -r requirements.txt
 
 ```bash
 # Test server startup
-python -m notepadpp_mcp.tools.server
+python -m oscmcp.tools.server
 
 # Should see:
 # ✅ FastMCP 2.12.4
