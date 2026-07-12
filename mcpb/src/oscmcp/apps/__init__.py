@@ -13,6 +13,8 @@ from .supercollider import SuperColliderOSC
 from .touchdesigner import TouchDesignerOSC
 from .vcvrack import VCVController
 from .vrchat import VRChatOSC
+from .obs import OBSOSC
+from .qlab import QLabOSC
 
 __all__ = [
     "AbletonLive",
@@ -29,4 +31,6 @@ __all__ = [
     "TouchDesignerOSC",
     "VCVController",
     "VRChatOSC",
+    "OBSOSC",
+    "QLabOSC",
 ]

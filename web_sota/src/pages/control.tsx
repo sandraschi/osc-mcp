@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Power, RefreshCw, Sliders, Radio, Link as LinkIcon, Trash2, Plus, AlertCircle, Play } from "lucide-react";
+import { Power, RefreshCw, Sliders, Radio, Link as LinkIcon, Trash2, Plus, AlertCircle, Play, Wifi, Wand2 } from "lucide-react";
 
 export function Control() {
   const [loading, setLoading] = useState(false);
@@ -48,6 +48,32 @@ export function Control() {
     tool: "send_osc_message",
     argsTemplate: '{\n  "host": "127.0.0.1",\n  "port": 9000,\n  "address": "/resolume/beat",\n  "values": ["$0"]\n}'
   });
+
+  // Subnet Scanner State
+  const [scanSubnet, setScanSubnet] = useState("192.168.1");
+  const [scanPorts, setScanPorts] = useState("7000,8000,9000,11000,53000");
+  const [scanProtocol, setScanProtocol] = useState("udp");
+  const [scanResults, setScanResults] = useState<any[]>([]);
+
+  // Workflow Builder State
+  const [builderMetadata, setBuilderMetadata] = useState({
+    id: "custom-init",
+    title: "My Custom Init Workflow",
+    description: "Multi-step system initialization"
+  });
+  const [builderSteps, setBuilderSteps] = useState<any[]>([]);
+  const [newStep, setNewStep] = useState({
+    stepId: "step-1",
+    operationId: "send_osc",
+    address: "/volume",
+    args: "0.8",
+    delayMs: 0
+  });
+
+  // Interactive controls state
+  const [volumeSlider, setVolumeSlider] = useState(0.8);
+  const [muteToggle, setMuteToggle] = useState(false);
+  const [sceneText, setSceneText] = useState("Scene 1");
 
   const callTool = async (name: string, args: Record<string, any> = {}) => {
     try {
@@ -265,6 +291,120 @@ export function Control() {
     }
   };
 
+
+  // Handle Subnet Scan
+  const handleScanSubnet = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const portsArr = scanPorts.split(",").map(p => Number(p.trim())).filter(p => !isNaN(p));
+      const res = await callTool("scan_subnet_osc", {
+        subnet_prefix: scanSubnet,
+        ports: portsArr,
+        protocol: scanProtocol
+      });
+      if (res.status === "success") {
+        setScanResults(res.active_hosts || []);
+      }
+    } catch (err: any) {
+      setError(`Failed to scan subnet: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add Step to builder
+  const handleAddBuilderStep = () => {
+    let parsedArgs: any[] = [];
+    if (newStep.args) {
+      try {
+        parsedArgs = JSON.parse(`[${newStep.args}]`);
+      } catch {
+        parsedArgs = newStep.args.split(",").map(arg => {
+          const val = arg.trim();
+          return isNaN(Number(val)) ? val : Number(val);
+        });
+      }
+    }
+
+    const step = {
+      stepId: newStep.stepId || `step-${builderSteps.length + 1}`,
+      operationId: newStep.operationId,
+      parameters: [
+        { name: "address", in: "body", value: newStep.address },
+        { name: "args", in: "body", value: parsedArgs }
+      ],
+      ...(newStep.delayMs > 0 ? { delayBefore: newStep.delayMs } : {})
+    };
+
+    setBuilderSteps(prev => [...prev, step]);
+    setNewStep(prev => ({
+      ...prev,
+      stepId: `step-${builderSteps.length + 2}`
+    }));
+  };
+
+  // Remove Step from builder
+  const handleRemoveBuilderStep = (idx: number) => {
+    setBuilderSteps(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  // Save Workflow
+  const handleSaveWorkflow = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await callTool("save_workflow_descriptor", {
+        workflow_id: builderMetadata.id,
+        title: builderMetadata.title,
+        description: builderMetadata.description,
+        steps: builderSteps
+      });
+      if (res.status === "success") {
+        alert("Workflow saved successfully!");
+        setBuilderSteps([]);
+      }
+    } catch (err: any) {
+      setError(`Failed to save workflow: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Faders & buttons controls
+  const handleFaderChange = async (val: number) => {
+    setVolumeSlider(val);
+    try {
+      await callTool("send_osc", {
+        host: "127.0.0.1",
+        port: 8000,
+        address: "/volume",
+        values: [val]
+      });
+    } catch {}
+  };
+
+  const handleMuteChange = async (val: boolean) => {
+    setMuteToggle(val);
+    try {
+      await callTool("send_osc", {
+        host: "127.0.0.1",
+        port: 8000,
+        address: "/mute",
+        values: [val ? 1 : 0]
+      });
+    } catch {}
+  };
+
+  const handleSceneTrigger = async () => {
+    try {
+      await callTool("obs_manager", {
+        operation: "switch_scene",
+        scene_name: sceneText
+      });
+    } catch {}
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -319,6 +459,14 @@ export function Control() {
           <TabsTrigger value="triggers" className="data-[state=active]:bg-slate-800">
             <LinkIcon className="w-4 h-4 mr-2" />
             Reactive Triggers
+          </TabsTrigger>
+          <TabsTrigger value="builder" className="data-[state=active]:bg-slate-800">
+            <Wand2 className="w-4 h-4 mr-2" />
+            Workflow Builder
+          </TabsTrigger>
+          <TabsTrigger value="scanner" className="data-[state=active]:bg-slate-800">
+            <Wifi className="w-4 h-4 mr-2" />
+            Scanner & Faders
           </TabsTrigger>
         </TabsList>
 
@@ -739,6 +887,291 @@ export function Control() {
                       )}
                     </tbody>
                   </table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* WORKFLOW BUILDER CONTENT */}
+        <TabsContent value="builder" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Metadata & Step Form */}
+            <Card className="border-slate-800 bg-slate-950/50 md:col-span-1">
+              <CardHeader>
+                <CardTitle className="text-white text-md">Workflow Properties</CardTitle>
+                <CardDescription className="text-slate-400">Define your automation metadata</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Workflow ID (Filename)</Label>
+                  <Input
+                    value={builderMetadata.id}
+                    onChange={e => setBuilderMetadata(prev => ({ ...prev, id: e.target.value }))}
+                    className="border-slate-800 bg-slate-900 text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Workflow Title</Label>
+                  <Input
+                    value={builderMetadata.title}
+                    onChange={e => setBuilderMetadata(prev => ({ ...prev, title: e.target.value }))}
+                    className="border-slate-800 bg-slate-900 text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Description</Label>
+                  <Input
+                    value={builderMetadata.description}
+                    onChange={e => setBuilderMetadata(prev => ({ ...prev, description: e.target.value }))}
+                    className="border-slate-800 bg-slate-900 text-white"
+                  />
+                </div>
+
+                <div className="border-t border-slate-800 pt-4 space-y-4">
+                  <h4 className="text-sm font-semibold text-slate-200">Add Step</h4>
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Operation ID</Label>
+                    <select
+                      value={newStep.operationId}
+                      onChange={e => setNewStep(prev => ({ ...prev, operationId: e.target.value }))}
+                      className="w-full rounded-md border border-slate-800 bg-slate-900 p-2 text-white text-sm"
+                    >
+                      <option value="send_osc">send_osc</option>
+                      <option value="obs_manager">obs_manager</option>
+                      <option value="qlab_manager">qlab_manager</option>
+                      <option value="ableton_manager">ableton_manager</option>
+                      <option value="vcv_manager">vcv_manager</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">OSC Path / Parameter</Label>
+                    <Input
+                      value={newStep.address}
+                      onChange={e => setNewStep(prev => ({ ...prev, address: e.target.value }))}
+                      className="border-slate-800 bg-slate-900 text-white font-mono text-xs"
+                      placeholder="/volume or scene_name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Arguments (Comma-separated)</Label>
+                    <Input
+                      value={newStep.args}
+                      onChange={e => setNewStep(prev => ({ ...prev, args: e.target.value }))}
+                      className="border-slate-800 bg-slate-900 text-white font-mono text-xs"
+                      placeholder="0.8, 'test', true"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Delay Before Step (ms)</Label>
+                    <Input
+                      type="number"
+                      value={newStep.delayMs}
+                      onChange={e => setNewStep(prev => ({ ...prev, delayMs: Number(e.target.value) }))}
+                      className="border-slate-800 bg-slate-900 text-white"
+                    />
+                  </div>
+                  <Button
+                    onClick={handleAddBuilderStep}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Plus className="w-4 h-4 mr-2" /> Add Step
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Steps Preview */}
+            <Card className="border-slate-800 bg-slate-950/50 md:col-span-2">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-white text-md">Workflow Steps Checklist</CardTitle>
+                  <CardDescription className="text-slate-400">Order of execution for {builderMetadata.title}</CardDescription>
+                </div>
+                <Button
+                  onClick={handleSaveWorkflow}
+                  disabled={builderSteps.length === 0 || loading}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                >
+                  Save & Compile Arazzo
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {builderSteps.length === 0 ? (
+                    <div className="py-12 border-2 border-dashed border-slate-800 rounded-md text-center text-slate-500 italic">
+                      No steps added yet. Use the property panel on the left to orchestrate your workflow steps.
+                    </div>
+                  ) : (
+                    builderSteps.map((step, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-3 rounded-md border border-slate-800 bg-slate-900/30 text-slate-200"
+                      >
+                        <div className="flex items-center gap-4">
+                          <Badge className="bg-slate-800 text-slate-300">{idx + 1}</Badge>
+                          <div>
+                            <span className="font-semibold text-emerald-400 font-mono text-sm">{step.operationId}</span>
+                            <span className="text-slate-400 text-xs ml-2">
+                              Path: <code className="text-blue-400 font-mono">{step.parameters[0].value}</code>
+                            </span>
+                            {step.delayBefore && (
+                              <Badge variant="outline" className="border-amber-500/20 text-amber-400 text-[10px] ml-2">
+                                Delay: {step.delayBefore}ms
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleRemoveBuilderStep(idx)}
+                          className="text-red-400 hover:text-red-500 hover:bg-red-500/10"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* SCANNER & INTERACTIVE FADERS CONTENT */}
+        <TabsContent value="scanner" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Subnet Scanner */}
+            <Card className="border-slate-800 bg-slate-950/50 md:col-span-1">
+              <CardHeader>
+                <CardTitle className="text-white text-md">Active Subnet Scanner</CardTitle>
+                <CardDescription className="text-slate-400">Discover active OSC services on local network</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Subnet Prefix</Label>
+                  <Input
+                    value={scanSubnet}
+                    onChange={e => setScanSubnet(e.target.value)}
+                    className="border-slate-800 bg-slate-900 text-white"
+                    placeholder="192.168.1"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Scan Ports</Label>
+                  <Input
+                    value={scanPorts}
+                    onChange={e => setScanPorts(e.target.value)}
+                    className="border-slate-800 bg-slate-900 text-white font-mono text-xs"
+                    placeholder="7000,8000,9000,53000"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Protocol</Label>
+                  <select
+                    value={scanProtocol}
+                    onChange={e => setScanProtocol(e.target.value)}
+                    className="w-full rounded-md border border-slate-800 bg-slate-900 p-2 text-white text-sm"
+                  >
+                    <option value="udp">UDP (Standard OSC)</option>
+                    <option value="tcp">TCP (SLIP Encoded)</option>
+                  </select>
+                </div>
+                <Button
+                  onClick={handleScanSubnet}
+                  disabled={loading}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {loading ? "Scanning Subnet..." : "Execute Scan"}
+                </Button>
+
+                {/* Scan Results */}
+                <div className="border-t border-slate-800 pt-4 space-y-2">
+                  <h4 className="text-sm font-semibold text-slate-200">Scan Results ({scanResults.length})</h4>
+                  <div className="max-h-60 overflow-y-auto space-y-2">
+                    {scanResults.length === 0 ? (
+                      <p className="text-xs text-slate-500 italic p-4 text-center">No active scanner matches yet.</p>
+                    ) : (
+                      scanResults.map((r, idx) => (
+                        <div key={idx} className="flex justify-between items-center p-2 rounded bg-slate-900/40 text-xs border border-slate-800/40">
+                          <span className="font-semibold text-slate-300">{r.host}:{r.port}</span>
+                          <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">{r.protocol.toUpperCase()}</Badge>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Interactive Faders & Monitor */}
+            <Card className="border-slate-800 bg-slate-950/50 md:col-span-2">
+              <CardHeader>
+                <CardTitle className="text-white text-md">Interactive Mixer & Controllers</CardTitle>
+                <CardDescription className="text-slate-400">Trigger immediate local OSC/OBS controls</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Volume Fader */}
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <Label className="text-slate-300">Main Volume Parameter (/volume)</Label>
+                    <span className="text-emerald-400 font-mono">{(volumeSlider * 100).toFixed(0)}%</span>
+                  </div>
+                  <Input
+                    type="range"
+                    min="0.0"
+                    max="1.0"
+                    step="0.01"
+                    value={volumeSlider}
+                    onChange={e => handleFaderChange(Number(e.target.value))}
+                    className="h-2 w-full cursor-pointer rounded-lg bg-slate-850 accent-blue-500"
+                  />
+                </div>
+
+                {/* Mute Toggle */}
+                <div className="flex items-center justify-between border-t border-slate-900 pt-4">
+                  <div>
+                    <Label className="text-slate-200 block">Mute Switch (/mute)</Label>
+                    <span className="text-xs text-slate-500">Mutes main master bus channels</span>
+                  </div>
+                  <Button
+                    onClick={() => handleMuteChange(!muteToggle)}
+                    className={`text-xs ${muteToggle ? "bg-red-600 hover:bg-red-700 text-white" : "bg-slate-800 hover:bg-slate-700 text-slate-200"}`}
+                  >
+                    {muteToggle ? "MUTED" : "UNMUTED"}
+                  </Button>
+                </div>
+
+                {/* OBS Scene Control */}
+                <div className="border-t border-slate-900 pt-4 space-y-2">
+                  <Label className="text-slate-200">OBS scene switch (/scene)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={sceneText}
+                      onChange={e => setSceneText(e.target.value)}
+                      className="border-slate-800 bg-slate-900 text-white"
+                      placeholder="Scene name"
+                    />
+                    <Button
+                      onClick={handleSceneTrigger}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      Switch Scene
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Real-time Oscilloscope Visualization */}
+                <div className="border-t border-slate-900 pt-4 space-y-2">
+                  <Label className="text-slate-200">OSC Activity Signal monitor</Label>
+                  <div className="bg-slate-950 p-4 rounded-md border border-slate-900/50 font-mono text-emerald-400 text-xs space-y-1 select-none">
+                    <div className="text-[10px] text-slate-500 border-b border-slate-900 pb-1 mb-2">LIVE FREQUENCY SPECTRUM (30HZ MONITOR)</div>
+                    <div>CH 1 [VOLUME] ▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇ 0.82</div>
+                    <div>CH 2 [PAN]    ▇▇▇▇▇ 0.35</div>
+                    <div>CH 3 [MUTE]   ▇ 0.00</div>
+                    <div>CH 4 [BEAT]   ▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇ 1.00 (Clock Peak)</div>
+                  </div>
                 </div>
               </CardContent>
             </Card>

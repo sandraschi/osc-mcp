@@ -18,6 +18,8 @@ from fastmcp import FastMCP, Context
 from pydantic import BaseModel, Field
 from pythonosc import dispatcher, osc_server
 from pythonosc.udp_client import SimpleUDPClient
+from .apps import OBSOSC, QLabOSC
+from .routing.scanner import scan_subnet_osc as run_subnet_scan
 
 from .sampling import osc_sampler
 from .apps.dynamic_mapper import DynamicToolMapper
@@ -782,6 +784,207 @@ def show_available_workflows() -> PrefabApp:
             ]
         )
     return app
+
+
+@server.tool()
+async def obs_manager(
+    operation: str,
+    scene_name: Optional[str] = None,
+    source_name: Optional[str] = None,
+    volume: Optional[float] = None,
+    host: str = "127.0.0.1",
+    port: int = 7000
+) -> Dict[str, Any]:
+    """Control OBS Studio via OSC.
+
+    Supported operations:
+    - switch_scene: Switch to target scene (requires scene_name)
+    - toggle_mute: Toggle mute status of an audio source (requires source_name)
+    - set_volume: Set volume of an audio source 0.0 to 1.0 (requires source_name, volume)
+    - start_stream: Start streaming
+    - stop_stream: Stop streaming
+    """
+    obs = OBSOSC(host, port)
+    op = operation.lower()
+    try:
+        if op == "switch_scene":
+            if not scene_name:
+                return {"status": "error", "message": "scene_name is required for switch_scene"}
+            obs.switch_scene(scene_name)
+        elif op == "toggle_mute":
+            if not source_name:
+                return {"status": "error", "message": "source_name is required for toggle_mute"}
+            obs.toggle_mute(source_name)
+        elif op == "set_volume":
+            if not source_name or volume is None:
+                return {"status": "error", "message": "source_name and volume are required for set_volume"}
+            obs.set_volume(source_name, volume)
+        elif op == "start_stream":
+            obs.start_stream()
+        elif op == "stop_stream":
+            obs.stop_stream()
+        else:
+            return {"status": "error", "message": f"Unsupported operation: {operation}"}
+        return {"status": "success", "operation": operation}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@server.tool()
+async def qlab_manager(
+    operation: str,
+    cue_id: Optional[str] = None,
+    slider_index: Optional[int] = None,
+    level: Optional[float] = None,
+    host: str = "127.0.0.1",
+    port: int = 53000
+) -> Dict[str, Any]:
+    """Control Figure 53 QLab workspaces via OSC.
+
+    Supported operations:
+    - go: Trigger the GO button (start next cue)
+    - stop: Stop all currently playing cues
+    - panic: Fade out and stop all playing cues
+    - trigger_cue: Start a specific cue (requires cue_id)
+    - set_slider_level: Set volume level for a cue (requires cue_id, slider_index, level in dB)
+    """
+    qlab = QLabOSC(host, port)
+    op = operation.lower()
+    try:
+        if op == "go":
+            qlab.go()
+        elif op == "stop":
+            qlab.stop()
+        elif op == "panic":
+            qlab.panic()
+        elif op == "trigger_cue":
+            if not cue_id:
+                return {"status": "error", "message": "cue_id is required for trigger_cue"}
+            qlab.trigger_cue(cue_id)
+        elif op == "set_slider_level":
+            if not cue_id or slider_index is None or level is None:
+                return {"status": "error", "message": "cue_id, slider_index, and level are required for set_slider_level"}
+            qlab.set_slider_level(cue_id, slider_index, level)
+        else:
+            return {"status": "error", "message": f"Unsupported operation: {operation}"}
+        return {"status": "success", "operation": operation}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@server.tool()
+async def scan_subnet_osc(
+    subnet_prefix: str,
+    ports: List[int] = [7000, 8000, 9000, 11000, 53000],
+    protocol: str = "udp"
+) -> Dict[str, Any]:
+    """Scan a subnet prefix (e.g. '192.168.1') for active OSC ports."""
+    try:
+        active = await run_subnet_scan(subnet_prefix, ports, protocol)
+        return {
+            "status": "success",
+            "active_hosts": active,
+            "count": len(active)
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@server.tool(app=True)
+def show_control_faders() -> PrefabApp:
+    """Display interactive faders and buttons to send immediate OSC values."""
+    controls = [
+        {"control": "Main Volume", "type": "Fader", "address": "/volume", "current_value": "0.8"},
+        {"control": "Track 1 Mute", "type": "Toggle", "address": "/track/1/mute", "current_value": "Off"},
+        {"control": "Scene Switcher", "type": "Trigger", "address": "/scene", "current_value": "Default"},
+    ]
+    with PrefabApp() as app:
+        DataTable(
+            data=controls,
+            columns=[
+                DataTableColumn(name="control", label="Control Name"),
+                DataTableColumn(name="type", label="Control Type"),
+                DataTableColumn(name="address", label="OSC Target Path"),
+                DataTableColumn(name="current_value", label="Current Value")
+            ]
+        )
+    return app
+
+
+@server.tool(app=True)
+def show_osc_oscilloscope() -> PrefabApp:
+    """Display a simulated real-time oscilloscope tracking incoming/outgoing OSC activity intensity."""
+    import random
+    intensity_data = []
+    levels = [" ", " ", "▂", "▃", "▄", "▅", "▆", "▇", "█"]
+    for i in range(12):
+        level = random.choice(levels)
+        intensity_data.append({
+            "channel": f"CH {i+1}",
+            "activity": level * 8,
+            "status": "Healthy" if level in levels[3:] else "Idle"
+        })
+    with PrefabApp() as app:
+        DataTable(
+            data=intensity_data,
+            columns=[
+                DataTableColumn(name="channel", label="OSC Channel"),
+                DataTableColumn(name="activity", label="Signal Level Monitor"),
+                DataTableColumn(name="status", label="Channel Status")
+            ]
+        )
+    return app
+
+
+@server.tool()
+async def save_workflow_descriptor(
+    workflow_id: str,
+    title: str,
+    description: str,
+    steps: List[Dict[str, Any]]
+) -> Dict[str, Any]:
+    """Save a newly created workflow descriptor as an Arazzo YAML file.
+
+    Args:
+        workflow_id: Filename prefix and unique ID of the workflow
+        title: User-facing title
+        description: Workflow purpose description
+        steps: List of step dictionaries (e.g., [{'stepId': 's1', 'operationId': 'send_osc_message', 'parameters': [...] }])
+    """
+    import yaml
+    try:
+        workflows_dir = Path(__file__).parent / "workflows"
+        workflows_dir.mkdir(parents=True, exist_ok=True)
+
+        arazzo_data = {
+            "arazzo": "1.0.1",
+            "info": {
+                "title": title,
+                "description": description,
+                "version": "1.0.0"
+            },
+            "sourceDescriptions": [
+                {
+                    "name": "osc_server",
+                    "url": "http://127.0.0.1:8000"
+                }
+            ],
+            "workflows": [
+                {
+                    "workflowId": "test_run",
+                    "summary": title,
+                    "steps": steps
+                }
+            ]
+        }
+
+        target_file = workflows_dir / f"{workflow_id}.yaml"
+        with open(target_file, "w", encoding="utf-8") as f:
+            yaml.safe_dump(arazzo_data, f, default_flow_style=False, sort_keys=False)
+
+        return {"status": "success", "file": str(target_file)}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 
 # ASGI app for uvicorn (web_sota/start.ps1): uvicorn oscmcp.server:app

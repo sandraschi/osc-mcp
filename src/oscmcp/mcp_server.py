@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional
 
 from fastmcp import FastMCP
 from pydantic import BaseModel, Field
-from pythonosc.udp_client import SimpleUDPClient
+from .osc.client import OSCClient
 
 from .osc.server import OSCServer
 from .transport import run_server
@@ -92,7 +92,7 @@ if _is_stdio_mode:
     )
 
 # Store OSC clients and servers
-osc_clients: Dict[str, SimpleUDPClient] = {}
+osc_clients: Dict[str, OSCClient] = {}
 osc_servers: Dict[int, "OSCServer"] = {}
 
 # OSC Recording system
@@ -127,7 +127,7 @@ class OSCServerStopInput(BaseModel):
 
 
 @server.tool()
-async def send_osc(host: str, port: int, address: str, values: List[Any] = None) -> Dict[str, Any]:
+async def send_osc(host: str, port: int, address: str, values: List[Any] = None, protocol: str = "udp") -> Dict[str, Any]:
     """Send an OSC message to the specified address.
 
     This tool sends OSC (Open Sound Control) messages over UDP to any OSC-enabled
@@ -244,20 +244,21 @@ async def send_osc(host: str, port: int, address: str, values: List[Any] = None)
 
     try:
         # Get or create OSC client
-        client_key = f"{host}:{port}"
+        client_key = f"{host}:{port}:{protocol}"
         if client_key not in osc_clients:
-            osc_clients[client_key] = SimpleUDPClient(host, port)
+            osc_clients[client_key] = OSCClient(host, port, protocol)
 
         # Send the OSC message
-        osc_clients[client_key].send_message(address, values)
+        osc_clients[client_key].send(address, *values)
 
-        logger.info(f"Sent OSC to {host}:{port} - {address}: {values}")
+        logger.info(f"Sent {protocol.upper()} OSC to {host}:{port} - {address}: {values}")
         return {
             "status": "success",
             "host": host,
             "port": port,
             "address": address,
             "values": values,
+            "protocol": protocol,
         }
     except Exception as e:
         error = f"Failed to send OSC message: {e}"
@@ -266,7 +267,7 @@ async def send_osc(host: str, port: int, address: str, values: List[Any] = None)
 
 
 @server.tool()
-async def start_osc_server(port: int, address: str = "0.0.0.0") -> Dict[str, Any]:
+async def start_osc_server(port: int, address: str = "0.0.0.0", protocol: str = "udp") -> Dict[str, Any]:
     """Start an OSC server to receive incoming messages.
 
     This tool creates a UDP server that listens for incoming OSC messages on the
@@ -410,7 +411,7 @@ async def start_osc_server(port: int, address: str = "0.0.0.0") -> Dict[str, Any
 
     try:
         # Create OSCServer instance with message buffering
-        osc_server_instance = OSCServer(address, port)
+        osc_server_instance = OSCServer(address, port, protocol=protocol)
 
         # Start the server
         await osc_server_instance.start()

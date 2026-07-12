@@ -1,6 +1,4 @@
-"""OSC server implementation for receiving OSC messages.
-
-This module provides functionality to receive and handle OSC messages.
+"""OSC server implementation for receiving OSC messages over UDP and TCP.
 """
 
 import asyncio
@@ -10,8 +8,38 @@ from typing import Any, Callable, Dict, List, Optional
 
 from pythonosc import dispatcher
 from pythonosc.osc_server import AsyncIOOSCUDPServer
+from pythonosc.osc_message import OscMessage
 
 logger = logging.getLogger(__name__)
+
+
+class SLIPDecoder:
+    """Stateful decoder for SLIP protocol (RFC 1055) streams."""
+
+    def __init__(self):
+        self._buffer = bytearray()
+        self._escaped = False
+
+    def feed(self, data: bytes) -> List[bytes]:
+        """Feed bytes into the decoder and return completed packets."""
+        packets = []
+        for byte in data:
+            if byte == 0xC0:
+                if self._buffer:
+                    packets.append(bytes(self._buffer))
+                    self._buffer = bytearray()
+                self._escaped = False
+            elif byte == 0xDB:
+                self._escaped = True
+            elif self._escaped:
+                if byte == 0xDC:
+                    self._buffer.append(0xC0)
+                elif byte == 0xDD:
+                    self._buffer.append(0xDB)
+                self._escaped = False
+            else:
+                self._buffer.append(byte)
+        return packets
 
 
 class OSCMessage:
@@ -35,74 +63,102 @@ class OSCMessage:
 class OSCServer:
     """Server for receiving and handling OSC messages."""
 
-    def __init__(self, host: str = "0.0.0.0", port: int = 9000, max_buffer_size: int = 1000):
+    def __init__(self, host: str = "0.0.0.0", port: int = 9000, max_buffer_size: int = 1000, protocol: str = "udp"):
         """Initialize the OSC server.
 
         Args:
             host: The hostname or IP address to bind to.
             port: The port number to listen on.
             max_buffer_size: Maximum number of messages to buffer.
+            protocol: Protocol ('udp' or 'tcp').
         """
         self.host = host
         self.port = port
+        self.protocol = protocol.lower()
         self.dispatcher = dispatcher.Dispatcher()
-        self.server: Optional[AsyncIOOSCUDPServer] = None
+        self.server = None
         self._transport = None
+        self._tcp_server: Optional[asyncio.Server] = None
+        self._tcp_tasks: List[asyncio.Task] = []
         self._callbacks: Dict[str, Callable] = {}
         self._message_buffer: List[OSCMessage] = []
         self._max_buffer_size = max_buffer_size
 
     def add_handler(self, address: str, callback: Callable) -> None:
-        """Add a handler for a specific OSC address.
-
-        Args:
-            address: The OSC address pattern to handle.
-            callback: The function to call when a message is received at the address.
-        """
+        """Add a handler for a specific OSC address."""
         self._callbacks[address] = callback
         self.dispatcher.map(address, self._handle_osc_message, address)
 
     def _handle_osc_message(self, address: str, *args: Any) -> None:
-        """Handle an incoming OSC message.
-
-        Args:
-            address: The OSC address pattern of the message.
-            *args: The message arguments.
-        """
-        # Create message object with timestamp
+        """Handle an incoming OSC message."""
         message = OSCMessage(address, args, time.time())
-
-        # Add to buffer
         self._message_buffer.append(message)
 
-        # Maintain buffer size limit (remove oldest messages)
         if len(self._message_buffer) > self._max_buffer_size:
             self._message_buffer.pop(0)
 
-        logger.debug(f"Received OSC message at {address}: {args}")
+        logger.debug(f"Received {self.protocol.upper()} OSC message at {address}: {args}")
 
-        # Call registered callbacks
         if address in self._callbacks:
             try:
                 self._callbacks[address](address, *args)
             except Exception as e:
                 logger.error(f"Error in OSC handler for {address}: {e}")
 
+    async def _handle_tcp_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
+        """Handle individual TCP connections and stream SLIP-framed OSC packets."""
+        decoder = SLIPDecoder()
+        try:
+            while True:
+                data = await reader.read(4096)
+                if not data:
+                    break
+                packets = decoder.feed(data)
+                for packet in packets:
+                    try:
+                        msg = OscMessage(packet)
+                        self._handle_osc_message(msg.address, *msg.params)
+                    except Exception as e:
+                        logger.error(f"Failed to parse TCP OSC packet: {e}")
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            logger.error(f"TCP client connection error: {e}")
+        finally:
+            writer.close()
+            try:
+                await writer.wait_closed()
+            except Exception:
+                pass
+
     async def start(self) -> None:
         """Start the OSC server."""
-        loop = asyncio.get_running_loop()
-        self.server = AsyncIOOSCUDPServer((self.host, self.port), self.dispatcher, loop)
-
-        transport, _ = await self.server.create_serve_endpoint()
-        self._transport = transport
-        logger.info(f"OSC server started on {self.host}:{self.port}")
+        if self.protocol == "udp":
+            loop = asyncio.get_running_loop()
+            self.server = AsyncIOOSCUDPServer((self.host, self.port), self.dispatcher, loop)
+            transport, _ = await self.server.create_serve_endpoint()
+            self._transport = transport
+            logger.info(f"OSC UDP server started on {self.host}:{self.port}")
+        else:
+            # TCP Server
+            self._tcp_server = await asyncio.start_server(
+                self._handle_tcp_client, self.host, self.port
+            )
+            logger.info(f"OSC TCP server started on {self.host}:{self.port}")
 
     async def stop(self) -> None:
         """Stop the OSC server."""
         if self._transport:
             self._transport.close()
             self._transport = None
-            logger.info("OSC server stopped")
+        if self._tcp_server:
+            self._tcp_server.close()
+            await self._tcp_server.wait_closed()
+            self._tcp_server = None
+        for task in self._tcp_tasks:
+            task.cancel()
+        self._tcp_tasks.clear()
+        logger.info(f"OSC {self.protocol.upper()} server stopped")
 
     def get_received_messages(
         self,
@@ -110,23 +166,11 @@ class OSCServer:
         max_age_seconds: Optional[float] = None,
         limit: int = 100,
     ) -> List[Dict[str, Any]]:
-        """
-        Get received OSC messages from the buffer.
-
-        Args:
-            address_pattern: Filter by OSC address pattern (substring match)
-            max_age_seconds: Only return messages newer than this age
-            limit: Maximum number of messages to return
-
-        Returns:
-            List of message dictionaries with address, args, timestamp, age_seconds
-        """
+        """Get received OSC messages from the buffer."""
         current_time = time.time()
         messages = []
 
-        # Iterate through buffer in reverse (newest first)
         for message in reversed(self._message_buffer):
-            # Apply filters
             if address_pattern and address_pattern not in message.address:
                 continue
 
@@ -135,44 +179,25 @@ class OSCServer:
 
             messages.append(message.to_dict())
 
-            # Stop when we reach the limit
             if len(messages) >= limit:
                 break
 
         return messages
 
     def get_latest_message(self, address_pattern: Optional[str] = None) -> Optional[Dict[str, Any]]:
-        """
-        Get the most recent OSC message matching the pattern.
-
-        Args:
-            address_pattern: Filter by OSC address pattern (substring match)
-
-        Returns:
-            Latest message dictionary or None if no matching messages
-        """
+        """Get the most recent OSC message matching the pattern."""
         messages = self.get_received_messages(address_pattern, limit=1)
         return messages[0] if messages else None
 
     def clear_message_buffer(self) -> int:
-        """
-        Clear all messages from the buffer.
-
-        Returns:
-            Number of messages that were cleared
-        """
+        """Clear all messages from the buffer."""
         cleared_count = len(self._message_buffer)
         self._message_buffer.clear()
         logger.info(f"Cleared {cleared_count} messages from OSC buffer")
         return cleared_count
 
     def get_buffer_stats(self) -> Dict[str, Any]:
-        """
-        Get statistics about the message buffer.
-
-        Returns:
-            Dictionary with buffer statistics
-        """
+        """Get statistics about the message buffer."""
         if not self._message_buffer:
             return {
                 "total_messages": 0,
