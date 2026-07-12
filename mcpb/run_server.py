@@ -10,7 +10,7 @@ import _strptime  # noqa: F401
 from oscmcp.server import server
 
 # Check if port or http transport is requested
-port = os.environ.get("MCP_PORT") or os.environ.get("PORT")
+port = os.environ.get("OSC_MCP_PORT") or os.environ.get("MCP_PORT") or os.environ.get("PORT")
 if len(sys.argv) > 1 and sys.argv[1].isdigit():
     port = sys.argv[1]
 

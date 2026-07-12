@@ -17,8 +17,8 @@ pub struct BackendProcess(pub Mutex<Option<Child>>);
 const BACKEND_NAME: &str = "osc-mcp-backend.exe";
 const BACKEND_PORT: u16 = 10767;
 const BACKEND_TAG: &str = "osc-mcp-backend-x86_64-pc-windows-msvc.exe";
-const ENV_PORT: &str = "PORT";
-const ENV_HOST: &str = "HOST";
+const ENV_PORT: &str = "OSC_MCP_PORT";
+const ENV_HOST: &str = "OSC_MCP_HOST";
 const ENV_TAURI: &str = "OSC_MCP_TAURI";
 
 fn dev_backend_path() -> Option<PathBuf> {
