@@ -15,6 +15,7 @@ import {
   ScrollText,
   Server,
   Settings,
+  Code2,
   User,
   Wrench,
 } from "lucide-react";
@@ -35,8 +36,10 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     { path: "/control", label: "Signal Center", icon: Activity },
     { path: "/visualizer", label: "Spectrum", icon: Map },
     { path: "/tools", label: "Tools Hub", icon: Wrench },
+    { path: "/skills", label: "Skills", icon: Code2 },
     { path: "/chat", label: "Chat Orchestrator", icon: Bot },
     { path: "/help", label: "Help", icon: HelpCircle },
+    { path: "/api-docs", label: "API Docs", icon: Code2 },
     { path: "/logs", label: "Logs", icon: ScrollText },
   ];
 

@@ -4,10 +4,10 @@ This module provides a FastMCP 2.10 compliant MCP server for audio/visual automa
 using the Open Sound Control (OSC) protocol.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 # Set up logging
 logging.basicConfig(
@@ -25,7 +25,7 @@ class OSCMCPServer:
     with integration for audio/visual automation workflows.
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """Initialize the OSCMCP server with optional configuration.
 
         Args:
@@ -54,7 +54,7 @@ class OSCMCPServer:
         self._initialized = False
         logger.info("OSCMCP server shutdown complete")
 
-    async def get_info(self) -> Dict[str, Any]:
+    async def get_info(self) -> dict[str, Any]:
         """Get server information.
 
         Returns:

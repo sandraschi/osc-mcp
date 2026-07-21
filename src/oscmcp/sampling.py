@@ -4,9 +4,10 @@ This module provides AI-driven validation, generation, and analysis for OSC work
 using the official FastMCP 3.4.2+ native Context sampling interface.
 """
 
-import logging
 import json
-from typing import Any, Dict, List, Literal, Optional
+import logging
+from typing import Any, Literal
+
 from fastmcp import Context
 
 logger = logging.getLogger(__name__)
@@ -22,9 +23,9 @@ class OSCWorkflowSampler:
         self,
         task_description: str,
         ctx: Context,
-        target_applications: Optional[List[str]] = None,
+        target_applications: list[str] | None = None,
         complexity_level: Literal["simple", "intermediate", "advanced"] = "intermediate",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Generate an intelligent OSC workflow using native Context sampling.
 
         Args:
@@ -57,8 +58,8 @@ Provide a structured JSON response with the following keys:
             return self._create_fallback_workflow(task_description)
 
     async def validate_osc_message(
-        self, address: str, values: List[Any], ctx: Context, application_context: str = "generic"
-    ) -> Dict[str, Any]:
+        self, address: str, values: list[Any], ctx: Context, application_context: str = "generic"
+    ) -> dict[str, Any]:
         """Validate OSC message format and appropriateness using native Context sampling."""
         prompt = f"""Validate this OSC message for {application_context}:
 
@@ -86,10 +87,10 @@ Return a JSON response with:
 
     async def enhance_osc_workflow(
         self,
-        workflow: Dict[str, Any],
+        workflow: dict[str, Any],
         ctx: Context,
         enhancement_type: Literal["optimization", "robustness", "features"] = "optimization",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Enhance an existing OSC workflow using native Context sampling."""
         prompt = f"""Enhance this OSC workflow with {enhancement_type} improvements:
 
@@ -104,7 +105,7 @@ Return the enhanced workflow in the same JSON format."""
             logger.error("Workflow enhancement failed: %s", e)
             return workflow
 
-    async def validate_osc_workflow(self, workflow: Dict[str, Any], ctx: Context) -> Dict[str, Any]:
+    async def validate_osc_workflow(self, workflow: dict[str, Any], ctx: Context) -> dict[str, Any]:
         """Validate an OSC workflow structure and logic using native Context sampling."""
         prompt = f"""Validate this OSC workflow for correctness and best practices:
 
@@ -131,10 +132,11 @@ Return a JSON response with:
                 "fix_suggestions": [],
             }
 
-    async def execute_osc_workflow(self, workflow: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute_osc_workflow(self, workflow: dict[str, Any]) -> dict[str, Any]:
         """Execute an OSC workflow with intelligent monitoring."""
         import asyncio
         import time
+
         from pythonosc.udp_client import SimpleUDPClient
 
         start_time = time.time()
@@ -179,9 +181,7 @@ Return a JSON response with:
 
             execution_time = time.time() - start_time
             success_rate = (
-                len([m for m in executed_messages if m["success"]]) / len(executed_messages)
-                if executed_messages
-                else 0
+                len([m for m in executed_messages if m["success"]]) / len(executed_messages) if executed_messages else 0
             )
 
             return {
@@ -209,8 +209,8 @@ Return a JSON response with:
             }
 
     async def analyze_osc_test(
-        self, server_result: Dict[str, Any], send_result: Dict[str, Any], ctx: Context
-    ) -> Dict[str, Any]:
+        self, server_result: dict[str, Any], send_result: dict[str, Any], ctx: Context
+    ) -> dict[str, Any]:
         """Analyze OSC connectivity test results using native Context sampling."""
         prompt = f"""Analyze these OSC connectivity test results:
 
@@ -226,7 +226,9 @@ Return a JSON response with:
 
         try:
             res = await ctx.sample(prompt)
-            return json.loads(res.text) if res.text else {"summary": "Test complete", "confidence": "high", "issues": []}
+            return (
+                json.loads(res.text) if res.text else {"summary": "Test complete", "confidence": "high", "issues": []}
+            )
         except Exception as e:
             logger.error("Test analysis failed: %s", e)
             return {
@@ -237,7 +239,7 @@ Return a JSON response with:
                 "next_steps": ["Verify target is running", "Check firewalls"],
             }
 
-    def _create_fallback_workflow(self, task_description: str) -> Dict[str, Any]:
+    def _create_fallback_workflow(self, task_description: str) -> dict[str, Any]:
         """Create a basic fallback workflow when LLM generation fails."""
         return {
             "workflow_name": "Basic OSC Workflow",

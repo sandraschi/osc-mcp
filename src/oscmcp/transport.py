@@ -32,7 +32,7 @@ import argparse
 import asyncio
 import logging
 import os
-from typing import Literal, Optional
+from typing import Literal
 
 logger = logging.getLogger(__name__)
 
@@ -93,25 +93,13 @@ Examples:
     )
 
     transport_group = parser.add_mutually_exclusive_group()
-    transport_group.add_argument(
-        "--stdio", action="store_true", help="Run in STDIO (JSON-RPC) mode (default)"
-    )
-    transport_group.add_argument(
-        "--http", action="store_true", help="Run in HTTP Streamable mode (FastMCP 2.14.4+)"
-    )
-    transport_group.add_argument(
-        "--sse", action="store_true", help="Run in SSE mode (deprecated, use --http)"
-    )
+    transport_group.add_argument("--stdio", action="store_true", help="Run in STDIO (JSON-RPC) mode (default)")
+    transport_group.add_argument("--http", action="store_true", help="Run in HTTP Streamable mode (FastMCP 2.14.4+)")
+    transport_group.add_argument("--sse", action="store_true", help="Run in SSE mode (deprecated, use --http)")
 
-    parser.add_argument(
-        "--host", default=None, help=f"Host to bind to (default: ${ENV_HOST} or 127.0.0.1)"
-    )
-    parser.add_argument(
-        "--port", type=int, default=None, help=f"Port to listen on (default: ${ENV_PORT} or 10767)"
-    )
-    parser.add_argument(
-        "--path", default=None, help=f"HTTP endpoint path (default: ${ENV_PATH} or /mcp)"
-    )
+    parser.add_argument("--host", default=None, help=f"Host to bind to (default: ${ENV_HOST} or 127.0.0.1)")
+    parser.add_argument("--port", type=int, default=None, help=f"Port to listen on (default: ${ENV_PORT} or 10767)")
+    parser.add_argument("--path", default=None, help=f"HTTP endpoint path (default: ${ENV_PATH} or /mcp)")
     parser.add_argument("--debug", action="store_true", help="Enable debug logging")
 
     return parser
@@ -148,9 +136,7 @@ def resolve_transport(args: argparse.Namespace) -> TransportType:
         logger.warning(f"Invalid {ENV_TRANSPORT}='{env_transport}', defaulting to stdio")
         return "stdio"
     if env_transport == "sse":
-        logger.warning(
-            "SSE transport is deprecated. Consider using MCP_TRANSPORT=http instead."
-        )
+        logger.warning("SSE transport is deprecated. Consider using MCP_TRANSPORT=http instead.")
     return env_transport  # type: ignore
 
 
@@ -176,9 +162,7 @@ def resolve_config(args: argparse.Namespace) -> dict:
     }
 
 
-def run_server(
-    mcp_app, args: Optional[argparse.Namespace] = None, server_name: str = "mcp-server"
-) -> None:
+def run_server(mcp_app, args: argparse.Namespace | None = None, server_name: str = "mcp-server") -> None:
     """
     Unified server runner for all transport modes.
 
@@ -197,9 +181,7 @@ def run_server(
     asyncio.run(run_server_async(mcp_app, args, server_name))
 
 
-async def run_server_async(
-    mcp_app, args: Optional[argparse.Namespace] = None, server_name: str = "mcp-server"
-) -> None:
+async def run_server_async(mcp_app, args: argparse.Namespace | None = None, server_name: str = "mcp-server") -> None:
     """
     Asynchronous unified server runner for all transport modes.
 
@@ -234,14 +216,39 @@ async def run_server_async(
             path = config["path"]
             endpoint = f"http://{host}:{port}{path}"
             logger.info(f"Running in HTTP Streamable mode: {endpoint}")
-            await mcp_app.run_http_async(host=host, port=port, path=path)
+
+            # Use uvicorn.Server on mcp.http_app() so CORSMiddleware is preserved
+            # (run_http_async() drops custom middlewares per fleet standard)
+            import uvicorn
+            from fastapi.middleware.cors import CORSMiddleware
+
+            http_app = mcp_app.http_app()
+            http_app.add_middleware(
+                CORSMiddleware,
+                allow_origins=[
+                    "http://localhost:10766",
+                    "http://127.0.0.1:10766",
+                    "http://localhost:10767",
+                    "http://127.0.0.1:10767",
+                    "http://tauri.localhost",
+                    "https://tauri.localhost",
+                    "tauri://localhost",
+                ],
+                allow_origin_regex=r"https?://(?:[a-zA-Z0-9-]+\.ts\.net|.*?\.tail-[a-f0-9]+\.ts\.net|tauri\.localhost|localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|100\.\d{1,3}\.\d{1,3}\.\d{1,3})(?::\d+)?$|^tauri://localhost$",
+                allow_credentials=True,
+                allow_methods=["*"],
+                allow_headers=["*"],
+            )
+            config_obj = uvicorn.Config(http_app, host=host, port=port, log_level="info")
+            server = uvicorn.Server(config_obj)
+            await server.serve()
 
         elif transport == "sse":
             host = config["host"]
             port = config["port"]
             logger.warning("SSE mode is deprecated. Migrate to HTTP Streamable (--http).")
             logger.info(f"Running in SSE mode: http://{host}:{port}")
-            await mcp_app.run_async(transport='sse', host=host, port=port)
+            await mcp_app.run_async(transport="sse", host=host, port=port)
 
     except asyncio.CancelledError:
         logger.info(f"{server_name} task cancelled")

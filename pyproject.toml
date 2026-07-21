@@ -24,7 +24,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-    "fastmcp[all]>=3.4.2,<4",
+    "fastmcp>=3.4.4,<4",
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.32.0",
     "python-osc>=1.8.0",
@@ -42,6 +42,7 @@ dependencies = [
 dev = [
     "pytest>=7.0.0",
     "pytest-asyncio>=0.20.0",
+    "httpx>=0.27.0",
     "ruff>=0.6.0",
     "mypy>=1.0.0",
     "pyinstaller>=6.0.0",
@@ -53,7 +54,7 @@ where = ["src"]
 asyncio_mode = "auto"
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
@@ -105,3 +106,11 @@ ignore = ["S101", "B008"]
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.0.2",
+    "pytest-asyncio>=1.3.0",
+    "ruff>=0.15.2",
+]

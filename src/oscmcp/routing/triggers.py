@@ -1,36 +1,30 @@
 """Reactive Trigger Engine to link incoming OSC messages to MCP tools."""
-import logging
+
 import fnmatch
-from typing import Dict, Any, List, Optional
+import logging
+from typing import Any
+
 from fastmcp import FastMCP
 
 logger = logging.getLogger(__name__)
 
+
 class ReactiveTriggerEngine:
     """Matches incoming OSC messages to tool execution actions."""
 
-    def __init__(self, server: Optional[FastMCP] = None):
+    def __init__(self, server: FastMCP | None = None):
         self.server = server
-        self.triggers: List[Dict[str, Any]] = []
+        self.triggers: list[dict[str, Any]] = []
 
     def set_server(self, server: FastMCP) -> None:
         self.server = server
 
-    def register_trigger(
-        self,
-        address_pattern: str,
-        target_tool: str,
-        args_template: Dict[str, Any]
-    ) -> None:
+    def register_trigger(self, address_pattern: str, target_tool: str, args_template: dict[str, Any]) -> None:
         """Register a new trigger action."""
-        self.triggers.append({
-            "pattern": address_pattern,
-            "tool": target_tool,
-            "template": args_template
-        })
+        self.triggers.append({"pattern": address_pattern, "tool": target_tool, "template": args_template})
         logger.info(f"Registered reactive trigger: {address_pattern} -> {target_tool}")
 
-    def get_triggers(self) -> List[Dict[str, Any]]:
+    def get_triggers(self) -> list[dict[str, Any]]:
         """Returns all registered triggers."""
         return self.triggers
 
@@ -62,9 +56,10 @@ class ReactiveTriggerEngine:
 
                     # Call the tool asynchronously in the running event loop
                     import asyncio
+
                     asyncio.create_task(self._execute_tool(trigger["tool"], resolved_args))
 
-    async def _execute_tool(self, tool_name: str, arguments: Dict[str, Any]) -> None:
+    async def _execute_tool(self, tool_name: str, arguments: dict[str, Any]) -> None:
         """Asynchronously call target tool."""
         try:
             logger.info(f"Executing target tool: {tool_name} with arguments: {arguments}")
@@ -73,6 +68,7 @@ class ReactiveTriggerEngine:
             logger.info(f"Reactive execution of {tool_name} finished: {result}")
         except Exception as e:
             logger.error(f"Error executing dynamic reactive tool {tool_name}: {e}")
+
 
 # Global instance of reactive engine
 global_trigger_engine = ReactiveTriggerEngine()

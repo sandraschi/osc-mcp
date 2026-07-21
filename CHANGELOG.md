@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] — 2026-07-21
+
+### Security
+- **CORS**: Replaced `allow_origins=["*"]` with explicit fleet origins + Tailscale/LAN regex in `api/main.py` and `web_sota/backend/server.py` (CRITICAL)
+- **run_http_async**: Replaced with `uvicorn.Server` on `mcp.http_app()` with CORS middleware to prevent middleware being dropped (CRITICAL)
+- **.env bundling**: Fixed `native/build.ps1` to bundle `.env.example` instead of `.env` (CRITICAL — prevented API key leakage in NSIS installer)
+- **tauri.conf.json**: Resources now point to `.env.example` instead of `.env` (CRITICAL)
+- **Created `.env.example`** at repo root with template configuration vars (HIGH)
+- **Updated `.gitignore`** to add `*.mcpb`, `native/target/`, `native/gen/`, `*.bak`, and `.env` patterns
+
+### Fixed
+- **start.ps1**: Added port zombie clearing, TCP readiness health poll, and auto-open browser (was missing fleet-standard startup protocol)
+- **backend.rs**: Added multi-layer `free_port()` with Stop-Process → taskkill → UAC elevated → 240s poll; added stdout/stderr stream watching with `emit("backend-status", "ready")` on backend ready
+- **justfile**: Added `serve`, `test`, `fmt`, `types`, `gates-green`, `build-native`, `cua-nsis-test`, `mcpb-pack`, `e2e` recipes
+- **pyproject.toml**: Fixed invalid `fastmcp[all]` extra (removed `[all]`); fixed mypy `python_version` from "3.10" to "3.12"
+- **Created CLAUDE.md**: Per-repo agent behavioral instructions
+
+### Added
+- **Skills system**: `GET /api/v1/skills`, `GET /api/v1/skills/{name}` endpoints + `skills/osc-mcp-expert/SKILL.md` with 190-line comprehensive skill
+- **LLM discovery**: `GET /api/v1/llm/discover` endpoint probing Ollama on localhost:11434
+- **Diagnostics**: `GET /api/v1/diagnostics` endpoint with tool count, version, system info
+- **Error response**: `src/oscmcp/tools/_error_response()` with auto-logging via `logger.exception()`
+- **Webapp**: Zustand state management, Ctrl+Scroll zoom hook (`useZoom`), `color-scheme: dark`, `data-testid` attributes on all dashboard KPIs, exponential backoff health check (1s→2s→4s→8s→16s), Skills page, 6 example prompts, localStorage chat persistence, personality selector with 4 options, .txt export
+- **Tests**: 9 unit tests covering imports, error response, health, diagnostics endpoints
+- **Session context**: `.opencode/skills/session-context/SKILL.md` for tool-awareness injection
+- **CLAUDE.md**: Per-repo agent behavioral instructions
+
+### Fixed
+- **print()→logging**: Converted 35 `print()` calls to `logger.info()` across 9 app files
+- **Router prefixes**: Fixed API endpoint path double-v1 issue (simplified router prefix chain)
+- **Removed 8 stale .bak files** across the repo
+- **Cleaned up** pre-existing ruff lint issues (unused imports, type annotations)
+
+### Documentation
+- Added `docs/assess-reports/2026-07-21.md` — full SOTA compliance assessment
+
 ## [0.3.1] — 2026-07-11
 
 ### Fixed

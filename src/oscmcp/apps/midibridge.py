@@ -7,9 +7,9 @@ MIDI events.
 
 import asyncio
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import mido
 from mido import Message as MidiMessage
@@ -52,23 +52,23 @@ class MIDIMapping:
     # MIDI channel (1-16, 0 for any)
     channel: int = 0
     # MIDI control number or note number (0-127, None for any)
-    control: Optional[int] = None
+    control: int | None = None
     # OSC address to map to/from
     osc_address: str = ""
     # OSC argument index (for messages with multiple arguments)
     osc_arg_index: int = 0
     # Value range mapping (min, max) for MIDI to OSC conversion
-    midi_range: Tuple[float, float] = (0.0, 127.0)
+    midi_range: tuple[float, float] = (0.0, 127.0)
     # Value range mapping (min, max) for OSC to MIDI conversion
-    osc_range: Tuple[float, float] = (0.0, 1.0)
+    osc_range: tuple[float, float] = (0.0, 1.0)
     # Whether to round the value when converting to MIDI
     round_midi: bool = True
     # Whether to invert the value (1.0 - value)
     invert: bool = False
     # Additional OSC arguments (for OSC to MIDI)
-    osc_args: Optional[list] = None
+    osc_args: list | None = None
     # Additional MIDI parameters (for MIDI to OSC)
-    midi_kwargs: Optional[dict] = None
+    midi_kwargs: dict | None = None
     # Whether to send a note off message after a note on (for toggle behavior)
     send_note_off: bool = False
     # Last value sent (for toggle behavior)
@@ -89,8 +89,8 @@ class MIDIBridge:
         self,
         osc_host: str = "127.0.0.1",
         osc_port: int = 8000,
-        midi_in_port: Optional[str] = None,
-        midi_out_port: Optional[str] = None,
+        midi_in_port: str | None = None,
+        midi_out_port: str | None = None,
     ):
         """Initialize the MIDI-OSC bridge.
 
@@ -114,8 +114,8 @@ class MIDIBridge:
         self.osc_server = OSCServer(osc_host, osc_port + 1)  # Use next port for replies
 
         # Mappings
-        self.midi_to_osc_mappings: List[MIDIMapping] = []
-        self.osc_to_midi_mappings: Dict[str, List[MIDIMapping]] = {}
+        self.midi_to_osc_mappings: list[MIDIMapping] = []
+        self.osc_to_midi_mappings: dict[str, list[MIDIMapping]] = {}
 
         # MIDI listener and controller
         self.midi_listener = None
@@ -126,7 +126,7 @@ class MIDIBridge:
         self.osc_message_callbacks = []
 
         # Active notes (for note off handling)
-        self.active_notes: Dict[Tuple[int, int], float] = {}
+        self.active_notes: dict[tuple[int, int], float] = {}
 
     async def start(self) -> None:
         """Start the MIDI-OSC bridge."""
@@ -165,9 +165,7 @@ class MIDIBridge:
         # Connect to input port
         if self.midi_in_port_name:
             if self.midi_in_port_name in input_ports:
-                self.midi_in = mido.open_input(
-                    self.midi_in_port_name, callback=self._handle_midi_message
-                )
+                self.midi_in = mido.open_input(self.midi_in_port_name, callback=self._handle_midi_message)
                 logger.info(f"Connected to MIDI input: {self.midi_in_port_name}")
             else:
                 logger.warning(f"MIDI input port not found: {self.midi_in_port_name}")
@@ -197,13 +195,13 @@ class MIDIBridge:
 
     def add_midi_to_osc_mapping(
         self,
-        midi_type: Union[MIDIType, str, int],
+        midi_type: MIDIType | str | int,
         channel: int,
-        control: Optional[int],
+        control: int | None,
         osc_address: str,
         osc_arg_index: int = 0,
-        midi_range: Tuple[float, float] = (0.0, 127.0),
-        osc_range: Tuple[float, float] = (0.0, 1.0),
+        midi_range: tuple[float, float] = (0.0, 127.0),
+        osc_range: tuple[float, float] = (0.0, 1.0),
         round_midi: bool = True,
         invert: bool = False,
         send_note_off: bool = False,
@@ -249,12 +247,12 @@ class MIDIBridge:
     def add_osc_to_midi_mapping(
         self,
         osc_address: str,
-        midi_type: Union[MIDIType, str, int],
+        midi_type: MIDIType | str | int,
         channel: int,
-        control: Optional[int],
+        control: int | None,
         osc_arg_index: int = 0,
-        midi_range: Tuple[float, float] = (0.0, 127.0),
-        osc_range: Tuple[float, float] = (0.0, 1.0),
+        midi_range: tuple[float, float] = (0.0, 127.0),
+        osc_range: tuple[float, float] = (0.0, 1.0),
         round_midi: bool = True,
         invert: bool = False,
         **midi_kwargs,
@@ -456,9 +454,7 @@ class MIDIBridge:
                     elif mapping.midi_type == MIDIType.PROGRAM_CHANGE:
                         msg = MidiMessage("program_change", program=int(midi_value), **msg_kwargs)
                     else:
-                        logger.warning(
-                            f"Unsupported MIDI type for OSC to MIDI mapping: {mapping.midi_type}"
-                        )
+                        logger.warning(f"Unsupported MIDI type for OSC to MIDI mapping: {mapping.midi_type}")
                         continue
                 # For messages without a control/note number
                 elif mapping.midi_type == MIDIType.PROGRAM_CHANGE:
@@ -537,10 +533,10 @@ async def example_usage():
 
     # Add callbacks for logging
     def on_midi(message):
-        print(f"MIDI: {message}")
+        logger.info(f"MIDI: {message}")
 
     def on_osc(address, args):
-        print(f"OSC: {address} {args}")
+        logger.info(f"OSC: {address} {args}")
 
     bridge.on_midi_message(on_midi)
     bridge.on_osc_message(on_osc)
@@ -553,7 +549,7 @@ async def example_usage():
         while True:
             await asyncio.sleep(1)
     except KeyboardInterrupt:
-        print("Stopping...")
+        logger.info("Stopping...")
     finally:
         await bridge.stop()
 

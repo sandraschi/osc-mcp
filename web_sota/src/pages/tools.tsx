@@ -1,3 +1,4 @@
+import { API_BASE } from "../lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,7 +40,7 @@ export function Tools() {
 
   const fetchTools = async () => {
     try {
-      const response = await fetch("http://localhost:10767/api/v1/tools/");
+      const response = await fetch(API_BASE + "/api/v1/tools/");
       const data = await response.json();
       setTools(data);
     } catch (error) {
@@ -51,7 +52,7 @@ export function Tools() {
     if (!selectedTool) return;
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:10767/api/v1/tools/call", {
+      const response = await fetch(API_BASE + "/api/v1/tools/call", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

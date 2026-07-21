@@ -1,11 +1,14 @@
 """Dynamic OSCQuery to MCP tool auto-mapper."""
+
 import logging
-import asyncio
-from typing import Dict, Any, List
+from typing import Any
+
 from fastmcp import FastMCP
+
 from .oscquery import OSCQueryBrowser, OSCQueryService
 
 logger = logging.getLogger(__name__)
+
 
 class DynamicToolMapper:
     """Auto-discovers OSCQuery endpoints and registers them as MCP tools."""
@@ -14,7 +17,7 @@ class DynamicToolMapper:
         self.server = server
         self.browser = OSCQueryBrowser()
         self.browser.on_service_change(self._handle_service_change)
-        self.mapped_services: Dict[str, OSCQueryService] = {}
+        self.mapped_services: dict[str, OSCQueryService] = {}
 
     async def start(self) -> None:
         """Start the discovery browser."""
@@ -26,20 +29,22 @@ class DynamicToolMapper:
         logger.info("Stopping Dynamic OSCQuery Tool Mapper...")
         await self.browser.stop()
 
-    def get_services(self) -> List[Dict[str, Any]]:
+    def get_services(self) -> list[dict[str, Any]]:
         """Returns details of all active discovered services."""
         services_list = []
         for service in self.mapped_services.values():
-            services_list.append({
-                "name": service.name,
-                "host": service.host,
-                "osc_port": service.osc_port,
-                "ws_port": service.ws_port,
-                "info": service.info
-            })
+            services_list.append(
+                {
+                    "name": service.name,
+                    "host": service.host,
+                    "osc_port": service.osc_port,
+                    "ws_port": service.ws_port,
+                    "info": service.info,
+                }
+            )
         return services_list
 
-    async def get_service_parameters(self, name: str) -> List[Dict[str, Any]]:
+    async def get_service_parameters(self, name: str) -> list[dict[str, Any]]:
         """Fetch all parameters for a specific service."""
         for service in self.mapped_services.values():
             if service.name.lower() == name.lower():
@@ -62,7 +67,7 @@ class DynamicToolMapper:
         """Register MCP tool wrapper for discovered targets."""
         tool_name = f"oscquery_{service.name.lower().replace('-', '_')}_set"
 
-        async def dynamic_set_parameter(path: str, value: str) -> Dict[str, Any]:
+        async def dynamic_set_parameter(path: str, value: str) -> dict[str, Any]:
             """Dynamically sets a parameter on a discovered OSCQuery device.
 
             Args:
@@ -90,7 +95,7 @@ class DynamicToolMapper:
                     cast_val = False
                 elif "N" in param_type:
                     cast_val = None
-                
+
                 service.send(path, [cast_val] if cast_val is not None else [])
                 logger.info(f"OSCQuery Set: {service.name} {path} -> {cast_val}")
                 return {
@@ -98,7 +103,7 @@ class DynamicToolMapper:
                     "service": service.name,
                     "path": path,
                     "value": cast_val,
-                    "type": param_type
+                    "type": param_type,
                 }
             except Exception as e:
                 err = f"Failed to set parameter: {e}"
@@ -107,7 +112,9 @@ class DynamicToolMapper:
 
         # Override name and docstring to display properly in MCP catalogs
         dynamic_set_parameter.__name__ = tool_name
-        dynamic_set_parameter.__doc__ = f"Control parameters for discovered target '{service.name}'.\nHost: {service.host}:{service.osc_port}"
+        dynamic_set_parameter.__doc__ = (
+            f"Control parameters for discovered target '{service.name}'.\nHost: {service.host}:{service.osc_port}"
+        )
 
         # Register on FastMCP server
         try:

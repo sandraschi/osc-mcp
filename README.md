@@ -9,6 +9,7 @@ Natural language control of audio/visual applications (Ableton Live, TouchDesign
   <img src="https://img.shields.io/badge/Python-3.12+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python">
   <img src="https://img.shields.io/badge/License-MIT-yellow?style=flat-square" alt="MIT">
   <img src="https://img.shields.io/badge/status-production-brightgreen?style=flat-square" alt="Status">
+  <img src="https://img.shields.io/badge/zustand-5.0-orange?style=flat-square" alt="Zustand">
 </p>
 
 ## Features
@@ -61,9 +62,23 @@ See [INSTALL.md](INSTALL.md) for manual setup and Claude Desktop configuration.
 | **Managers** | `ableton_manager`, `vcv_manager`, `touchdesigner_manager`, `vrchat_manager`, `supercollider_manager`, `maxmsp_manager`, `resolume_manager`, `puredata_manager`, `audio_workflow_manager`, `osc_recorder_manager`, `music_orchestrator` |
 | **Workflows** | `list_arazzo_workflows`, `execute_osc_workflow`, `generate_osc_workflow` |
 
+## Stack
+
+| Layer | Technology |
+|-------|-----------|
+| **Framework** | FastMCP 3.4 / FastAPI |
+| **Runtime** | Python 3.12+ (uv) |
+| **Frontend** | React 19, Vite 7, TypeScript 5.9 |
+| **Styling** | Tailwind CSS 3.4, Radix UI, Lucide Icons |
+| **State** | Zustand 5, TanStack React Query |
+| **Desktop** | Tauri 2.0 (NSIS installer) |
+| **Build** | PyInstaller, setuptools, MCPB |
+
 ## Dashboard
 
 SOTA web interface at `http://localhost:10766` — real-time OSC monitoring, application-specific controllers, integrated chat for natural language command orchestration.
+
+**Keyboard shortcuts:** Ctrl+L → Logs, Ctrl+H → Help, Ctrl+K → Tools, Ctrl+Scroll → Zoom
 
 ## Links
 

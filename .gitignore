@@ -193,3 +193,16 @@ site/
 *.bak
 
 _dashboard/
+
+# Build artifacts
+*.mcpb
+
+# Tauri / Native
+native/target/
+native/gen/
+
+# Batch backup safety files
+*.bak
+
+# Environment (real .env is personal, only .env.example should exist)
+.env

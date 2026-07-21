@@ -6,7 +6,8 @@ bidirectional communication for music and multimedia applications.
 
 import asyncio
 import logging
-from typing import Any, Callable, Dict, List
+from collections.abc import Callable
+from typing import Any
 
 from ..osc.client import OSCClient
 from ..osc.server import OSCServer
@@ -46,8 +47,8 @@ class MaxMSPOSC:
         self.server = OSCServer(host, listen_port)
 
         # Callback storage
-        self.callbacks: Dict[str, List[Callable[[str, Any], None]]] = {}
-        self.message_callbacks: List[Callable[[str, list], None]] = []
+        self.callbacks: dict[str, list[Callable[[str, Any], None]]] = {}
+        self.message_callbacks: list[Callable[[str, list], None]] = []
 
         # Register default handlers
         self._register_default_handlers()
@@ -282,10 +283,10 @@ async def example_usage():
 
     # Define callbacks
     def on_parameter_changed(address, value):
-        print(f"Parameter '{address}' changed to: {value}")
+        logger.info(f"Parameter '{address}' changed to: {value}")
 
     def on_any_message(address, args):
-        print(f"Received message: {address} {args}")
+        logger.info(f"Received message: {address} {args}")
 
     # Register callbacks
     maxmsp.on_message("/test", on_parameter_changed)
@@ -296,15 +297,15 @@ async def example_usage():
         await maxmsp.start()
 
         # Load a patch
-        print("Loading patch...")
+        logger.info("Loading patch...")
         maxmsp.load_patch("/path/to/patch.maxpat")
 
         # Start DSP
-        print("Starting DSP...")
+        logger.info("Starting DSP...")
         maxmsp.start_dsp()
 
         # Send some test messages
-        print("Sending test messages...")
+        logger.info("Sending test messages...")
         maxmsp.send_float("frequency", 440.0)
         maxmsp.send_bang("trigger")
 
@@ -312,7 +313,7 @@ async def example_usage():
         await asyncio.sleep(5)
 
         # Change some parameters
-        print("Updating parameters...")
+        logger.info("Updating parameters...")
         maxmsp.send_float("frequency", 880.0)
         maxmsp.send_float("amp", 0.7)
 
@@ -320,11 +321,11 @@ async def example_usage():
         await asyncio.sleep(3)
 
         # Stop DSP
-        print("Stopping DSP...")
+        logger.info("Stopping DSP...")
         maxmsp.stop_dsp()
 
     except KeyboardInterrupt:
-        print("Stopping...")
+        logger.info("Stopping...")
     finally:
         await maxmsp.stop()
 

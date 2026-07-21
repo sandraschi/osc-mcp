@@ -5,7 +5,8 @@ bidirectional communication for modular synthesis control.
 """
 
 import logging
-from typing import Any, Callable, Dict, List
+from collections.abc import Callable
+from typing import Any
 
 from ..osc.client import OSCClient
 from ..osc.server import OSCServer
@@ -45,8 +46,8 @@ class VCVController:
         self.server = OSCServer(host, listen_port)
 
         # Callback storage
-        self.param_callbacks: Dict[str, List[Callable[[str, Any], None]]] = {}
-        self.message_callbacks: List[Callable[[str, list], None]] = []
+        self.param_callbacks: dict[str, list[Callable[[str, Any], None]]] = {}
+        self.message_callbacks: list[Callable[[str, list], None]] = []
 
         # Register default handlers
         self._register_default_handlers()
@@ -112,9 +113,7 @@ class VCVController:
             except Exception as e:
                 logger.error(f"Error in message callback: {e}")
 
-    def on_parameter_change(
-        self, module_id: int, param_id: int, callback: Callable[[str, float], None]
-    ) -> None:
+    def on_parameter_change(self, module_id: int, param_id: int, callback: Callable[[str, float], None]) -> None:
         """Register a callback for parameter changes.
 
         Args:
@@ -240,10 +239,10 @@ async def example_usage():
 
     # Define callbacks
     def on_parameter_changed(param_path, value):
-        print(f"Parameter '{param_path}' changed to: {value}")
+        logger.info(f"Parameter '{param_path}' changed to: {value}")
 
     def on_message(address, args):
-        print(f"Received message: {address} {args}")
+        logger.info(f"Received message: {address} {args}")
 
     # Register callbacks
     vcv.on_parameter_change(1, 0, on_parameter_changed)  # Module 1, Param 0
@@ -262,7 +261,7 @@ async def example_usage():
             await asyncio.sleep(1)
 
     except KeyboardInterrupt:
-        print("Stopping...")
+        logger.info("Stopping...")
     finally:
         await vcv.stop()
 

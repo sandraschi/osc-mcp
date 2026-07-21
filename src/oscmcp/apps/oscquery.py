@@ -8,7 +8,8 @@ import asyncio
 import logging
 import socket
 import uuid
-from typing import Any, Callable, Dict, List, Optional
+from collections.abc import Callable
+from typing import Any
 
 import aiohttp
 from zeroconf import IPVersion, ServiceInfo, Zeroconf
@@ -28,8 +29,8 @@ class OSCQueryService:
         name: str,
         host: str,
         osc_port: int,
-        ws_port: Optional[int] = None,
-        info: Optional[Dict] = None,
+        ws_port: int | None = None,
+        info: dict | None = None,
     ):
         self.name = name
         self.host = host
@@ -39,12 +40,14 @@ class OSCQueryService:
         self.osc_client = OSCClient(host, osc_port)
 
     def __str__(self) -> str:
-        return f"OSCQueryService(name='{self.name}', host='{self.host}', osc_port={self.osc_port}, ws_port={self.ws_port})"
+        return (
+            f"OSCQueryService(name='{self.name}', host='{self.host}', osc_port={self.osc_port}, ws_port={self.ws_port})"
+        )
 
     def __repr__(self) -> str:
         return self.__str__()
 
-    async def get_host_info(self) -> Dict:
+    async def get_host_info(self) -> dict:
         """Get the host info from the OSCQuery service."""
         if not hasattr(self, "_host_info"):
             await self._fetch_host_info()
@@ -64,7 +67,7 @@ class OSCQueryService:
             self._host_info = {}
             logger.error(f"Error fetching host info: {e}")
 
-    async def query(self, path: str = "") -> Dict:
+    async def query(self, path: str = "") -> dict:
         """Query the OSCQuery service for information about an OSC address.
 
         Args:
@@ -87,12 +90,12 @@ class OSCQueryService:
             logger.error(f"Error querying {path}: {e}")
             return {}
 
-    async def list_parameters(self) -> List[Dict]:
+    async def list_parameters(self) -> list[dict]:
         """List all available OSC parameters from the service."""
         host_info = await self.get_host_info()
         parameters = []
 
-        def traverse(node: Dict, path: str = "") -> None:
+        def traverse(node: dict, path: str = "") -> None:
             current_path = path + node.get("FULL_PATH", node.get("NAME", ""))
 
             # If this node has a TYPE, it's a parameter
@@ -147,9 +150,7 @@ class OSCQueryBrowser:
             return
 
         self.zeroconf = AsyncZeroconf(ip_version=IPVersion.V4Only)
-        self._browser = await self.zeroconf.zeroconf.async_add_listener(
-            self._service_state_change, self.SERVICE_TYPE
-        )
+        self._browser = await self.zeroconf.zeroconf.async_add_listener(self._service_state_change, self.SERVICE_TYPE)
         logger.info("OSCQuery browser started")
 
     async def stop(self) -> None:
@@ -162,9 +163,7 @@ class OSCQueryBrowser:
             self.zeroconf = None
             logger.info("OSCQuery browser stopped")
 
-    def _service_state_change(
-        self, zeroconf: Zeroconf, service_type: str, name: str, state_change: str
-    ) -> None:
+    def _service_state_change(self, zeroconf: Zeroconf, service_type: str, name: str, state_change: str) -> None:
         """Handle service state changes."""
         if state_change == "add":
             asyncio.create_task(self._add_service(zeroconf, service_type, name))
@@ -250,11 +249,11 @@ class OSCQueryBrowser:
         """
         self._service_listeners.append(callback)
 
-    def get_services(self) -> List[OSCQueryService]:
+    def get_services(self) -> list[OSCQueryService]:
         """Get a list of all discovered services."""
         return list(self.services.values())
 
-    def find_service(self, name: str) -> Optional[OSCQueryService]:
+    def find_service(self, name: str) -> OSCQueryService | None:
         """Find a service by name.
 
         Args:
@@ -324,7 +323,7 @@ class OSCQueryServer:
         value: Any = None,
         range_min: float = None,
         range_max: float = None,
-        tags: List[str] = None,
+        tags: list[str] = None,
     ) -> None:
         """Add an OSC endpoint to the OSCQuery server.
 
@@ -492,7 +491,7 @@ class OSCQueryServer:
             await self.zeroconf.async_close()
             self.zeroconf = None
 
-    def _get_host_info(self) -> Dict:
+    def _get_host_info(self) -> dict:
         """Get the host info document."""
         # Create the host info structure
         host_info = {
@@ -594,7 +593,7 @@ async def example_usage():
             server.update_endpoint_value("/test/float", random.random())
 
     except KeyboardInterrupt:
-        print("Stopping...")
+        logger.info("Stopping...")
     finally:
         await server.stop()
 
@@ -608,7 +607,7 @@ async def example_browser():
 
     # Define callback for service changes
     def on_service_change(action, service):
-        print(f"Service {action}: {service}")
+        logger.info(f"Service {action}: {service}")
 
     # Register callback
     browser.on_service_change(on_service_change)
@@ -622,7 +621,7 @@ async def example_browser():
             await asyncio.sleep(1)
 
     except KeyboardInterrupt:
-        print("Stopping...")
+        logger.info("Stopping...")
     finally:
         await browser.stop()
 

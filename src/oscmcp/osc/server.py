@@ -1,14 +1,14 @@
-"""OSC server implementation for receiving OSC messages over UDP and TCP.
-"""
+"""OSC server implementation for receiving OSC messages over UDP and TCP."""
 
 import asyncio
 import logging
 import time
-from typing import Any, Callable, Dict, List, Optional
+from collections.abc import Callable
+from typing import Any
 
 from pythonosc import dispatcher
-from pythonosc.osc_server import AsyncIOOSCUDPServer
 from pythonosc.osc_message import OscMessage
+from pythonosc.osc_server import AsyncIOOSCUDPServer
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ class SLIPDecoder:
         self._buffer = bytearray()
         self._escaped = False
 
-    def feed(self, data: bytes) -> List[bytes]:
+    def feed(self, data: bytes) -> list[bytes]:
         """Feed bytes into the decoder and return completed packets."""
         packets = []
         for byte in data:
@@ -50,7 +50,7 @@ class OSCMessage:
         self.args = args
         self.timestamp = timestamp
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "address": self.address,
@@ -78,10 +78,10 @@ class OSCServer:
         self.dispatcher = dispatcher.Dispatcher()
         self.server = None
         self._transport = None
-        self._tcp_server: Optional[asyncio.Server] = None
-        self._tcp_tasks: List[asyncio.Task] = []
-        self._callbacks: Dict[str, Callable] = {}
-        self._message_buffer: List[OSCMessage] = []
+        self._tcp_server: asyncio.Server | None = None
+        self._tcp_tasks: list[asyncio.Task] = []
+        self._callbacks: dict[str, Callable] = {}
+        self._message_buffer: list[OSCMessage] = []
         self._max_buffer_size = max_buffer_size
 
     def add_handler(self, address: str, callback: Callable) -> None:
@@ -141,9 +141,7 @@ class OSCServer:
             logger.info(f"OSC UDP server started on {self.host}:{self.port}")
         else:
             # TCP Server
-            self._tcp_server = await asyncio.start_server(
-                self._handle_tcp_client, self.host, self.port
-            )
+            self._tcp_server = await asyncio.start_server(self._handle_tcp_client, self.host, self.port)
             logger.info(f"OSC TCP server started on {self.host}:{self.port}")
 
     async def stop(self) -> None:
@@ -162,10 +160,10 @@ class OSCServer:
 
     def get_received_messages(
         self,
-        address_pattern: Optional[str] = None,
-        max_age_seconds: Optional[float] = None,
+        address_pattern: str | None = None,
+        max_age_seconds: float | None = None,
         limit: int = 100,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Get received OSC messages from the buffer."""
         current_time = time.time()
         messages = []
@@ -184,7 +182,7 @@ class OSCServer:
 
         return messages
 
-    def get_latest_message(self, address_pattern: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    def get_latest_message(self, address_pattern: str | None = None) -> dict[str, Any] | None:
         """Get the most recent OSC message matching the pattern."""
         messages = self.get_received_messages(address_pattern, limit=1)
         return messages[0] if messages else None
@@ -196,7 +194,7 @@ class OSCServer:
         logger.info(f"Cleared {cleared_count} messages from OSC buffer")
         return cleared_count
 
-    def get_buffer_stats(self) -> Dict[str, Any]:
+    def get_buffer_stats(self) -> dict[str, Any]:
         """Get statistics about the message buffer."""
         if not self._message_buffer:
             return {

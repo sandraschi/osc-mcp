@@ -4,7 +4,7 @@ This module provides functionality to listen for MIDI messages and convert them 
 """
 
 import logging
-from typing import Callable, Dict, Optional
+from collections.abc import Callable
 
 import mido
 
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class MIDIListener:
     """Listens for MIDI messages and converts them to OSC."""
 
-    def __init__(self, port_name: Optional[str] = None):
+    def __init__(self, port_name: str | None = None):
         """Initialize the MIDI listener.
 
         Args:
@@ -25,7 +25,7 @@ class MIDIListener:
         self.running = False
         self.callbacks = []
 
-    def add_callback(self, callback: Callable[[Dict], None]) -> None:
+    def add_callback(self, callback: Callable[[dict], None]) -> None:
         """Add a callback function to be called when a MIDI message is received.
 
         Args:

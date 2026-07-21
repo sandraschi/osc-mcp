@@ -1,3 +1,4 @@
+import { ApiDocsPage } from "@/pages/api-docs";
 import { AppLayout } from "@/components/layout/app-layout";
 import Logging from "@/pages/Logging";
 import { Ableton } from "@/pages/ableton";
@@ -8,6 +9,7 @@ import { Dashboard } from "@/pages/dashboard";
 import { Help } from "@/pages/help";
 import { MaxMSP } from "@/pages/maxmsp";
 import { Settings } from "@/pages/settings";
+import { Skills } from "@/pages/skills";
 import { Status } from "@/pages/status";
 import { SuperCollider } from "@/pages/supercollider";
 import { Tools } from "@/pages/tools";
@@ -41,6 +43,8 @@ function App() {
           <Route path="/supercollider" element={<SuperCollider />} />
           <Route path="/vcvrack" element={<VCVRack />} />
           <Route path="/tools" element={<Tools />} />
+          <Route path="/skills" element={<Skills />} />
+          <Route path="/api-docs" element={<ApiDocsPage />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/logs" element={<Logging />} />
           <Route path="*" element={<Navigate to="/" replace />} />

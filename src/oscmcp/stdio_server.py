@@ -7,7 +7,7 @@ integration with other tools.
 
 import asyncio
 import logging
-from typing import Any, Dict, List
+from typing import Any
 
 from fastmcp import FastMCP
 from pydantic import BaseModel, Field
@@ -15,16 +15,14 @@ from pythonosc import dispatcher, osc_server
 from pythonosc.udp_client import SimpleUDPClient
 
 # Set up logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 # Create FastMCP instance
 server = FastMCP("OSC-MCP")
 
 # Store OSC server instances for cleanup
-_osc_servers: List[Any] = []
+_osc_servers: list[Any] = []
 
 
 # Pydantic models for input validation (FastMCP 2.13)
@@ -34,7 +32,7 @@ class OSCMessageInput(BaseModel):
     host: str = Field(..., description="Target hostname or IP address")
     port: int = Field(..., gt=0, le=65535, description="Target UDP port (1-65535)")
     address: str = Field(..., pattern=r"^/.*", description="OSC address pattern starting with /")
-    values: List[Any] = Field(..., description="List of values to send")
+    values: list[Any] = Field(..., description="List of values to send")
 
 
 class OSCListenerInput(BaseModel):
@@ -83,7 +81,7 @@ async def server_lifespan():
 
 
 @server.tool()
-async def send_osc_message(host: str, port: int, address: str, values: List[Any]) -> Dict[str, Any]:
+async def send_osc_message(host: str, port: int, address: str, values: list[Any]) -> dict[str, Any]:
     """Send OSC message to target application.
 
     Args:
@@ -117,7 +115,7 @@ async def send_osc_message(host: str, port: int, address: str, values: List[Any]
 
 
 @server.tool()
-async def start_osc_listener(port: int, address: str = "0.0.0.0") -> Dict[str, Any]:
+async def start_osc_listener(port: int, address: str = "0.0.0.0") -> dict[str, Any]:
     """Start OSC server to receive messages.
 
     Args:
@@ -139,9 +137,7 @@ async def start_osc_listener(port: int, address: str = "0.0.0.0") -> Dict[str, A
         osc_dispatcher.set_default_handler(default_handler)
 
         # Create and start the OSC server
-        osc_server_instance = osc_server.AsyncIOOSCUDPServer(
-            (address, port), osc_dispatcher, asyncio.get_event_loop()
-        )
+        osc_server_instance = osc_server.AsyncIOOSCUDPServer((address, port), osc_dispatcher, asyncio.get_event_loop())
 
         # Store the server instance for later cleanup
         _osc_servers.append(osc_server_instance)
@@ -165,7 +161,7 @@ async def start_osc_listener(port: int, address: str = "0.0.0.0") -> Dict[str, A
 
 # Add a simple test function to verify the server is working
 @server.tool()
-async def test_osc_echo(port: int = 9000) -> Dict[str, Any]:
+async def test_osc_echo(port: int = 9000) -> dict[str, Any]:
     """Test OSC functionality by sending and receiving a message.
 
     This is a test function that starts a server, sends a message to itself,

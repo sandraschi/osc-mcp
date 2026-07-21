@@ -6,7 +6,8 @@ bidirectional communication for audio processing and multimedia.
 
 import asyncio
 import logging
-from typing import Any, Callable, Dict, List
+from collections.abc import Callable
+from typing import Any
 
 from ..osc.client import OSCClient
 from ..osc.server import OSCServer
@@ -46,8 +47,8 @@ class PureDataOSC:
         self.server = OSCServer(host, listen_port)
 
         # Callback storage
-        self.callbacks: Dict[str, List[Callable[[str, Any], None]]] = {}
-        self.message_callbacks: List[Callable[[str, list], None]] = []
+        self.callbacks: dict[str, list[Callable[[str, Any], None]]] = {}
+        self.message_callbacks: list[Callable[[str, list], None]] = []
 
         # Register default handlers
         self._register_default_handlers()
@@ -240,10 +241,10 @@ async def example_usage():
 
     # Define callbacks
     def on_parameter_changed(address, value):
-        print(f"Parameter '{address}' changed to: {value}")
+        logger.info(f"Parameter '{address}' changed to: {value}")
 
     def on_any_message(address, args):
-        print(f"Received message: {address} {args}")
+        logger.info(f"Received message: {address} {args}")
 
     # Register callbacks
     pd.on_message("/test", on_parameter_changed)
@@ -264,7 +265,7 @@ async def example_usage():
             await asyncio.sleep(1)
 
     except KeyboardInterrupt:
-        print("Stopping...")
+        logger.info("Stopping...")
     finally:
         await pd.stop()
 

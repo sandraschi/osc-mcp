@@ -4,7 +4,7 @@ Exposes FastMCP tools through a standardized REST interface.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
@@ -13,38 +13,38 @@ from oscmcp.server import server
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(tags=["tools"], prefix="/v1/tools")
+router = APIRouter(tags=["tools"], prefix="/tools")
 
 
 class ToolParameter(BaseModel):
     name: str
     type: str
-    description: Optional[str] = None
+    description: str | None = None
     required: bool = True
 
 
 class ToolInfo(BaseModel):
     name: str
     description: str
-    parameters: List[ToolParameter] = []
+    parameters: list[ToolParameter] = []
 
 
 class ToolCallRequest(BaseModel):
     name: str
-    arguments: Dict[str, Any] = {}
+    arguments: dict[str, Any] = {}
 
 
 class ToolCallResponse(BaseModel):
     status: str
     result: Any = None
-    message: Optional[str] = None
+    message: str | None = None
 
 
-@router.get("/", response_model=List[ToolInfo])
-async def list_tools() -> List[ToolInfo]:
+@router.get("/", response_model=list[ToolInfo])
+async def list_tools() -> list[ToolInfo]:
     """List all registered MCP tools."""
     try:
-        tools: List[ToolInfo] = []
+        tools: list[ToolInfo] = []
 
         # FastMCP 2.14.3 tool manager access
         tool_sources = []
@@ -69,9 +69,7 @@ async def list_tools() -> List[ToolInfo]:
                         )
                     )
 
-            tools.append(
-                ToolInfo(name=tool.name, description=tool.description or "", parameters=params)
-            )
+            tools.append(ToolInfo(name=tool.name, description=tool.description or "", parameters=params))
 
         return tools
 
@@ -92,9 +90,7 @@ async def call_tool(request: ToolCallRequest) -> ToolCallResponse:
         # Execute tool via FastMCP instance
         result = await server.call_tool(request.name, request.arguments)
 
-        return ToolCallResponse(
-            status="success", result=result, message=f"Tool {request.name} executed successfully"
-        )
+        return ToolCallResponse(status="success", result=result, message=f"Tool {request.name} executed successfully")
 
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

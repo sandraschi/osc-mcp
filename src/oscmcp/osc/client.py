@@ -1,5 +1,4 @@
-"""OSC client implementation for sending OSC messages over UDP and TCP.
-"""
+"""OSC client implementation for sending OSC messages over UDP and TCP."""
 
 import logging
 import socket

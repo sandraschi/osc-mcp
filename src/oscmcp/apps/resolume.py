@@ -5,7 +5,8 @@ control of video mixing and composition.
 """
 
 import logging
-from typing import Any, Callable, Dict, List
+from collections.abc import Callable
+from typing import Any
 
 from ..osc.client import OSCClient
 from ..osc.server import OSCServer
@@ -45,8 +46,8 @@ class ResolumeArena:
         self.server = OSCServer(host, listen_port)
 
         # Callback storage
-        self.callbacks: Dict[str, List[Callable[[str, Any], None]]] = {}
-        self.feedback_callbacks: List[Callable[[str, list], None]] = []
+        self.callbacks: dict[str, list[Callable[[str, Any], None]]] = {}
+        self.feedback_callbacks: list[Callable[[str, list], None]] = []
 
         # Register default handlers
         self._register_default_handlers()
@@ -282,10 +283,10 @@ async def example_usage():
 
     # Define callbacks
     def on_parameter_changed(address, value):
-        print(f"Parameter '{address}' changed to: {value}")
+        logger.info(f"Parameter '{address}' changed to: {value}")
 
     def on_feedback(address, args):
-        print(f"Feedback: {address} {args}")
+        logger.info(f"Feedback: {address} {args}")
 
     # Register callbacks
     resolume.on_message("/composition/video/mixer/opacity", on_parameter_changed)
@@ -304,7 +305,7 @@ async def example_usage():
             await asyncio.sleep(2)
 
     except KeyboardInterrupt:
-        print("Stopping...")
+        logger.info("Stopping...")
     finally:
         await resolume.stop()
 

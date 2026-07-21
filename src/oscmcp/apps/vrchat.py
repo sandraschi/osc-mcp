@@ -6,8 +6,9 @@ bidirectional communication with VRChat avatars and worlds.
 
 import logging
 import os
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any
 
 from ..osc.client import OSCClient
 from ..osc.server import OSCServer
@@ -49,15 +50,15 @@ class VRChatOSC:
         self.server = OSCServer(host, input_port)
 
         # Avatar parameter callbacks
-        self.parameter_callbacks: Dict[str, List[Callable[[str, Any], None]]] = {}
+        self.parameter_callbacks: dict[str, list[Callable[[str, Any], None]]] = {}
 
         # Avatar change callback
-        self.avatar_change_callback: Optional[Callable[[str], None]] = None
+        self.avatar_change_callback: Callable[[str], None] | None = None
 
         # Avatar config
-        self.avatar_id: Optional[str] = None
-        self.avatar_name: Optional[str] = None
-        self.avatar_parameters: Dict[str, Dict] = {}
+        self.avatar_id: str | None = None
+        self.avatar_name: str | None = None
+        self.avatar_parameters: dict[str, dict] = {}
 
         # Register default handlers
         self._register_default_handlers()
@@ -142,9 +143,7 @@ class VRChatOSC:
         config_dir = Path(app_data).parent / "LocalLow" / "VRChat" / "VRChat" / "OSC"
 
         # For now, we'll just log that we'd try to load the config
-        logger.info(
-            f"Would load avatar config from: {config_dir}/<user_id>/Avatars/{self.avatar_id}.json"
-        )
+        logger.info(f"Would load avatar config from: {config_dir}/<user_id>/Avatars/{self.avatar_id}.json")
 
     def on_avatar_change(self, callback: Callable[[str], None]) -> None:
         """Register a callback for avatar change events.
@@ -165,7 +164,7 @@ class VRChatOSC:
             self.parameter_callbacks[param_name] = []
         self.parameter_callbacks[param_name].append(callback)
 
-    def set_parameter(self, param_name: str, value: Union[float, bool]) -> None:
+    def set_parameter(self, param_name: str, value: float | bool) -> None:
         """Set an avatar parameter in VRChat.
 
         Args:
@@ -228,10 +227,10 @@ async def example_usage():
 
     # Define callbacks
     def on_avatar_changed(avatar_id):
-        print(f"Avatar changed to: {avatar_id}")
+        logger.info(f"Avatar changed to: {avatar_id}")
 
     def on_parameter_changed(param_name, value):
-        print(f"Parameter '{param_name}' changed to: {value}")
+        logger.info(f"Parameter '{param_name}' changed to: {value}")
 
     # Register callbacks
     vrchat.on_avatar_change(on_avatar_changed)
@@ -249,7 +248,7 @@ async def example_usage():
             await asyncio.sleep(5)
 
     except KeyboardInterrupt:
-        print("Stopping...")
+        logger.info("Stopping...")
     finally:
         await vrchat.stop()
 

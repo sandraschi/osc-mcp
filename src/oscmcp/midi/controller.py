@@ -4,7 +4,6 @@ This module provides functionality to send MIDI messages from OSC.
 """
 
 import logging
-from typing import Optional
 
 import mido
 
@@ -14,7 +13,7 @@ logger = logging.getLogger(__name__)
 class MIDIController:
     """Sends MIDI messages in response to OSC commands."""
 
-    def __init__(self, port_name: Optional[str] = None):
+    def __init__(self, port_name: str | None = None):
         """Initialize the MIDI controller.
 
         Args:

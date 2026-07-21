@@ -11,12 +11,11 @@ import asyncio
 import logging
 import os
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from fastmcp import FastMCP
 from pydantic import BaseModel, Field
-from .osc.client import OSCClient
 
+from .osc.client import OSCClient
 from .osc.server import OSCServer
 from .transport import run_server
 
@@ -49,9 +48,7 @@ class DevNullStdout:
 
 
 # Set up logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 # Detect if we're running in stdio mode (for MCP)
@@ -70,7 +67,7 @@ if _is_stdio_mode:
     sys.stdout = DevNullStdout(sys.stdout)
 
 # Create FastMCP instance with stdio transport
-from .server import server
+from .server import _DESTRUCTIVE, _MUTATING, _README_ONLY, server
 
 # CRITICAL: After server initialization, restore stdout for stdio mode
 # This allows the server to communicate via JSON-RPC while preventing initialization logging
@@ -92,11 +89,11 @@ if _is_stdio_mode:
     )
 
 # Store OSC clients and servers
-osc_clients: Dict[str, OSCClient] = {}
-osc_servers: Dict[int, "OSCServer"] = {}
+osc_clients: dict[str, OSCClient] = {}
+osc_servers: dict[int, "OSCServer"] = {}
 
 # OSC Recording system
-osc_recordings: Dict[str, List[Dict[str, Any]]] = {}
+osc_recordings: dict[str, list[dict[str, Any]]] = {}
 
 
 # Pydantic models for input validation (FastMCP 2.13)
@@ -106,7 +103,7 @@ class OSCMessageInput(BaseModel):
     host: str = Field(..., description="Target hostname or IP address")
     port: int = Field(..., gt=0, le=65535, description="Target UDP port (1-65535)")
     address: str = Field(..., pattern=r"^/.*", description="OSC address pattern starting with /")
-    values: List[Any] = Field(default_factory=list, description="List of values to send")
+    values: list[Any] = Field(default_factory=list, description="List of values to send")
 
 
 class OSCServerInput(BaseModel):
@@ -127,7 +124,9 @@ class OSCServerStopInput(BaseModel):
 
 
 @server.tool()
-async def send_osc(host: str, port: int, address: str, values: List[Any] = None, protocol: str = "udp") -> Dict[str, Any]:
+async def send_osc(
+    host: str, port: int, address: str, values: list[Any] = None, protocol: str = "udp"
+) -> dict[str, Any]:
     """Send an OSC message to the specified address.
 
     This tool sends OSC (Open Sound Control) messages over UDP to any OSC-enabled
@@ -266,8 +265,8 @@ async def send_osc(host: str, port: int, address: str, values: List[Any] = None,
         return {"status": "error", "message": error}
 
 
-@server.tool()
-async def start_osc_server(port: int, address: str = "0.0.0.0", protocol: str = "udp") -> Dict[str, Any]:
+@server.tool(annotations=_MUTATING)
+async def start_osc_server(port: int, address: str = "0.0.0.0", protocol: str = "udp") -> dict[str, Any]:
     """Start an OSC server to receive incoming messages.
 
     This tool creates a UDP server that listens for incoming OSC messages on the
@@ -433,8 +432,8 @@ async def start_osc_server(port: int, address: str = "0.0.0.0", protocol: str = 
         return {"status": "error", "message": error}
 
 
-@server.tool()
-async def stop_osc_server(port: int) -> Dict[str, Any]:
+@server.tool(annotations=_MUTATING)
+async def stop_osc_server(port: int) -> dict[str, Any]:
     """Stop a running OSC server and free the port.
 
     This tool stops an OSC server that was previously started with start_osc_server(),
@@ -588,13 +587,13 @@ async def stop_osc_server(port: int) -> Dict[str, Any]:
         return {"status": "error", "message": error}
 
 
-@server.tool()
+@server.tool(annotations=_README_ONLY)
 async def get_received_messages(
     port: int,
-    address_pattern: Optional[str] = None,
-    max_age_seconds: Optional[float] = None,
+    address_pattern: str | None = None,
+    max_age_seconds: float | None = None,
     limit: int = 100,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Get OSC messages received by a running OSC server.
 
@@ -666,8 +665,8 @@ async def get_received_messages(
     }
 
 
-@server.tool()
-async def get_latest_message(port: int, address_pattern: Optional[str] = None) -> Dict[str, Any]:
+@server.tool(annotations=_README_ONLY)
+async def get_latest_message(port: int, address_pattern: str | None = None) -> dict[str, Any]:
     """
     Get the most recent OSC message from a running server.
 
@@ -710,8 +709,8 @@ async def get_latest_message(port: int, address_pattern: Optional[str] = None) -
     return {"status": "success", "message": message, "found": message is not None}
 
 
-@server.tool()
-async def get_osc_server_stats(port: int) -> Dict[str, Any]:
+@server.tool(annotations=_README_ONLY)
+async def get_osc_server_stats(port: int) -> dict[str, Any]:
     """
     Get statistics about a running OSC server's message buffer.
 
@@ -762,8 +761,8 @@ async def get_osc_server_stats(port: int) -> Dict[str, Any]:
     return {"status": "success", "stats": stats}
 
 
-@server.tool()
-async def clear_osc_message_buffer(port: int) -> Dict[str, Any]:
+@server.tool(annotations=_DESTRUCTIVE)
+async def clear_osc_message_buffer(port: int) -> dict[str, Any]:
     """
     Clear all messages from an OSC server's buffer.
 
@@ -803,7 +802,7 @@ async def clear_osc_message_buffer(port: int) -> Dict[str, Any]:
 
 # Disabled duplicate - FastMCP 3.1+ conversational/sampling version is defined in server.py
 # @server.tool()
-async def test_osc_echo(port: int = 9000) -> Dict[str, Any]:
+async def test_osc_echo(port: int = 9000) -> dict[str, Any]:
     """Test OSC functionality by sending and receiving a message.
 
     This tool performs an end-to-end test of OSC functionality by:
@@ -957,12 +956,12 @@ async def ableton_manager(
     operation: str,
     host: str = "127.0.0.1",
     port: int = 11000,
-    track_index: Optional[int] = None,
-    clip_slot: Optional[int] = None,
-    bpm: Optional[float] = None,
-    volume: Optional[float] = None,
-    pan: Optional[float] = None,
-) -> Dict[str, Any]:
+    track_index: int | None = None,
+    clip_slot: int | None = None,
+    bpm: float | None = None,
+    volume: float | None = None,
+    pan: float | None = None,
+) -> dict[str, Any]:
     """
     Ableton Live Manager - Professional DAW control.
 
@@ -1031,14 +1030,14 @@ async def vrchat_manager(
     operation: str,
     host: str = "127.0.0.1",
     port: int = 9000,
-    param_name: Optional[str] = None,
-    value: Optional[float] = None,
-    message: Optional[str] = None,
-    device: Optional[str] = None,
-    duration: Optional[float] = None,
-    amplitude: Optional[float] = None,
-    frequency: Optional[float] = None,
-) -> Dict[str, Any]:
+    param_name: str | None = None,
+    value: float | None = None,
+    message: str | None = None,
+    device: str | None = None,
+    duration: float | None = None,
+    amplitude: float | None = None,
+    frequency: float | None = None,
+) -> dict[str, Any]:
     """
     VRChat Manager - Avatar and world control.
 
@@ -1110,30 +1109,30 @@ async def touchdesigner_manager(
     operation: str,
     host: str = "127.0.0.1",
     port: int = 9000,
-    component_path: Optional[str] = None,
-    parameter: Optional[str] = None,
-    value: Optional[float] = None,
+    component_path: str | None = None,
+    parameter: str | None = None,
+    value: float | None = None,
     # CHOP parameters
-    channel_index: Optional[int] = None,
-    channel_name: Optional[str] = None,
+    channel_index: int | None = None,
+    channel_name: str | None = None,
     # TOP parameters
-    texture_index: Optional[int] = None,
+    texture_index: int | None = None,
     # DAT parameters
-    row: Optional[int] = None,
-    col: Optional[int] = None,
-    text: Optional[str] = None,
+    row: int | None = None,
+    col: int | None = None,
+    text: str | None = None,
     # 3D parameters
-    x: Optional[float] = None,
-    y: Optional[float] = None,
-    z: Optional[float] = None,
+    x: float | None = None,
+    y: float | None = None,
+    z: float | None = None,
     # Audio parameters
-    frequency: Optional[float] = None,
-    amplitude: Optional[float] = None,
-    phase: Optional[float] = None,
+    frequency: float | None = None,
+    amplitude: float | None = None,
+    phase: float | None = None,
     # Video parameters
-    resolution: Optional[str] = None,
-    fps: Optional[float] = None,
-) -> Dict[str, Any]:
+    resolution: str | None = None,
+    fps: float | None = None,
+) -> dict[str, Any]:
     """
     TouchDesigner Manager - Comprehensive real-time visual programming control.
 
@@ -1739,29 +1738,29 @@ async def vcv_manager(
     operation: str,
     host: str = "127.0.0.1",
     port: int = 10001,
-    module_id: Optional[int] = None,
-    param_id: Optional[int] = None,
-    value: Optional[float] = None,
-    cv_id: Optional[int] = None,
-    voltage: Optional[float] = None,
-    light_id: Optional[int] = None,
-    brightness: Optional[float] = None,
-    trigger_id: Optional[int] = None,
-    note: Optional[int] = None,
-    velocity: Optional[int] = None,
-    channel: Optional[int] = None,
-    controller: Optional[int] = None,
-    frequency: Optional[float] = None,
-    level: Optional[float] = None,
-    rate: Optional[float] = None,
-    cutoff: Optional[float] = None,
-    attack: Optional[float] = None,
-    decay: Optional[float] = None,
-    sustain: Optional[float] = None,
-    release: Optional[float] = None,
-    reaper_tempo: Optional[float] = None,
-    position: Optional[float] = None,
-) -> Dict[str, Any]:
+    module_id: int | None = None,
+    param_id: int | None = None,
+    value: float | None = None,
+    cv_id: int | None = None,
+    voltage: float | None = None,
+    light_id: int | None = None,
+    brightness: float | None = None,
+    trigger_id: int | None = None,
+    note: int | None = None,
+    velocity: int | None = None,
+    channel: int | None = None,
+    controller: int | None = None,
+    frequency: float | None = None,
+    level: float | None = None,
+    rate: float | None = None,
+    cutoff: float | None = None,
+    attack: float | None = None,
+    decay: float | None = None,
+    sustain: float | None = None,
+    release: float | None = None,
+    reaper_tempo: float | None = None,
+    position: float | None = None,
+) -> dict[str, Any]:
     """
     VCV Rack Manager - Comprehensive modular synthesis control.
 
@@ -1985,12 +1984,12 @@ async def vcv_manager(
 @server.tool()
 async def osc_recorder_manager(
     operation: str,
-    recording_name: Optional[str] = None,
-    port: Optional[int] = None,
+    recording_name: str | None = None,
+    port: int | None = None,
     playback_speed: float = 1.0,
     loop: bool = False,
-    filter_address: Optional[str] = None,
-) -> Dict[str, Any]:
+    filter_address: str | None = None,
+) -> dict[str, Any]:
     """
     OSC Recorder Manager - Record and playback OSC message sequences.
 
@@ -2068,9 +2067,7 @@ async def osc_recorder_manager(
                 {
                     "name": name,
                     "message_count": len(messages),
-                    "duration": messages[-1]["timestamp"] - messages[0]["timestamp"]
-                    if messages
-                    else 0,
+                    "duration": messages[-1]["timestamp"] - messages[0]["timestamp"] if messages else 0,
                 }
             )
 
@@ -2176,15 +2173,15 @@ async def osc_recorder_manager(
 @server.tool()
 async def music_loader_manager(
     operation: str,
-    midi_file_path: Optional[str] = None,
+    midi_file_path: str | None = None,
     instrument_type: str = "organ",
-    tempo: Optional[float] = None,
+    tempo: float | None = None,
     vcv_host: str = "127.0.0.1",
     vcv_port: int = 10001,
     reaper_host: str = "127.0.0.1",
     reaper_port: int = 8000,
     auto_setup: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Music Loader Manager - High-level orchestration for loading and playing music.
 
@@ -2220,9 +2217,7 @@ async def music_loader_manager(
 
         if auto_setup:
             # Setup wavetable oscillator for organ sound (Bogaudio WT recommended)
-            result = await send_osc(
-                vcv_host, vcv_port, "/param", [1, 0, 0.5]
-            )  # WT wavetable select (organ preset)
+            result = await send_osc(vcv_host, vcv_port, "/param", [1, 0, 0.5])  # WT wavetable select (organ preset)
             setup_results.append({"step": "wavetable_setup", "result": result})
 
             # Setup envelope for organ attack/decay
@@ -2307,17 +2302,11 @@ async def music_loader_manager(
         setup_results.append({"step": "add_audio_out", "result": result})
 
         # Connect modules
-        result = await send_osc(
-            vcv_host, vcv_port, "/connect", [1, "out", 3, "in"]
-        )  # Osc -> Filter
+        result = await send_osc(vcv_host, vcv_port, "/connect", [1, "out", 3, "in"])  # Osc -> Filter
         setup_results.append({"step": "connect_osc_filter", "result": result})
-        result = await send_osc(
-            vcv_host, vcv_port, "/connect", [2, "out", 1, "gate"]
-        )  # Env -> Osc gate
+        result = await send_osc(vcv_host, vcv_port, "/connect", [2, "out", 1, "gate"])  # Env -> Osc gate
         setup_results.append({"step": "connect_env_osc", "result": result})
-        result = await send_osc(
-            vcv_host, vcv_port, "/connect", [3, "out", 4, "in"]
-        )  # Filter -> Audio Out
+        result = await send_osc(vcv_host, vcv_port, "/connect", [3, "out", 4, "in"])  # Filter -> Audio Out
         setup_results.append({"step": "connect_filter_out", "result": result})
 
         return {
@@ -2371,18 +2360,18 @@ async def music_loader_manager(
 async def music_orchestrator(
     operation: str,
     # Bach demo specific
-    midi_file_path: Optional[str] = None,
-    organ_module: Optional[int] = None,
+    midi_file_path: str | None = None,
+    organ_module: int | None = None,
     # General orchestration
-    workflow_name: Optional[str] = None,
-    tempo: Optional[float] = None,
-    key_signature: Optional[str] = None,
-    time_signature: Optional[str] = None,
+    workflow_name: str | None = None,
+    tempo: float | None = None,
+    key_signature: str | None = None,
+    time_signature: str | None = None,
     # Multi-app coordination
     sync_apps: bool = True,
     record_performance: bool = False,
-    recording_name: Optional[str] = None,
-) -> Dict[str, Any]:
+    recording_name: str | None = None,
+) -> dict[str, Any]:
     """
     Music Orchestrator - High-level multi-step workflow automation.
 
@@ -2440,36 +2429,22 @@ async def music_orchestrator(
         organ_module = organ_module or 1
         # Set up wavetable for organ-like sound (assuming Surge XT or similar)
         vcv_results = []
-        vcv_results.append(
-            await send_osc("127.0.0.1", 10001, "/param", [organ_module, 0, 0.3])
-        )  # Organ wavetable
-        vcv_results.append(
-            await send_osc("127.0.0.1", 10001, "/param", [organ_module, 1, 0.7])
-        )  # Reverb mix
-        vcv_results.append(
-            await send_osc("127.0.0.1", 10001, "/param", [organ_module, 2, 0.8])
-        )  # Drawbar 8'
-        vcv_results.append(
-            await send_osc("127.0.0.1", 10001, "/param", [organ_module, 3, 0.6])
-        )  # Drawbar 4'
-        results["steps"].append(
-            {"step": "vcv_organ_setup", "status": "success", "results": vcv_results}
-        )
+        vcv_results.append(await send_osc("127.0.0.1", 10001, "/param", [organ_module, 0, 0.3]))  # Organ wavetable
+        vcv_results.append(await send_osc("127.0.0.1", 10001, "/param", [organ_module, 1, 0.7]))  # Reverb mix
+        vcv_results.append(await send_osc("127.0.0.1", 10001, "/param", [organ_module, 2, 0.8]))  # Drawbar 8'
+        vcv_results.append(await send_osc("127.0.0.1", 10001, "/param", [organ_module, 3, 0.6]))  # Drawbar 4'
+        results["steps"].append({"step": "vcv_organ_setup", "status": "success", "results": vcv_results})
 
         # Step 4: Configure REAPER (if available) for additional processing
         if sync_apps:
             reaper_results = []
             reaper_results.append(await send_osc("127.0.0.1", 8000, "/tempo", [tempo or 120.0]))
             reaper_results.append(await send_osc("127.0.0.1", 8000, "/track/1/volume", [0.8]))
-            results["steps"].append(
-                {"step": "reaper_sync", "status": "success", "results": reaper_results}
-            )
+            results["steps"].append({"step": "reaper_sync", "status": "success", "results": reaper_results})
 
         # Step 5: Set up performance recording if requested
         if record_performance and recording_name:
-            record_result = await osc_recorder_manager(
-                "start_recording", recording_name=recording_name, port=10001
-            )
+            record_result = await osc_recorder_manager("start_recording", recording_name=recording_name, port=10001)
             results["steps"].append(
                 {
                     "step": "recording_setup",
@@ -2479,9 +2454,7 @@ async def music_orchestrator(
             )
 
         results["setup_complete"] = True
-        results["ready_message"] = (
-            "🎵 Bach organ rig configured! Ready to perform. Use performance_start to begin."
-        )
+        results["ready_message"] = "🎵 Bach organ rig configured! Ready to perform. Use performance_start to begin."
         return results
 
     if operation == "performance_start":
@@ -2491,15 +2464,11 @@ async def music_orchestrator(
         if sync_apps:
             # VCV Rack transport
             vcv_result = await send_osc("127.0.0.1", 10001, "/transport/play", [])
-            results["coordinated_apps"].append(
-                {"app": "vcv_rack", "operation": "start", "result": vcv_result}
-            )
+            results["coordinated_apps"].append({"app": "vcv_rack", "operation": "start", "result": vcv_result})
 
             # REAPER transport
             reaper_result = await send_osc("127.0.0.1", 8000, "/play", [])
-            results["coordinated_apps"].append(
-                {"app": "reaper", "operation": "start", "result": reaper_result}
-            )
+            results["coordinated_apps"].append({"app": "reaper", "operation": "start", "result": reaper_result})
 
             # Any other apps could be added here
             results["message"] = "🎼 Synchronized performance started across all applications!"
@@ -2520,9 +2489,7 @@ async def music_orchestrator(
 
         # Stop recording if active
         if record_performance and recording_name:
-            record_result = await osc_recorder_manager(
-                "stop_recording", recording_name=recording_name
-            )
+            record_result = await osc_recorder_manager("stop_recording", recording_name=recording_name)
             results["stopped_apps"].append({"app": "osc_recorder", "result": record_result})
 
         results["message"] = "🛑 Performance stopped across all applications."
@@ -2546,9 +2513,7 @@ async def music_orchestrator(
 
         for param_name, value in drawbar_settings:
             result = await send_osc("127.0.0.1", 10001, f"/organ/{param_name}", [value])
-            results["organ_settings"].append(
-                {"parameter": param_name, "value": value, "result": result}
-            )
+            results["organ_settings"].append({"parameter": param_name, "value": value, "result": result})
 
         results["message"] = "🎹 Organ voice configured with classic drawbar settings!"
         return results
@@ -2599,13 +2564,13 @@ async def supercollider_manager(
     operation: str,
     host: str = "127.0.0.1",
     port: int = 57120,
-    def_name: Optional[str] = None,
-    node_id: Optional[int] = None,
-    add_action: Optional[int] = None,
-    target: Optional[int] = None,
-    control_name: Optional[str] = None,
-    value: Optional[float] = None,
-) -> Dict[str, Any]:
+    def_name: str | None = None,
+    node_id: int | None = None,
+    add_action: int | None = None,
+    target: int | None = None,
+    control_name: str | None = None,
+    value: float | None = None,
+) -> dict[str, Any]:
     """
     SuperCollider Manager - Algorithmic composition and audio synthesis.
 
@@ -2660,9 +2625,9 @@ async def maxmsp_manager(
     operation: str,
     host: str = "127.0.0.1",
     port: int = 4000,
-    receiver: Optional[str] = None,
-    value: Optional[float] = None,
-) -> Dict[str, Any]:
+    receiver: str | None = None,
+    value: float | None = None,
+) -> dict[str, Any]:
     """
     Max/MSP Manager - Audio/visual programming control.
 
@@ -2706,11 +2671,11 @@ async def resolume_manager(
     operation: str,
     host: str = "127.0.0.1",
     port: int = 7000,
-    layer: Optional[int] = None,
-    column: Optional[int] = None,
-    opacity: Optional[float] = None,
-    bpm: Optional[float] = None,
-) -> Dict[str, Any]:
+    layer: int | None = None,
+    column: int | None = None,
+    opacity: float | None = None,
+    bpm: float | None = None,
+) -> dict[str, Any]:
     """
     Resolume Arena Manager - VJ software and live video mixing.
 
@@ -2738,9 +2703,7 @@ async def resolume_manager(
                 "status": "error",
                 "message": "layer and column required for play_clip",
             }
-        return await send_osc(
-            host, port, f"/composition/layers/{layer}/clips/{column}/connect", [1]
-        )
+        return await send_osc(host, port, f"/composition/layers/{layer}/clips/{column}/connect", [1])
 
     if operation == "set_layer_opacity":
         if layer is None or opacity is None:
@@ -2764,15 +2727,15 @@ async def audio_workflow_manager(
     # VCV Rack parameters
     vcv_host: str = "127.0.0.1",
     vcv_port: int = 10001,
-    module_id: Optional[int] = None,
+    module_id: int | None = None,
     # REAPER parameters
     reaper_host: str = "127.0.0.1",
     reaper_port: int = 8000,
-    track_index: Optional[int] = None,
+    track_index: int | None = None,
     # Common parameters
-    bpm: Optional[float] = None,
-    start_stop: Optional[bool] = None,
-) -> Dict[str, Any]:
+    bpm: float | None = None,
+    start_stop: bool | None = None,
+) -> dict[str, Any]:
     """
     Audio Workflow Manager - Coordinate multi-application audio workflows.
 
@@ -2807,9 +2770,7 @@ async def audio_workflow_manager(
         if module_id is not None:
             bpm_normalized = bpm / 120.0  # Normalize assuming 120 BPM = 1.0
             result = await send_osc(vcv_host, vcv_port, "/param", [module_id, 0, bpm_normalized])
-            results["operations"].append(
-                {"app": "vcv_rack", "operation": "set_bpm", "result": result}
-            )
+            results["operations"].append({"app": "vcv_rack", "operation": "set_bpm", "result": result})
 
         # Sync to REAPER
         result = await send_osc(reaper_host, reaper_port, "/tempo", [bpm])
@@ -2820,45 +2781,33 @@ async def audio_workflow_manager(
     elif operation == "start_all":
         # Start VCV Rack transport
         result = await send_osc(vcv_host, vcv_port, "/transport/play", [])
-        results["operations"].append(
-            {"app": "vcv_rack", "operation": "start_transport", "result": result}
-        )
+        results["operations"].append({"app": "vcv_rack", "operation": "start_transport", "result": result})
 
         # Start REAPER transport
         result = await send_osc(reaper_host, reaper_port, "/play", [])
-        results["operations"].append(
-            {"app": "reaper", "operation": "start_playback", "result": result}
-        )
+        results["operations"].append({"app": "reaper", "operation": "start_playback", "result": result})
 
         results["message"] = "Started transport in all applications"
 
     elif operation == "stop_all":
         # Stop VCV Rack transport
         result = await send_osc(vcv_host, vcv_port, "/transport/stop", [])
-        results["operations"].append(
-            {"app": "vcv_rack", "operation": "stop_transport", "result": result}
-        )
+        results["operations"].append({"app": "vcv_rack", "operation": "stop_transport", "result": result})
 
         # Stop REAPER transport
         result = await send_osc(reaper_host, reaper_port, "/stop", [])
-        results["operations"].append(
-            {"app": "reaper", "operation": "stop_playback", "result": result}
-        )
+        results["operations"].append({"app": "reaper", "operation": "stop_playback", "result": result})
 
         results["message"] = "Stopped transport in all applications"
 
     elif operation == "reset_all":
         # Reset VCV Rack transport
         result = await send_osc(vcv_host, vcv_port, "/transport/reset", [])
-        results["operations"].append(
-            {"app": "vcv_rack", "operation": "reset_transport", "result": result}
-        )
+        results["operations"].append({"app": "vcv_rack", "operation": "reset_transport", "result": result})
 
         # Reset REAPER transport (this might need REAPER-specific command)
         result = await send_osc(reaper_host, reaper_port, "/rewind", [])
-        results["operations"].append(
-            {"app": "reaper", "operation": "reset_position", "result": result}
-        )
+        results["operations"].append({"app": "reaper", "operation": "reset_position", "result": result})
 
         results["message"] = "Reset all applications to beginning"
 
@@ -2873,9 +2822,9 @@ async def puredata_manager(
     operation: str,
     host: str = "127.0.0.1",
     port: int = 3000,
-    receiver: Optional[str] = None,
-    value: Optional[float] = None,
-) -> Dict[str, Any]:
+    receiver: str | None = None,
+    value: float | None = None,
+) -> dict[str, Any]:
     """
     Pure Data Manager - Visual programming and audio processing.
 

@@ -4,17 +4,15 @@ Standardized endpoints for cross-app orchestration and launch protocols.
 """
 
 import logging
-import os
 import subprocess
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(tags=["fleet"], prefix="/v1/fleet")
+router = APIRouter(tags=["fleet"], prefix="/fleet")
 
 
 class FleetLaunchRequest(BaseModel):
@@ -88,6 +86,4 @@ async def launch_app(request: FleetLaunchRequest) -> FleetLaunchResponse:
         return FleetLaunchResponse(success=True, message=f"Launched {path.name} successfully")
     except Exception as e:
         logger.error(f"Failed to launch {path.name}: {e!s}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Launch failed: {e!s}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Launch failed: {e!s}")

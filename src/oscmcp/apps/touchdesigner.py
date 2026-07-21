@@ -5,7 +5,8 @@ bidirectional communication for interactive media and visual programming.
 """
 
 import logging
-from typing import Any, Callable, Dict, List
+from collections.abc import Callable
+from typing import Any
 
 from ..osc.client import OSCClient
 from ..osc.server import OSCServer
@@ -45,7 +46,7 @@ class TouchDesignerOSC:
         self.server = OSCServer(host, listen_port)
 
         # Callback storage
-        self.callbacks: Dict[str, List[Callable[[str, Any], None]]] = {}
+        self.callbacks: dict[str, list[Callable[[str, Any], None]]] = {}
 
         # Register default handlers
         self._register_default_handlers()
@@ -220,9 +221,7 @@ class TouchDesignerOSC:
         """
         self.send(f"{component_path}/chan{channel_index}", value)
 
-    def set_chop_channel_by_name(
-        self, component_path: str, channel_name: str, value: float
-    ) -> None:
+    def set_chop_channel_by_name(self, component_path: str, channel_name: str, value: float) -> None:
         """Set a CHOP channel value by name.
 
         Args:
@@ -333,9 +332,7 @@ class TouchDesignerOSC:
         """
         self.set_parameter(component_path, "gamma", gamma)
 
-    def set_transform_scale(
-        self, component_path: str, x: float = None, y: float = None, z: float = None
-    ) -> None:
+    def set_transform_scale(self, component_path: str, x: float = None, y: float = None, z: float = None) -> None:
         """Set transform TOP scale.
 
         Args:
@@ -354,9 +351,7 @@ class TouchDesignerOSC:
         if values:
             self.send(f"{component_path}/scale", *values)
 
-    def set_transform_rotate(
-        self, component_path: str, x: float = None, y: float = None, z: float = None
-    ) -> None:
+    def set_transform_rotate(self, component_path: str, x: float = None, y: float = None, z: float = None) -> None:
         """Set transform TOP rotation.
 
         Args:
@@ -375,9 +370,7 @@ class TouchDesignerOSC:
         if values:
             self.send(f"{component_path}/rotate", *values)
 
-    def set_transform_translate(
-        self, component_path: str, x: float = None, y: float = None, z: float = None
-    ) -> None:
+    def set_transform_translate(self, component_path: str, x: float = None, y: float = None, z: float = None) -> None:
         """Set transform TOP translation.
 
         Args:
@@ -416,9 +409,7 @@ class TouchDesignerOSC:
         """
         self.set_parameter(component_path, "radius", radius)
 
-    def set_box_size(
-        self, component_path: str, x: float = None, y: float = None, z: float = None
-    ) -> None:
+    def set_box_size(self, component_path: str, x: float = None, y: float = None, z: float = None) -> None:
         """Set box SOP size.
 
         Args:
@@ -645,7 +636,7 @@ async def example_usage():
 
     # Define callbacks
     def on_parameter_changed(address, value):
-        print(f"Parameter '{address}' changed to: {value}")
+        logger.info(f"Parameter '{address}' changed to: {value}")
 
     # Register callbacks
     td.on_message("/project1/constant1", on_parameter_changed)
@@ -664,7 +655,7 @@ async def example_usage():
             await asyncio.sleep(1)
 
     except KeyboardInterrupt:
-        print("Stopping...")
+        logger.info("Stopping...")
     finally:
         await td.stop()
 

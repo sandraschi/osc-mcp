@@ -31,14 +31,19 @@ const TARGET_ICONS: Record<string, React.ElementType> = {
   vcvrack: Guitar,
 };
 
+const BACKOFF_INTERVALS = [1, 2, 4, 8, 16];
+
 export function Dashboard() {
   const [health, setHealth] = useState<Health | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [backendOk, setBackendOk] = useState<boolean | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    let attempt = 0;
+
+    const fetchHealth = async () => {
       try {
         const [h, s] = await Promise.all([
           fetch(API_BASE + "/api/v1/health").then((r) => r.json()),
@@ -47,14 +52,22 @@ export function Dashboard() {
         if (!cancelled) {
           setHealth(h);
           setStats(s);
+          setBackendOk(true);
+          setErr(null);
         }
       } catch (e) {
-        if (!cancelled) setErr(e instanceof Error ? e.message : String(e));
+        if (!cancelled) {
+          setErr(e instanceof Error ? e.message : String(e));
+          setBackendOk(false);
+          const delay = BACKOFF_INTERVALS[Math.min(attempt, BACKOFF_INTERVALS.length - 1)] * 1000;
+          attempt++;
+          setTimeout(fetchHealth, delay);
+        }
       }
-    })();
-    return () => {
-      cancelled = true;
     };
+
+    fetchHealth();
+    return () => { cancelled = true; };
   }, []);
 
   const targetCount = stats ? Object.keys(stats.targets).length : 0;
@@ -67,7 +80,7 @@ export function Dashboard() {
   const messages = stats?.messages_sent ?? 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="dashboard">
       {/* Hero */}
       <div className="relative overflow-hidden rounded-xl border border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-8">
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-[100px] rounded-full" />
@@ -102,7 +115,7 @@ export function Dashboard() {
 
       {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-slate-800 bg-slate-950/50">
+        <Card data-testid="kpi-targets" className="border-slate-800 bg-slate-950/50">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-slate-200">
               Available Targets
@@ -117,7 +130,7 @@ export function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-slate-800 bg-slate-950/50">
+        <Card data-testid="kpi-messages" className="border-slate-800 bg-slate-950/50">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-slate-200">
               Messages Sent
@@ -132,7 +145,7 @@ export function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-slate-800 bg-slate-950/50">
+        <Card data-testid="kpi-uptime" className="border-slate-800 bg-slate-950/50">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-slate-200">
               Uptime
@@ -145,7 +158,7 @@ export function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-slate-800 bg-slate-950/50">
+        <Card data-testid="kpi-backend" className="border-slate-800 bg-slate-950/50">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-slate-200">
               Backend
@@ -161,6 +174,12 @@ export function Dashboard() {
             </p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Backend Status Dot */}
+      <div data-testid="backend-dot" className="flex items-center gap-2">
+        <span className={`w-2 h-2 rounded-full ${backendOk === null ? "bg-gray-500" : backendOk ? "bg-green-500" : "bg-red-500"} animate-pulse`} />
+        <span className="text-xs text-slate-400">{backendOk === null ? "Connecting..." : backendOk ? "Connected" : "Offline"}</span>
       </div>
 
       {/* Target Grid */}

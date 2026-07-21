@@ -6,7 +6,8 @@ bidirectional communication for audio synthesis and algorithmic composition.
 
 import asyncio
 import logging
-from typing import Any, Callable, Dict, List
+from collections.abc import Callable
+from typing import Any
 
 from ..osc.client import OSCClient
 from ..osc.server import OSCServer
@@ -47,9 +48,9 @@ class SuperColliderOSC:
         self.server = OSCServer(host, listen_port)
 
         # Callback storage
-        self.callbacks: Dict[str, List[Callable[[str, Any], None]]] = {}
-        self.def_receive_callbacks: List[Callable[[str, list], None]] = []
-        self.status_callbacks: List[Callable[[dict], None]] = []
+        self.callbacks: dict[str, list[Callable[[str, Any], None]]] = {}
+        self.def_receive_callbacks: list[Callable[[str, list], None]] = []
+        self.status_callbacks: list[Callable[[dict], None]] = []
 
         # Register default handlers
         self._register_default_handlers()
@@ -239,9 +240,7 @@ class SuperColliderOSC:
         """Allocate a buffer."""
         self.send("/b_alloc", bufnum, num_frames, num_chans)
 
-    def b_alloc_read(
-        self, bufnum: int, path: str, start_frame: int = 0, num_frames: int = -1
-    ) -> None:
+    def b_alloc_read(self, bufnum: int, path: str, start_frame: int = 0, num_frames: int = -1) -> None:
         """Allocate and read a sound file into a buffer."""
         self.send("/b_allocRead", bufnum, path, start_frame, num_frames)
 
@@ -313,13 +312,10 @@ async def example_usage():
 
     # Define callbacks
     def on_status(status):
-        print(
-            f"SuperCollider status: {status['synth_count']} synths, "
-            f"CPU: {status['avg_cpu_peak']:.1f}%"
-        )
+        logger.info(f"SuperCollider status: {status['synth_count']} synths, CPU: {status['avg_cpu_peak']:.1f}%")
 
     def on_message(address, args):
-        print(f"Received message: {address} {args}")
+        logger.info(f"Received message: {address} {args}")
 
     # Register callbacks
     sc.on_status(on_status)
@@ -339,28 +335,28 @@ async def example_usage():
         asyncio.create_task(status_loop())
 
         # Example: Load a sound and play it
-        print("Loading sound...")
+        logger.info("Loading sound...")
         bufnum = sc.load_sound("/path/to/sound.wav")
 
         # Wait a bit for the sound to load
         await asyncio.sleep(1)
 
         # Play the sound
-        print("Playing sound...")
+        logger.info("Playing sound...")
         node_id = sc.play_synth("default", out=0, bufnum=bufnum, amp=0.5)
 
         # Let it play for a bit
         await asyncio.sleep(5)
 
         # Change the amplitude
-        print("Changing amplitude...")
+        logger.info("Changing amplitude...")
         sc.set_control(node_id, amp=0.2)
 
         # Wait a bit more
         await asyncio.sleep(3)
 
         # Stop the sound
-        print("Stopping sound...")
+        logger.info("Stopping sound...")
         sc.n_free(node_id)
 
         # Free the buffer
@@ -370,7 +366,7 @@ async def example_usage():
         await asyncio.Future()
 
     except KeyboardInterrupt:
-        print("Stopping...")
+        logger.info("Stopping...")
     finally:
         await sc.stop()
 

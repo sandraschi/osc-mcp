@@ -1,10 +1,9 @@
-"""Active subnet scanner for OSC listeners.
-"""
+"""Active subnet scanner for OSC listeners."""
 
-import socket
 import asyncio
 import logging
-from typing import List, Dict, Any
+import socket
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -13,9 +12,7 @@ async def check_port(host: str, port: int, protocol: str = "udp", timeout: float
     """Check if a specific port is active on a host."""
     if protocol == "tcp":
         try:
-            reader, writer = await asyncio.wait_for(
-                asyncio.open_connection(host, port), timeout=timeout
-            )
+            reader, writer = await asyncio.wait_for(asyncio.open_connection(host, port), timeout=timeout)
             writer.close()
             try:
                 await writer.wait_closed()
@@ -35,7 +32,7 @@ async def check_port(host: str, port: int, protocol: str = "udp", timeout: float
             try:
                 sock.recvfrom(1)
                 return True
-            except socket.timeout:
+            except TimeoutError:
                 # No ICMP refused received within timeout, likely listening or filtered
                 return True
             except ConnectionRefusedError:
@@ -46,7 +43,7 @@ async def check_port(host: str, port: int, protocol: str = "udp", timeout: float
             return False
 
 
-async def scan_subnet_osc(subnet_prefix: str, ports: List[int], protocol: str = "udp") -> List[Dict[str, Any]]:
+async def scan_subnet_osc(subnet_prefix: str, ports: list[int], protocol: str = "udp") -> list[dict[str, Any]]:
     """Scan a subnet prefix (e.g. '192.168.1') for active OSC ports."""
     tasks = []
     # Scan standard host range (1-254)
@@ -61,12 +58,7 @@ async def scan_subnet_osc(subnet_prefix: str, ports: List[int], protocol: str = 
     async def worker(host: str, port: int):
         async with sem:
             if await check_port(host, port, protocol):
-                active_hosts.append({
-                    "host": host,
-                    "port": port,
-                    "protocol": protocol,
-                    "status": "active"
-                })
+                active_hosts.append({"host": host, "port": port, "protocol": protocol, "status": "active"})
 
     await asyncio.gather(*(worker(h, p) for h, p in tasks))
     return active_hosts
