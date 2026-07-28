@@ -1,8 +1,8 @@
 "use client";
 
-import { APPS_CATALOG } from "@/common/apps-catalog";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ExternalLink, HelpCircle, LayoutGrid } from "lucide-react";
+import { APPS_CATALOG } from "@/common/apps-catalog";
 
 export function Topbar() {
   return (

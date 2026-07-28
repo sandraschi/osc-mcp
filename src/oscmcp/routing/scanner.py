@@ -12,7 +12,7 @@ async def check_port(host: str, port: int, protocol: str = "udp", timeout: float
     """Check if a specific port is active on a host."""
     if protocol == "tcp":
         try:
-            reader, writer = await asyncio.wait_for(asyncio.open_connection(host, port), timeout=timeout)
+            _reader, writer = await asyncio.wait_for(asyncio.open_connection(host, port), timeout=timeout)
             writer.close()
             try:
                 await writer.wait_closed()

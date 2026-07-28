@@ -332,7 +332,9 @@ class TouchDesignerOSC:
         """
         self.set_parameter(component_path, "gamma", gamma)
 
-    def set_transform_scale(self, component_path: str, x: float = None, y: float = None, z: float = None) -> None:
+    def set_transform_scale(
+        self, component_path: str, x: float | None = None, y: float | None = None, z: float | None = None
+    ) -> None:
         """Set transform TOP scale.
 
         Args:
@@ -351,7 +353,9 @@ class TouchDesignerOSC:
         if values:
             self.send(f"{component_path}/scale", *values)
 
-    def set_transform_rotate(self, component_path: str, x: float = None, y: float = None, z: float = None) -> None:
+    def set_transform_rotate(
+        self, component_path: str, x: float | None = None, y: float | None = None, z: float | None = None
+    ) -> None:
         """Set transform TOP rotation.
 
         Args:
@@ -370,7 +374,9 @@ class TouchDesignerOSC:
         if values:
             self.send(f"{component_path}/rotate", *values)
 
-    def set_transform_translate(self, component_path: str, x: float = None, y: float = None, z: float = None) -> None:
+    def set_transform_translate(
+        self, component_path: str, x: float | None = None, y: float | None = None, z: float | None = None
+    ) -> None:
         """Set transform TOP translation.
 
         Args:
@@ -409,7 +415,9 @@ class TouchDesignerOSC:
         """
         self.set_parameter(component_path, "radius", radius)
 
-    def set_box_size(self, component_path: str, x: float = None, y: float = None, z: float = None) -> None:
+    def set_box_size(
+        self, component_path: str, x: float | None = None, y: float | None = None, z: float | None = None
+    ) -> None:
         """Set box SOP size.
 
         Args:

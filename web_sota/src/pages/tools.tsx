@@ -1,4 +1,5 @@
-import { API_BASE } from "../lib/api";
+import { Play, Search, Terminal, Wrench } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,8 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Play, Search, Terminal, Wrench } from "lucide-react";
-import { useEffect, useState } from "react";
+import { API_BASE } from "../lib/api";
 
 interface ToolParameter {
   name: string;
@@ -34,13 +34,9 @@ export function Tools() {
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    fetchTools();
-  }, []);
-
   const fetchTools = async () => {
     try {
-      const response = await fetch(API_BASE + "/api/v1/tools/");
+      const response = await fetch(`${API_BASE}/api/v1/tools/`);
       const data = await response.json();
       setTools(data);
     } catch (error) {
@@ -48,11 +44,15 @@ export function Tools() {
     }
   };
 
+  useEffect(() => {
+    void fetchTools();
+  }, []);
+
   const handleCallTool = async () => {
     if (!selectedTool) return;
     setLoading(true);
     try {
-      const response = await fetch(API_BASE + "/api/v1/tools/call", {
+      const response = await fetch(`${API_BASE}/api/v1/tools/call`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

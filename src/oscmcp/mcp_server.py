@@ -125,7 +125,7 @@ class OSCServerStopInput(BaseModel):
 
 @server.tool()
 async def send_osc(
-    host: str, port: int, address: str, values: list[Any] = None, protocol: str = "udp"
+    host: str, port: int, address: str, values: list[Any] | None = None, protocol: str = "udp"
 ) -> dict[str, Any]:
     """Send an OSC message to the specified address.
 

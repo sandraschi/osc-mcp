@@ -317,13 +317,13 @@ class OSCQueryServer:
     def add_endpoint(
         self,
         path: str,
-        type_hint: str = None,
+        type_hint: str | None = None,
         description: str = "",
         access: int = 3,  # Read/Write by default
         value: Any = None,
-        range_min: float = None,
-        range_max: float = None,
-        tags: list[str] = None,
+        range_min: float | None = None,
+        range_max: float | None = None,
+        tags: list[str] | None = None,
     ) -> None:
         """Add an OSC endpoint to the OSCQuery server.
 

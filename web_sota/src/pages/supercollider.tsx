@@ -1,9 +1,9 @@
+import { Activity, Cpu, Terminal } from "lucide-react";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
-import { Activity, Cpu, Terminal } from "lucide-react";
-import { useState } from "react";
 
 export function SuperCollider() {
   const [status, setStatus] = useState<Record<string, unknown> | null>(null);
@@ -28,8 +28,7 @@ export function SuperCollider() {
 
       let resultStatus = data;
       if (
-        data &&
-        data.content &&
+        data?.content &&
         Array.isArray(data.content) &&
         data.content.length > 0
       ) {

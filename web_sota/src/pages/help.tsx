@@ -1,4 +1,3 @@
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Activity,
   Beaker,
@@ -11,6 +10,7 @@ import {
   Radio,
 } from "lucide-react";
 import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 
 type Tab =
   | "overview"

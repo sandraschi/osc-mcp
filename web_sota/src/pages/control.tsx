@@ -1,11 +1,29 @@
+import {
+  AlertCircle,
+  Link as LinkIcon,
+  Play,
+  Plus,
+  Power,
+  Radio,
+  RefreshCw,
+  Sliders,
+  Trash2,
+  Wand2,
+  Wifi,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Power, RefreshCw, Sliders, Radio, Link as LinkIcon, Trash2, Plus, AlertCircle, Play, Wifi, Wand2 } from "lucide-react";
 
 export function Control() {
   const [loading, setLoading] = useState(false);
@@ -15,21 +33,29 @@ export function Control() {
   const [services, setServices] = useState<any[]>([]);
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [parameters, setParameters] = useState<any[]>([]);
-  const [paramInputValues, setParamInputValues] = useState<Record<string, string>>({});
+  const [paramInputValues, setParamInputValues] = useState<
+    Record<string, string>
+  >({});
 
   // MIDI Bridge State
-  const [midiPorts, setMidiPorts] = useState<{ inputs: string[]; outputs: string[] }>({ inputs: [], outputs: [] });
+  const [midiPorts, setMidiPorts] = useState<{
+    inputs: string[];
+    outputs: string[];
+  }>({ inputs: [], outputs: [] });
   const [midiBridgeStatus, setMidiBridgeStatus] = useState<any>(null);
-  const [midiMappings, setMidiMappings] = useState<{ midi_to_osc: any[]; osc_to_midi: any[] }>({ midi_to_osc: [], osc_to_midi: [] });
-  
+  const [midiMappings, setMidiMappings] = useState<{
+    midi_to_osc: any[];
+    osc_to_midi: any[];
+  }>({ midi_to_osc: [], osc_to_midi: [] });
+
   // MIDI Bridge Form State
   const [bridgeForm, setBridgeForm] = useState({
     oscHost: "127.0.0.1",
     oscPort: "8000",
     midiIn: "",
-    midiOut: ""
+    midiOut: "",
   });
-  
+
   // MIDI Mapping Form State
   const [mappingForm, setMappingForm] = useState({
     direction: "midi_to_osc",
@@ -38,7 +64,7 @@ export function Control() {
     channel: "1",
     control: "1",
     minVal: "0.0",
-    maxVal: "1.0"
+    maxVal: "1.0",
   });
 
   // Reactive Triggers State
@@ -46,7 +72,8 @@ export function Control() {
   const [triggerForm, setTriggerForm] = useState({
     pattern: "/live/beat",
     tool: "send_osc_message",
-    argsTemplate: '{\n  "host": "127.0.0.1",\n  "port": 9000,\n  "address": "/resolume/beat",\n  "values": ["$0"]\n}'
+    argsTemplate:
+      '{\n  "host": "127.0.0.1",\n  "port": 9000,\n  "address": "/resolume/beat",\n  "values": ["$0"]\n}',
   });
 
   // Subnet Scanner State
@@ -59,7 +86,7 @@ export function Control() {
   const [builderMetadata, setBuilderMetadata] = useState({
     id: "custom-init",
     title: "My Custom Init Workflow",
-    description: "Multi-step system initialization"
+    description: "Multi-step system initialization",
   });
   const [builderSteps, setBuilderSteps] = useState<any[]>([]);
   const [newStep, setNewStep] = useState({
@@ -67,7 +94,7 @@ export function Control() {
     operationId: "send_osc",
     address: "/volume",
     args: "0.8",
-    delayMs: 0
+    delayMs: 0,
   });
 
   // Interactive controls state
@@ -100,7 +127,7 @@ export function Control() {
     try {
       // Fetch OSCQuery services
       const servicesRes = await callTool("oscquery_list_services");
-      if (servicesRes && servicesRes.services) {
+      if (servicesRes?.services) {
         setServices(servicesRes.services);
       }
 
@@ -109,10 +136,10 @@ export function Control() {
       if (portsRes && portsRes.status === "success") {
         setMidiPorts({ inputs: portsRes.inputs, outputs: portsRes.outputs });
         // Set default dropdown selections if ports found
-        setBridgeForm(prev => ({
+        setBridgeForm((prev) => ({
           ...prev,
           midiIn: prev.midiIn || portsRes.inputs[0] || "",
-          midiOut: prev.midiOut || portsRes.outputs[0] || ""
+          midiOut: prev.midiOut || portsRes.outputs[0] || "",
         }));
       }
 
@@ -122,7 +149,7 @@ export function Control() {
         if (mappingsRes && mappingsRes.status === "success") {
           setMidiMappings({
             midi_to_osc: mappingsRes.midi_to_osc || [],
-            osc_to_midi: mappingsRes.osc_to_midi || []
+            osc_to_midi: mappingsRes.osc_to_midi || [],
           });
           setMidiBridgeStatus({ active: true });
         } else {
@@ -134,10 +161,9 @@ export function Control() {
 
       // Fetch Reactive Triggers
       const triggersRes = await callTool("get_reactive_triggers");
-      if (triggersRes && triggersRes.triggers) {
+      if (triggersRes?.triggers) {
         setTriggers(triggersRes.triggers);
       }
-
     } catch (err: any) {
       setError(err.message || "Failed to sync dashboard state");
     } finally {
@@ -147,15 +173,17 @@ export function Control() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   // Fetch parameters for selected OSCQuery service
   const handleSelectService = async (name: string) => {
     setSelectedService(name);
     setLoading(true);
     try {
-      const res = await callTool("oscquery_get_parameters", { service_name: name });
-      if (res && res.parameters) {
+      const res = await callTool("oscquery_get_parameters", {
+        service_name: name,
+      });
+      if (res?.parameters) {
         setParameters(res.parameters);
       }
     } catch (err: any) {
@@ -177,16 +205,16 @@ export function Control() {
         host: service.host,
         port: service.osc_port,
         address: path,
-        args: [isNaN(Number(rawVal)) ? rawVal : Number(rawVal)]
+        args: [Number.isNaN(Number(rawVal)) ? rawVal : Number(rawVal)],
       });
-      
+
       // Update local state value for reflection
-      setParameters(prev =>
-        prev.map(p => (p.path === path ? { ...p, value: rawVal } : p))
+      setParameters((prev) =>
+        prev.map((p) => (p.path === path ? { ...p, value: rawVal } : p)),
       );
-      
+
       // Clear input
-      setParamInputValues(prev => ({ ...prev, [path]: "" }));
+      setParamInputValues((prev) => ({ ...prev, [path]: "" }));
     } catch (err: any) {
       setError(`Failed to send OSC parameter: ${err.message}`);
     } finally {
@@ -202,7 +230,7 @@ export function Control() {
         osc_host: bridgeForm.oscHost,
         osc_port: Number(bridgeForm.oscPort),
         midi_in: bridgeForm.midiIn || undefined,
-        midi_out: bridgeForm.midiOut || undefined
+        midi_out: bridgeForm.midiOut || undefined,
       });
       if (res.status === "success") {
         setMidiBridgeStatus({ active: true, ...res });
@@ -240,7 +268,7 @@ export function Control() {
         channel: Number(mappingForm.channel),
         control: Number(mappingForm.control),
         min_val: Number(mappingForm.minVal),
-        max_val: Number(mappingForm.maxVal)
+        max_val: Number(mappingForm.maxVal),
       });
       if (res.status === "success") {
         fetchData();
@@ -256,7 +284,7 @@ export function Control() {
   const handleAddTrigger = async () => {
     setLoading(true);
     try {
-      let resolvedJson;
+      let resolvedJson: unknown;
       try {
         resolvedJson = JSON.parse(triggerForm.argsTemplate);
       } catch {
@@ -266,7 +294,7 @@ export function Control() {
       const res = await callTool("register_reactive_trigger", {
         address_pattern: triggerForm.pattern,
         target_tool: triggerForm.tool,
-        args_template: resolvedJson
+        args_template: resolvedJson,
       });
       if (res.status === "success") {
         fetchData();
@@ -291,17 +319,19 @@ export function Control() {
     }
   };
 
-
   // Handle Subnet Scan
   const handleScanSubnet = async () => {
     setLoading(true);
     setError(null);
     try {
-      const portsArr = scanPorts.split(",").map(p => Number(p.trim())).filter(p => !isNaN(p));
+      const portsArr = scanPorts
+        .split(",")
+        .map((p) => Number(p.trim()))
+        .filter((p) => !Number.isNaN(p));
       const res = await callTool("scan_subnet_osc", {
         subnet_prefix: scanSubnet,
         ports: portsArr,
-        protocol: scanProtocol
+        protocol: scanProtocol,
       });
       if (res.status === "success") {
         setScanResults(res.active_hosts || []);
@@ -320,9 +350,9 @@ export function Control() {
       try {
         parsedArgs = JSON.parse(`[${newStep.args}]`);
       } catch {
-        parsedArgs = newStep.args.split(",").map(arg => {
+        parsedArgs = newStep.args.split(",").map((arg) => {
           const val = arg.trim();
-          return isNaN(Number(val)) ? val : Number(val);
+          return Number.isNaN(Number(val)) ? val : Number(val);
         });
       }
     }
@@ -332,21 +362,21 @@ export function Control() {
       operationId: newStep.operationId,
       parameters: [
         { name: "address", in: "body", value: newStep.address },
-        { name: "args", in: "body", value: parsedArgs }
+        { name: "args", in: "body", value: parsedArgs },
       ],
-      ...(newStep.delayMs > 0 ? { delayBefore: newStep.delayMs } : {})
+      ...(newStep.delayMs > 0 ? { delayBefore: newStep.delayMs } : {}),
     };
 
-    setBuilderSteps(prev => [...prev, step]);
-    setNewStep(prev => ({
+    setBuilderSteps((prev) => [...prev, step]);
+    setNewStep((prev) => ({
       ...prev,
-      stepId: `step-${builderSteps.length + 2}`
+      stepId: `step-${builderSteps.length + 2}`,
     }));
   };
 
   // Remove Step from builder
   const handleRemoveBuilderStep = (idx: number) => {
-    setBuilderSteps(prev => prev.filter((_, i) => i !== idx));
+    setBuilderSteps((prev) => prev.filter((_, i) => i !== idx));
   };
 
   // Save Workflow
@@ -358,7 +388,7 @@ export function Control() {
         workflow_id: builderMetadata.id,
         title: builderMetadata.title,
         description: builderMetadata.description,
-        steps: builderSteps
+        steps: builderSteps,
       });
       if (res.status === "success") {
         alert("Workflow saved successfully!");
@@ -379,7 +409,7 @@ export function Control() {
         host: "127.0.0.1",
         port: 8000,
         address: "/volume",
-        values: [val]
+        values: [val],
       });
     } catch {}
   };
@@ -391,7 +421,7 @@ export function Control() {
         host: "127.0.0.1",
         port: 8000,
         address: "/mute",
-        values: [val ? 1 : 0]
+        values: [val ? 1 : 0],
       });
     } catch {}
   };
@@ -400,7 +430,7 @@ export function Control() {
     try {
       await callTool("obs_manager", {
         operation: "switch_scene",
-        scene_name: sceneText
+        scene_name: sceneText,
       });
     } catch {}
   };
@@ -413,7 +443,8 @@ export function Control() {
             OSC Control Center
           </h2>
           <p className="text-slate-400">
-            Intelligent signal routing, MIDI loopback bridges, and dynamic parameter mapping
+            Intelligent signal routing, MIDI loopback bridges, and dynamic
+            parameter mapping
           </p>
         </div>
         <div className="flex gap-2">
@@ -423,7 +454,9 @@ export function Control() {
             disabled={loading}
             className="border-slate-800 bg-slate-900/50 hover:bg-slate-800 text-slate-200"
           >
-            <RefreshCw className={`mr-2 h-4 w-4 ${loading && "animate-spin"}`} />
+            <RefreshCw
+              className={`mr-2 h-4 w-4 ${loading && "animate-spin"}`}
+            />
             Sync Dashboard
           </Button>
         </div>
@@ -448,23 +481,38 @@ export function Control() {
 
       <Tabs defaultValue="oscquery" className="space-y-4">
         <TabsList className="bg-slate-900/50 border border-slate-800">
-          <TabsTrigger value="oscquery" className="data-[state=active]:bg-slate-800">
+          <TabsTrigger
+            value="oscquery"
+            className="data-[state=active]:bg-slate-800"
+          >
             <Sliders className="w-4 h-4 mr-2" />
             OSCQuery Discovery
           </TabsTrigger>
-          <TabsTrigger value="midibridge" className="data-[state=active]:bg-slate-800">
+          <TabsTrigger
+            value="midibridge"
+            className="data-[state=active]:bg-slate-800"
+          >
             <Radio className="w-4 h-4 mr-2" />
             MIDI Bridge
           </TabsTrigger>
-          <TabsTrigger value="triggers" className="data-[state=active]:bg-slate-800">
+          <TabsTrigger
+            value="triggers"
+            className="data-[state=active]:bg-slate-800"
+          >
             <LinkIcon className="w-4 h-4 mr-2" />
             Reactive Triggers
           </TabsTrigger>
-          <TabsTrigger value="builder" className="data-[state=active]:bg-slate-800">
+          <TabsTrigger
+            value="builder"
+            className="data-[state=active]:bg-slate-800"
+          >
             <Wand2 className="w-4 h-4 mr-2" />
             Workflow Builder
           </TabsTrigger>
-          <TabsTrigger value="scanner" className="data-[state=active]:bg-slate-800">
+          <TabsTrigger
+            value="scanner"
+            className="data-[state=active]:bg-slate-800"
+          >
             <Wifi className="w-4 h-4 mr-2" />
             Scanner & Faders
           </TabsTrigger>
@@ -476,14 +524,20 @@ export function Control() {
             {/* Services List */}
             <Card className="border-slate-800 bg-slate-950/50">
               <CardHeader>
-                <CardTitle className="text-white text-md">Discovered Devices</CardTitle>
-                <CardDescription className="text-slate-400">OSCQuery nodes found via Zeroconf</CardDescription>
+                <CardTitle className="text-white text-md">
+                  Discovered Devices
+                </CardTitle>
+                <CardDescription className="text-slate-400">
+                  OSCQuery nodes found via Zeroconf
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-2">
                 {services.length === 0 ? (
-                  <p className="text-sm text-slate-500 italic p-4 text-center">Scanning for devices on network...</p>
+                  <p className="text-sm text-slate-500 italic p-4 text-center">
+                    Scanning for devices on network...
+                  </p>
                 ) : (
-                  services.map(s => (
+                  services.map((s) => (
                     <div
                       key={s.name}
                       onClick={() => handleSelectService(s.name)}
@@ -494,7 +548,9 @@ export function Control() {
                       }`}
                     >
                       <span className="font-semibold">{s.name}</span>
-                      <span className="text-xs text-slate-400 mt-1">Host: {s.host}:{s.osc_port}</span>
+                      <span className="text-xs text-slate-400 mt-1">
+                        Host: {s.host}:{s.osc_port}
+                      </span>
                     </div>
                   ))
                 )}
@@ -505,17 +561,24 @@ export function Control() {
             <Card className="md:col-span-2 border-slate-800 bg-slate-950/50">
               <CardHeader>
                 <CardTitle className="text-white text-md">
-                  {selectedService ? `Parameter Tree: ${selectedService}` : "Device Parameters"}
+                  {selectedService
+                    ? `Parameter Tree: ${selectedService}`
+                    : "Device Parameters"}
                 </CardTitle>
                 <CardDescription className="text-slate-400">
-                  Select a discovered device to inspect and manipulate parameter trees.
+                  Select a discovered device to inspect and manipulate parameter
+                  trees.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {!selectedService ? (
-                  <p className="text-sm text-slate-500 italic p-8 text-center">No device selected.</p>
+                  <p className="text-sm text-slate-500 italic p-8 text-center">
+                    No device selected.
+                  </p>
                 ) : parameters.length === 0 ? (
-                  <p className="text-sm text-slate-500 italic p-8 text-center">No parameters exposed by this node.</p>
+                  <p className="text-sm text-slate-500 italic p-8 text-center">
+                    No parameters exposed by this node.
+                  </p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-slate-850 font-mono text-sm">
@@ -528,21 +591,30 @@ export function Control() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-900 text-slate-300">
-                        {parameters.map(p => (
+                        {parameters.map((p) => (
                           <tr key={p.path} className="hover:bg-slate-900/20">
-                            <td className="py-3 pr-4 font-semibold text-slate-200">{p.path}</td>
-                            <td className="py-3 px-4">
-                              <Badge className="bg-slate-800 text-slate-300 border-0">{p.type}</Badge>
+                            <td className="py-3 pr-4 font-semibold text-slate-200">
+                              {p.path}
                             </td>
-                            <td className="py-3 px-4 text-emerald-400">{JSON.stringify(p.value) ?? "null"}</td>
+                            <td className="py-3 px-4">
+                              <Badge className="bg-slate-800 text-slate-300 border-0">
+                                {p.type}
+                              </Badge>
+                            </td>
+                            <td className="py-3 px-4 text-emerald-400">
+                              {JSON.stringify(p.value) ?? "null"}
+                            </td>
                             <td className="py-3 pl-4">
                               <div className="flex gap-2">
                                 <Input
                                   size={10}
                                   placeholder="Value..."
                                   value={paramInputValues[p.path] || ""}
-                                  onChange={e =>
-                                    setParamInputValues(prev => ({ ...prev, [p.path]: e.target.value }))
+                                  onChange={(e) =>
+                                    setParamInputValues((prev) => ({
+                                      ...prev,
+                                      [p.path]: e.target.value,
+                                    }))
                                   }
                                   className="h-8 w-24 bg-slate-900 border-slate-800 text-xs text-white"
                                 />
@@ -551,7 +623,9 @@ export function Control() {
                                   onClick={() =>
                                     handleSetParameter(
                                       p.path,
-                                      services.find(s => s.name === selectedService)
+                                      services.find(
+                                        (s) => s.name === selectedService,
+                                      ),
                                     )
                                   }
                                   className="h-8 bg-blue-600 hover:bg-blue-700 text-white text-xs"
@@ -577,69 +651,115 @@ export function Control() {
             {/* Bridge Controller */}
             <Card className="border-slate-800 bg-slate-950/50">
               <CardHeader>
-                <CardTitle className="text-white text-md">Bridge Engine Connection</CardTitle>
-                <CardDescription className="text-slate-400">Initialize virtual or physical MIDI port mapping</CardDescription>
+                <CardTitle className="text-white text-md">
+                  Bridge Engine Connection
+                </CardTitle>
+                <CardDescription className="text-slate-400">
+                  Initialize virtual or physical MIDI port mapping
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-slate-300">Status</span>
+                    <span className="text-sm font-semibold text-slate-300">
+                      Status
+                    </span>
                     {midiBridgeStatus?.active ? (
-                      <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Running</Badge>
+                      <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        Running
+                      </Badge>
                     ) : (
-                      <Badge className="bg-slate-800 text-slate-400 border-0">Inactive</Badge>
+                      <Badge className="bg-slate-800 text-slate-400 border-0">
+                        Inactive
+                      </Badge>
                     )}
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="oscHost" className="text-slate-400 text-xs">Target OSC Host</Label>
+                  <Label htmlFor="oscHost" className="text-slate-400 text-xs">
+                    Target OSC Host
+                  </Label>
                   <Input
                     id="oscHost"
                     value={bridgeForm.oscHost}
-                    onChange={e => setBridgeForm(prev => ({ ...prev, oscHost: e.target.value }))}
+                    onChange={(e) =>
+                      setBridgeForm((prev) => ({
+                        ...prev,
+                        oscHost: e.target.value,
+                      }))
+                    }
                     className="bg-slate-900 border-slate-800 text-white"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="oscPort" className="text-slate-400 text-xs">Target OSC Port</Label>
+                  <Label htmlFor="oscPort" className="text-slate-400 text-xs">
+                    Target OSC Port
+                  </Label>
                   <Input
                     id="oscPort"
                     value={bridgeForm.oscPort}
-                    onChange={e => setBridgeForm(prev => ({ ...prev, oscPort: e.target.value }))}
+                    onChange={(e) =>
+                      setBridgeForm((prev) => ({
+                        ...prev,
+                        oscPort: e.target.value,
+                      }))
+                    }
                     className="bg-slate-900 border-slate-800 text-white"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="midiIn" className="text-slate-400 text-xs">MIDI Input Interface</Label>
+                  <Label htmlFor="midiIn" className="text-slate-400 text-xs">
+                    MIDI Input Interface
+                  </Label>
                   <select
                     id="midiIn"
                     value={bridgeForm.midiIn}
-                    onChange={e => setBridgeForm(prev => ({ ...prev, midiIn: e.target.value }))}
+                    onChange={(e) =>
+                      setBridgeForm((prev) => ({
+                        ...prev,
+                        midiIn: e.target.value,
+                      }))
+                    }
                     className="w-full h-10 px-3 rounded-md bg-slate-900 border border-slate-800 text-sm text-white focus:outline-none"
                   >
                     {midiPorts.inputs.length === 0 ? (
                       <option value="">No MIDI inputs detected</option>
                     ) : (
-                      midiPorts.inputs.map(p => <option key={p} value={p}>{p}</option>)
+                      midiPorts.inputs.map((p) => (
+                        <option key={p} value={p}>
+                          {p}
+                        </option>
+                      ))
                     )}
                   </select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="midiOut" className="text-slate-400 text-xs">MIDI Output Interface</Label>
+                  <Label htmlFor="midiOut" className="text-slate-400 text-xs">
+                    MIDI Output Interface
+                  </Label>
                   <select
                     id="midiOut"
                     value={bridgeForm.midiOut}
-                    onChange={e => setBridgeForm(prev => ({ ...prev, midiOut: e.target.value }))}
+                    onChange={(e) =>
+                      setBridgeForm((prev) => ({
+                        ...prev,
+                        midiOut: e.target.value,
+                      }))
+                    }
                     className="w-full h-10 px-3 rounded-md bg-slate-900 border border-slate-800 text-sm text-white focus:outline-none"
                   >
                     {midiPorts.outputs.length === 0 ? (
                       <option value="">No MIDI outputs detected</option>
                     ) : (
-                      midiPorts.outputs.map(p => <option key={p} value={p}>{p}</option>)
+                      midiPorts.outputs.map((p) => (
+                        <option key={p} value={p}>
+                          {p}
+                        </option>
+                      ))
                     )}
                   </select>
                 </div>
@@ -666,20 +786,35 @@ export function Control() {
             {/* Mappings Setup */}
             <Card className="md:col-span-2 border-slate-800 bg-slate-950/50">
               <CardHeader>
-                <CardTitle className="text-white text-md">Mapping Configurator</CardTitle>
-                <CardDescription className="text-slate-400">Map MIDI CC knobs and notes directly to OSC paths</CardDescription>
+                <CardTitle className="text-white text-md">
+                  Mapping Configurator
+                </CardTitle>
+                <CardDescription className="text-slate-400">
+                  Map MIDI CC knobs and notes directly to OSC paths
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-md border border-slate-850 bg-slate-900/10">
                   <div className="space-y-2">
-                    <Label className="text-slate-450 text-xs">Mapping Type</Label>
+                    <Label className="text-slate-450 text-xs">
+                      Mapping Type
+                    </Label>
                     <select
                       value={mappingForm.direction}
-                      onChange={e => setMappingForm(prev => ({ ...prev, direction: e.target.value }))}
+                      onChange={(e) =>
+                        setMappingForm((prev) => ({
+                          ...prev,
+                          direction: e.target.value,
+                        }))
+                      }
                       className="w-full h-10 px-3 rounded bg-slate-900 border border-slate-800 text-sm text-slate-200"
                     >
-                      <option value="midi_to_osc">MIDI CC {"->"} OSC Path</option>
-                      <option value="osc_to_midi">OSC Path {"->"} MIDI CC/Note</option>
+                      <option value="midi_to_osc">
+                        MIDI CC {"->"} OSC Path
+                      </option>
+                      <option value="osc_to_midi">
+                        OSC Path {"->"} MIDI CC/Note
+                      </option>
                     </select>
                   </div>
 
@@ -687,27 +822,46 @@ export function Control() {
                     <Label className="text-slate-450 text-xs">OSC Path</Label>
                     <Input
                       value={mappingForm.oscAddress}
-                      onChange={e => setMappingForm(prev => ({ ...prev, oscAddress: e.target.value }))}
+                      onChange={(e) =>
+                        setMappingForm((prev) => ({
+                          ...prev,
+                          oscAddress: e.target.value,
+                        }))
+                      }
                       className="bg-slate-900 border-slate-800 text-white"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-slate-450 text-xs">MIDI CC / Note</Label>
+                    <Label className="text-slate-450 text-xs">
+                      MIDI CC / Note
+                    </Label>
                     <Input
                       type="number"
                       value={mappingForm.control}
-                      onChange={e => setMappingForm(prev => ({ ...prev, control: e.target.value }))}
+                      onChange={(e) =>
+                        setMappingForm((prev) => ({
+                          ...prev,
+                          control: e.target.value,
+                        }))
+                      }
                       className="bg-slate-900 border-slate-800 text-white"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-slate-450 text-xs">Channel (1-16)</Label>
+                    <Label className="text-slate-450 text-xs">
+                      Channel (1-16)
+                    </Label>
                     <Input
                       type="number"
                       value={mappingForm.channel}
-                      onChange={e => setMappingForm(prev => ({ ...prev, channel: e.target.value }))}
+                      onChange={(e) =>
+                        setMappingForm((prev) => ({
+                          ...prev,
+                          channel: e.target.value,
+                        }))
+                      }
                       className="bg-slate-900 border-slate-800 text-white"
                     />
                   </div>
@@ -716,7 +870,12 @@ export function Control() {
                     <Label className="text-slate-450 text-xs">Min Range</Label>
                     <Input
                       value={mappingForm.minVal}
-                      onChange={e => setMappingForm(prev => ({ ...prev, minVal: e.target.value }))}
+                      onChange={(e) =>
+                        setMappingForm((prev) => ({
+                          ...prev,
+                          minVal: e.target.value,
+                        }))
+                      }
                       className="bg-slate-900 border-slate-800 text-white"
                     />
                   </div>
@@ -725,7 +884,12 @@ export function Control() {
                     <Label className="text-slate-450 text-xs">Max Range</Label>
                     <Input
                       value={mappingForm.maxVal}
-                      onChange={e => setMappingForm(prev => ({ ...prev, maxVal: e.target.value }))}
+                      onChange={(e) =>
+                        setMappingForm((prev) => ({
+                          ...prev,
+                          maxVal: e.target.value,
+                        }))
+                      }
                       className="bg-slate-900 border-slate-800 text-white"
                     />
                   </div>
@@ -740,7 +904,9 @@ export function Control() {
                 </div>
 
                 <div className="space-y-4">
-                  <h3 className="text-white text-sm font-semibold">Active Mappings List</h3>
+                  <h3 className="text-white text-sm font-semibold">
+                    Active Mappings List
+                  </h3>
                   <div className="overflow-x-auto max-h-60">
                     <table className="min-w-full divide-y divide-slate-850 font-mono text-xs">
                       <thead>
@@ -755,27 +921,49 @@ export function Control() {
                       <tbody className="divide-y divide-slate-900 text-slate-300">
                         {midiMappings.midi_to_osc.map((m, idx) => (
                           <tr key={`m2o-${idx}`}>
-                            <td className="py-2 text-emerald-400">MIDI {"->"} OSC</td>
+                            <td className="py-2 text-emerald-400">
+                              MIDI {"->"} OSC
+                            </td>
                             <td className="py-2 px-2">{m.midi_type}</td>
-                            <td className="py-2 px-2">Ch: {m.channel} / CC: {m.control}</td>
-                            <td className="py-2 px-2 font-semibold text-slate-200">{m.osc_address}</td>
-                            <td className="py-2 pl-2">[{m.osc_range?.join(", ")}]</td>
+                            <td className="py-2 px-2">
+                              Ch: {m.channel} / CC: {m.control}
+                            </td>
+                            <td className="py-2 px-2 font-semibold text-slate-200">
+                              {m.osc_address}
+                            </td>
+                            <td className="py-2 pl-2">
+                              [{m.osc_range?.join(", ")}]
+                            </td>
                           </tr>
                         ))}
                         {midiMappings.osc_to_midi.map((m, idx) => (
                           <tr key={`o2m-${idx}`}>
-                            <td className="py-2 text-blue-400">OSC {"->"} MIDI</td>
+                            <td className="py-2 text-blue-400">
+                              OSC {"->"} MIDI
+                            </td>
                             <td className="py-2 px-2">{m.midi_type}</td>
-                            <td className="py-2 px-2">Ch: {m.channel} / CC: {m.control}</td>
-                            <td className="py-2 px-2 font-semibold text-slate-200">{m.osc_address}</td>
-                            <td className="py-2 pl-2">[{m.midi_range?.join(", ")}]</td>
+                            <td className="py-2 px-2">
+                              Ch: {m.channel} / CC: {m.control}
+                            </td>
+                            <td className="py-2 px-2 font-semibold text-slate-200">
+                              {m.osc_address}
+                            </td>
+                            <td className="py-2 pl-2">
+                              [{m.midi_range?.join(", ")}]
+                            </td>
                           </tr>
                         ))}
-                        {midiMappings.midi_to_osc.length === 0 && midiMappings.osc_to_midi.length === 0 && (
-                          <tr>
-                            <td colSpan={5} className="py-4 text-slate-500 italic text-center">No active mappings configured.</td>
-                          </tr>
-                        )}
+                        {midiMappings.midi_to_osc.length === 0 &&
+                          midiMappings.osc_to_midi.length === 0 && (
+                            <tr>
+                              <td
+                                colSpan={5}
+                                className="py-4 text-slate-500 italic text-center"
+                              >
+                                No active mappings configured.
+                              </td>
+                            </tr>
+                          )}
                       </tbody>
                     </table>
                   </div>
@@ -791,46 +979,80 @@ export function Control() {
             {/* Create Trigger Form */}
             <Card className="border-slate-800 bg-slate-950/50">
               <CardHeader>
-                <CardTitle className="text-white text-md">Register Reactive Trigger</CardTitle>
-                <CardDescription className="text-slate-400">Fire MCP tools dynamically upon incoming OSC matching rules</CardDescription>
+                <CardTitle className="text-white text-md">
+                  Register Reactive Trigger
+                </CardTitle>
+                <CardDescription className="text-slate-400">
+                  Fire MCP tools dynamically upon incoming OSC matching rules
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="pattern" className="text-slate-400 text-xs">Incoming Address Pattern (Glob)</Label>
+                  <Label htmlFor="pattern" className="text-slate-400 text-xs">
+                    Incoming Address Pattern (Glob)
+                  </Label>
                   <Input
                     id="pattern"
                     value={triggerForm.pattern}
-                    onChange={e => setTriggerForm(prev => ({ ...prev, pattern: e.target.value }))}
+                    onChange={(e) =>
+                      setTriggerForm((prev) => ({
+                        ...prev,
+                        pattern: e.target.value,
+                      }))
+                    }
                     className="bg-slate-900 border-slate-800 text-white font-mono"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="tool" className="text-slate-400 text-xs">Target MCP Tool to Call</Label>
+                  <Label htmlFor="tool" className="text-slate-400 text-xs">
+                    Target MCP Tool to Call
+                  </Label>
                   <select
                     id="tool"
                     value={triggerForm.tool}
-                    onChange={e => setTriggerForm(prev => ({ ...prev, tool: e.target.value }))}
+                    onChange={(e) =>
+                      setTriggerForm((prev) => ({
+                        ...prev,
+                        tool: e.target.value,
+                      }))
+                    }
                     className="w-full h-10 px-3 rounded bg-slate-900 border border-slate-800 text-sm text-white"
                   >
                     <option value="send_osc_message">send_osc_message</option>
-                    <option value="execute_osc_workflow">execute_osc_workflow</option>
+                    <option value="execute_osc_workflow">
+                      execute_osc_workflow
+                    </option>
                     <option value="test_osc_echo">test_osc_echo</option>
-                    <option value="trigger_vrchat_haptic_lfo">trigger_vrchat_haptic_lfo</option>
+                    <option value="trigger_vrchat_haptic_lfo">
+                      trigger_vrchat_haptic_lfo
+                    </option>
                   </select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="argsTemplate" className="text-slate-400 text-xs">Arguments Template (JSON)</Label>
+                  <Label
+                    htmlFor="argsTemplate"
+                    className="text-slate-400 text-xs"
+                  >
+                    Arguments Template (JSON)
+                  </Label>
                   <textarea
                     id="argsTemplate"
                     rows={6}
                     value={triggerForm.argsTemplate}
-                    onChange={e => setTriggerForm(prev => ({ ...prev, argsTemplate: e.target.value }))}
+                    onChange={(e) =>
+                      setTriggerForm((prev) => ({
+                        ...prev,
+                        argsTemplate: e.target.value,
+                      }))
+                    }
                     className="w-full p-3 rounded-md bg-slate-900 border border-slate-800 text-xs text-emerald-400 font-mono focus:outline-none focus:border-slate-700"
                   />
                   <p className="text-[10px] text-slate-500 mt-1">
-                    Use <code className="text-emerald-500">$0</code>, <code className="text-emerald-500">$1</code> to map incoming parameters.
+                    Use <code className="text-emerald-500">$0</code>,{" "}
+                    <code className="text-emerald-500">$1</code> to map incoming
+                    parameters.
                   </p>
                 </div>
 
@@ -846,8 +1068,12 @@ export function Control() {
             {/* Triggers List */}
             <Card className="md:col-span-2 border-slate-800 bg-slate-950/50">
               <CardHeader>
-                <CardTitle className="text-white text-md">Active Trigger Rules</CardTitle>
-                <CardDescription className="text-slate-400">Trigger-action bindings active on the OSC listener</CardDescription>
+                <CardTitle className="text-white text-md">
+                  Active Trigger Rules
+                </CardTitle>
+                <CardDescription className="text-slate-400">
+                  Trigger-action bindings active on the OSC listener
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
@@ -863,10 +1089,16 @@ export function Control() {
                     <tbody className="divide-y divide-slate-900 text-slate-300">
                       {triggers.map((t, idx) => (
                         <tr key={idx} className="hover:bg-slate-900/20">
-                          <td className="py-3 pr-4 font-semibold text-slate-200">{t.pattern}</td>
-                          <td className="py-3 px-4 text-emerald-400">{t.tool}</td>
+                          <td className="py-3 pr-4 font-semibold text-slate-200">
+                            {t.pattern}
+                          </td>
+                          <td className="py-3 px-4 text-emerald-400">
+                            {t.tool}
+                          </td>
                           <td className="py-3 px-4 max-w-xs overflow-hidden text-ellipsis">
-                            <span className="text-xs text-slate-500">{JSON.stringify(t.template)}</span>
+                            <span className="text-xs text-slate-500">
+                              {JSON.stringify(t.template)}
+                            </span>
                           </td>
                           <td className="py-3 pl-4 text-right">
                             <Button
@@ -882,7 +1114,12 @@ export function Control() {
                       ))}
                       {triggers.length === 0 && (
                         <tr>
-                          <td colSpan={4} className="py-8 text-slate-500 italic text-center">No reactive triggers configured.</td>
+                          <td
+                            colSpan={4}
+                            className="py-8 text-slate-500 italic text-center"
+                          >
+                            No reactive triggers configured.
+                          </td>
                         </tr>
                       )}
                     </tbody>
@@ -899,15 +1136,26 @@ export function Control() {
             {/* Metadata & Step Form */}
             <Card className="border-slate-800 bg-slate-950/50 md:col-span-1">
               <CardHeader>
-                <CardTitle className="text-white text-md">Workflow Properties</CardTitle>
-                <CardDescription className="text-slate-400">Define your automation metadata</CardDescription>
+                <CardTitle className="text-white text-md">
+                  Workflow Properties
+                </CardTitle>
+                <CardDescription className="text-slate-400">
+                  Define your automation metadata
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label className="text-slate-300">Workflow ID (Filename)</Label>
+                  <Label className="text-slate-300">
+                    Workflow ID (Filename)
+                  </Label>
                   <Input
                     value={builderMetadata.id}
-                    onChange={e => setBuilderMetadata(prev => ({ ...prev, id: e.target.value }))}
+                    onChange={(e) =>
+                      setBuilderMetadata((prev) => ({
+                        ...prev,
+                        id: e.target.value,
+                      }))
+                    }
                     className="border-slate-800 bg-slate-900 text-white"
                   />
                 </div>
@@ -915,7 +1163,12 @@ export function Control() {
                   <Label className="text-slate-300">Workflow Title</Label>
                   <Input
                     value={builderMetadata.title}
-                    onChange={e => setBuilderMetadata(prev => ({ ...prev, title: e.target.value }))}
+                    onChange={(e) =>
+                      setBuilderMetadata((prev) => ({
+                        ...prev,
+                        title: e.target.value,
+                      }))
+                    }
                     className="border-slate-800 bg-slate-900 text-white"
                   />
                 </div>
@@ -923,18 +1176,30 @@ export function Control() {
                   <Label className="text-slate-300">Description</Label>
                   <Input
                     value={builderMetadata.description}
-                    onChange={e => setBuilderMetadata(prev => ({ ...prev, description: e.target.value }))}
+                    onChange={(e) =>
+                      setBuilderMetadata((prev) => ({
+                        ...prev,
+                        description: e.target.value,
+                      }))
+                    }
                     className="border-slate-800 bg-slate-900 text-white"
                   />
                 </div>
 
                 <div className="border-t border-slate-800 pt-4 space-y-4">
-                  <h4 className="text-sm font-semibold text-slate-200">Add Step</h4>
+                  <h4 className="text-sm font-semibold text-slate-200">
+                    Add Step
+                  </h4>
                   <div className="space-y-2">
                     <Label className="text-slate-300">Operation ID</Label>
                     <select
                       value={newStep.operationId}
-                      onChange={e => setNewStep(prev => ({ ...prev, operationId: e.target.value }))}
+                      onChange={(e) =>
+                        setNewStep((prev) => ({
+                          ...prev,
+                          operationId: e.target.value,
+                        }))
+                      }
                       className="w-full rounded-md border border-slate-800 bg-slate-900 p-2 text-white text-sm"
                     >
                       <option value="send_osc">send_osc</option>
@@ -945,29 +1210,50 @@ export function Control() {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-slate-300">OSC Path / Parameter</Label>
+                    <Label className="text-slate-300">
+                      OSC Path / Parameter
+                    </Label>
                     <Input
                       value={newStep.address}
-                      onChange={e => setNewStep(prev => ({ ...prev, address: e.target.value }))}
+                      onChange={(e) =>
+                        setNewStep((prev) => ({
+                          ...prev,
+                          address: e.target.value,
+                        }))
+                      }
                       className="border-slate-800 bg-slate-900 text-white font-mono text-xs"
                       placeholder="/volume or scene_name"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-slate-300">Arguments (Comma-separated)</Label>
+                    <Label className="text-slate-300">
+                      Arguments (Comma-separated)
+                    </Label>
                     <Input
                       value={newStep.args}
-                      onChange={e => setNewStep(prev => ({ ...prev, args: e.target.value }))}
+                      onChange={(e) =>
+                        setNewStep((prev) => ({
+                          ...prev,
+                          args: e.target.value,
+                        }))
+                      }
                       className="border-slate-800 bg-slate-900 text-white font-mono text-xs"
                       placeholder="0.8, 'test', true"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-slate-300">Delay Before Step (ms)</Label>
+                    <Label className="text-slate-300">
+                      Delay Before Step (ms)
+                    </Label>
                     <Input
                       type="number"
                       value={newStep.delayMs}
-                      onChange={e => setNewStep(prev => ({ ...prev, delayMs: Number(e.target.value) }))}
+                      onChange={(e) =>
+                        setNewStep((prev) => ({
+                          ...prev,
+                          delayMs: Number(e.target.value),
+                        }))
+                      }
                       className="border-slate-800 bg-slate-900 text-white"
                     />
                   </div>
@@ -985,8 +1271,12 @@ export function Control() {
             <Card className="border-slate-800 bg-slate-950/50 md:col-span-2">
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle className="text-white text-md">Workflow Steps Checklist</CardTitle>
-                  <CardDescription className="text-slate-400">Order of execution for {builderMetadata.title}</CardDescription>
+                  <CardTitle className="text-white text-md">
+                    Workflow Steps Checklist
+                  </CardTitle>
+                  <CardDescription className="text-slate-400">
+                    Order of execution for {builderMetadata.title}
+                  </CardDescription>
                 </div>
                 <Button
                   onClick={handleSaveWorkflow}
@@ -1000,7 +1290,8 @@ export function Control() {
                 <div className="space-y-2">
                   {builderSteps.length === 0 ? (
                     <div className="py-12 border-2 border-dashed border-slate-800 rounded-md text-center text-slate-500 italic">
-                      No steps added yet. Use the property panel on the left to orchestrate your workflow steps.
+                      No steps added yet. Use the property panel on the left to
+                      orchestrate your workflow steps.
                     </div>
                   ) : (
                     builderSteps.map((step, idx) => (
@@ -1009,14 +1300,24 @@ export function Control() {
                         className="flex items-center justify-between p-3 rounded-md border border-slate-800 bg-slate-900/30 text-slate-200"
                       >
                         <div className="flex items-center gap-4">
-                          <Badge className="bg-slate-800 text-slate-300">{idx + 1}</Badge>
+                          <Badge className="bg-slate-800 text-slate-300">
+                            {idx + 1}
+                          </Badge>
                           <div>
-                            <span className="font-semibold text-emerald-400 font-mono text-sm">{step.operationId}</span>
+                            <span className="font-semibold text-emerald-400 font-mono text-sm">
+                              {step.operationId}
+                            </span>
                             <span className="text-slate-400 text-xs ml-2">
-                              Path: <code className="text-blue-400 font-mono">{step.parameters[0].value}</code>
+                              Path:{" "}
+                              <code className="text-blue-400 font-mono">
+                                {step.parameters[0].value}
+                              </code>
                             </span>
                             {step.delayBefore && (
-                              <Badge variant="outline" className="border-amber-500/20 text-amber-400 text-[10px] ml-2">
+                              <Badge
+                                variant="outline"
+                                className="border-amber-500/20 text-amber-400 text-[10px] ml-2"
+                              >
                                 Delay: {step.delayBefore}ms
                               </Badge>
                             )}
@@ -1045,15 +1346,19 @@ export function Control() {
             {/* Subnet Scanner */}
             <Card className="border-slate-800 bg-slate-950/50 md:col-span-1">
               <CardHeader>
-                <CardTitle className="text-white text-md">Active Subnet Scanner</CardTitle>
-                <CardDescription className="text-slate-400">Discover active OSC services on local network</CardDescription>
+                <CardTitle className="text-white text-md">
+                  Active Subnet Scanner
+                </CardTitle>
+                <CardDescription className="text-slate-400">
+                  Discover active OSC services on local network
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label className="text-slate-300">Subnet Prefix</Label>
                   <Input
                     value={scanSubnet}
-                    onChange={e => setScanSubnet(e.target.value)}
+                    onChange={(e) => setScanSubnet(e.target.value)}
                     className="border-slate-800 bg-slate-900 text-white"
                     placeholder="192.168.1"
                   />
@@ -1062,7 +1367,7 @@ export function Control() {
                   <Label className="text-slate-300">Scan Ports</Label>
                   <Input
                     value={scanPorts}
-                    onChange={e => setScanPorts(e.target.value)}
+                    onChange={(e) => setScanPorts(e.target.value)}
                     className="border-slate-800 bg-slate-900 text-white font-mono text-xs"
                     placeholder="7000,8000,9000,53000"
                   />
@@ -1071,7 +1376,7 @@ export function Control() {
                   <Label className="text-slate-300">Protocol</Label>
                   <select
                     value={scanProtocol}
-                    onChange={e => setScanProtocol(e.target.value)}
+                    onChange={(e) => setScanProtocol(e.target.value)}
                     className="w-full rounded-md border border-slate-800 bg-slate-900 p-2 text-white text-sm"
                   >
                     <option value="udp">UDP (Standard OSC)</option>
@@ -1088,15 +1393,26 @@ export function Control() {
 
                 {/* Scan Results */}
                 <div className="border-t border-slate-800 pt-4 space-y-2">
-                  <h4 className="text-sm font-semibold text-slate-200">Scan Results ({scanResults.length})</h4>
+                  <h4 className="text-sm font-semibold text-slate-200">
+                    Scan Results ({scanResults.length})
+                  </h4>
                   <div className="max-h-60 overflow-y-auto space-y-2">
                     {scanResults.length === 0 ? (
-                      <p className="text-xs text-slate-500 italic p-4 text-center">No active scanner matches yet.</p>
+                      <p className="text-xs text-slate-500 italic p-4 text-center">
+                        No active scanner matches yet.
+                      </p>
                     ) : (
                       scanResults.map((r, idx) => (
-                        <div key={idx} className="flex justify-between items-center p-2 rounded bg-slate-900/40 text-xs border border-slate-800/40">
-                          <span className="font-semibold text-slate-300">{r.host}:{r.port}</span>
-                          <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">{r.protocol.toUpperCase()}</Badge>
+                        <div
+                          key={idx}
+                          className="flex justify-between items-center p-2 rounded bg-slate-900/40 text-xs border border-slate-800/40"
+                        >
+                          <span className="font-semibold text-slate-300">
+                            {r.host}:{r.port}
+                          </span>
+                          <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            {r.protocol.toUpperCase()}
+                          </Badge>
                         </div>
                       ))
                     )}
@@ -1108,15 +1424,23 @@ export function Control() {
             {/* Interactive Faders & Monitor */}
             <Card className="border-slate-800 bg-slate-950/50 md:col-span-2">
               <CardHeader>
-                <CardTitle className="text-white text-md">Interactive Mixer & Controllers</CardTitle>
-                <CardDescription className="text-slate-400">Trigger immediate local OSC/OBS controls</CardDescription>
+                <CardTitle className="text-white text-md">
+                  Interactive Mixer & Controllers
+                </CardTitle>
+                <CardDescription className="text-slate-400">
+                  Trigger immediate local OSC/OBS controls
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Volume Fader */}
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <Label className="text-slate-300">Main Volume Parameter (/volume)</Label>
-                    <span className="text-emerald-400 font-mono">{(volumeSlider * 100).toFixed(0)}%</span>
+                    <Label className="text-slate-300">
+                      Main Volume Parameter (/volume)
+                    </Label>
+                    <span className="text-emerald-400 font-mono">
+                      {(volumeSlider * 100).toFixed(0)}%
+                    </span>
                   </div>
                   <Input
                     type="range"
@@ -1124,7 +1448,7 @@ export function Control() {
                     max="1.0"
                     step="0.01"
                     value={volumeSlider}
-                    onChange={e => handleFaderChange(Number(e.target.value))}
+                    onChange={(e) => handleFaderChange(Number(e.target.value))}
                     className="h-2 w-full cursor-pointer rounded-lg bg-slate-850 accent-blue-500"
                   />
                 </div>
@@ -1132,8 +1456,12 @@ export function Control() {
                 {/* Mute Toggle */}
                 <div className="flex items-center justify-between border-t border-slate-900 pt-4">
                   <div>
-                    <Label className="text-slate-200 block">Mute Switch (/mute)</Label>
-                    <span className="text-xs text-slate-500">Mutes main master bus channels</span>
+                    <Label className="text-slate-200 block">
+                      Mute Switch (/mute)
+                    </Label>
+                    <span className="text-xs text-slate-500">
+                      Mutes main master bus channels
+                    </span>
                   </div>
                   <Button
                     onClick={() => handleMuteChange(!muteToggle)}
@@ -1145,11 +1473,13 @@ export function Control() {
 
                 {/* OBS Scene Control */}
                 <div className="border-t border-slate-900 pt-4 space-y-2">
-                  <Label className="text-slate-200">OBS scene switch (/scene)</Label>
+                  <Label className="text-slate-200">
+                    OBS scene switch (/scene)
+                  </Label>
                   <div className="flex gap-2">
                     <Input
                       value={sceneText}
-                      onChange={e => setSceneText(e.target.value)}
+                      onChange={(e) => setSceneText(e.target.value)}
                       className="border-slate-800 bg-slate-900 text-white"
                       placeholder="Scene name"
                     />
@@ -1164,13 +1494,19 @@ export function Control() {
 
                 {/* Real-time Oscilloscope Visualization */}
                 <div className="border-t border-slate-900 pt-4 space-y-2">
-                  <Label className="text-slate-200">OSC Activity Signal monitor</Label>
+                  <Label className="text-slate-200">
+                    OSC Activity Signal monitor
+                  </Label>
                   <div className="bg-slate-950 p-4 rounded-md border border-slate-900/50 font-mono text-emerald-400 text-xs space-y-1 select-none">
-                    <div className="text-[10px] text-slate-500 border-b border-slate-900 pb-1 mb-2">LIVE FREQUENCY SPECTRUM (30HZ MONITOR)</div>
+                    <div className="text-[10px] text-slate-500 border-b border-slate-900 pb-1 mb-2">
+                      LIVE FREQUENCY SPECTRUM (30HZ MONITOR)
+                    </div>
                     <div>CH 1 [VOLUME] ▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇ 0.82</div>
-                    <div>CH 2 [PAN]    ▇▇▇▇▇ 0.35</div>
-                    <div>CH 3 [MUTE]   ▇ 0.00</div>
-                    <div>CH 4 [BEAT]   ▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇ 1.00 (Clock Peak)</div>
+                    <div>CH 2 [PAN] ▇▇▇▇▇ 0.35</div>
+                    <div>CH 3 [MUTE] ▇ 0.00</div>
+                    <div>
+                      CH 4 [BEAT] ▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇ 1.00 (Clock Peak)
+                    </div>
                   </div>
                 </div>
               </CardContent>

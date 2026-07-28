@@ -1,7 +1,7 @@
-import { API_BASE } from "../lib/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Code2, ChevronRight } from "lucide-react";
+import { ChevronRight, Code2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { API_BASE } from "../lib/api";
 
 export function Skills() {
   const [skills, setSkills] = useState<string[]>([]);
@@ -15,10 +15,16 @@ export function Skills() {
     (async () => {
       try {
         setLoading(true);
-        const r = await fetch(API_BASE + "/api/v1/skills");
+        const r = await fetch(`${API_BASE}/api/v1/skills`);
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const data = await r.json();
-        const names = Array.isArray(data) ? data.map((s: any) => typeof s === "string" ? s : s.name || s.id || String(s)).filter(Boolean) : [];
+        const names = Array.isArray(data)
+          ? data
+              .map((s: any) =>
+                typeof s === "string" ? s : s.name || s.id || String(s),
+              )
+              .filter(Boolean)
+          : [];
         setSkills(names);
         if (names.length > 0) {
           setSelected(names[0]);
@@ -36,12 +42,17 @@ export function Skills() {
     (async () => {
       try {
         setContentLoading(true);
-        const r = await fetch(API_BASE + "/api/v1/skills/" + encodeURIComponent(selected));
+        const r = await fetch(
+          `${API_BASE}/api/v1/skills/${encodeURIComponent(selected)}`,
+        );
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const text = await r.text();
         setContent(text);
       } catch (e) {
-        setContent("Error loading skill: " + (e instanceof Error ? e.message : String(e)));
+        setContent(
+          "Error loading skill: " +
+            (e instanceof Error ? e.message : String(e)),
+        );
       } finally {
         setContentLoading(false);
       }
@@ -54,11 +65,15 @@ export function Skills() {
         <Code2 className="h-6 w-6 text-blue-500" />
         <h1 className="text-2xl font-bold text-white">Skills</h1>
       </div>
-      <p className="text-sm text-slate-400">Available server skills — click to view full content.</p>
+      <p className="text-sm text-slate-400">
+        Available server skills — click to view full content.
+      </p>
 
       {loading && (
         <Card className="border-slate-800 bg-slate-950/50">
-          <CardContent className="p-6 text-center text-slate-500 text-sm">Loading skills...</CardContent>
+          <CardContent className="p-6 text-center text-slate-500 text-sm">
+            Loading skills...
+          </CardContent>
         </Card>
       )}
 
@@ -70,7 +85,9 @@ export function Skills() {
 
       {!loading && !err && skills.length === 0 && (
         <Card className="border-slate-800 bg-slate-950/50">
-          <CardContent className="p-6 text-center text-slate-500 text-sm">No skills available.</CardContent>
+          <CardContent className="p-6 text-center text-slate-500 text-sm">
+            No skills available.
+          </CardContent>
         </Card>
       )}
 
@@ -78,7 +95,9 @@ export function Skills() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card className="md:col-span-1 border-slate-800 bg-slate-950/50">
             <CardHeader>
-              <CardTitle className="text-sm text-slate-200">Skill Index</CardTitle>
+              <CardTitle className="text-sm text-slate-200">
+                Skill Index
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-1">
               {skills.map((name) => (
@@ -87,7 +106,9 @@ export function Skills() {
                   onClick={() => setSelected(name)}
                   className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors text-left ${selected === name ? "bg-blue-900/30 text-blue-300" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
                 >
-                  <ChevronRight className={`h-3 w-3 ${selected === name ? "text-blue-400" : "text-transparent"}`} />
+                  <ChevronRight
+                    className={`h-3 w-3 ${selected === name ? "text-blue-400" : "text-transparent"}`}
+                  />
                   {name}
                 </button>
               ))}
@@ -96,7 +117,9 @@ export function Skills() {
 
           <Card className="md:col-span-3 border-slate-800 bg-slate-950/50">
             <CardHeader>
-              <CardTitle className="text-sm text-slate-200">{selected}</CardTitle>
+              <CardTitle className="text-sm text-slate-200">
+                {selected}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               {contentLoading ? (

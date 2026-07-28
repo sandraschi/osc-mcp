@@ -204,7 +204,7 @@ Return a JSON response with:
                 "success": False,
                 "analysis": {"error": str(e)},
                 "executed_messages": executed_messages,
-                "errors": errors + [{"error": str(e)}],
+                "errors": [*errors, {"error": str(e)}],
                 "execution_time": time.time() - start_time,
             }
 

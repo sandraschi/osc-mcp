@@ -1,5 +1,5 @@
-import { Card, CardContent } from "@/components/ui/card";
 import { Maximize, Video } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 
 export function Visualizer() {
   return (

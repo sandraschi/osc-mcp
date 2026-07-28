@@ -1,3 +1,4 @@
+import { Activity, Server, ShieldCheck, Wifi } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -6,7 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Activity, Server, ShieldCheck, Wifi } from "lucide-react";
 
 export function Status() {
   return (

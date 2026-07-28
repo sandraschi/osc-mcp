@@ -417,7 +417,7 @@ class MIDIBridge:
 
                 # Round if needed
                 if mapping.round_midi:
-                    midi_value = int(round(midi_value))
+                    midi_value = round(midi_value)
 
                 # Clamp to MIDI range
                 midi_value = max(midi_min, min(midi_max, midi_value))

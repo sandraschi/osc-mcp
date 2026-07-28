@@ -1,12 +1,18 @@
-import { ApiDocsPage } from "@/pages/api-docs";
+import {
+  Navigate,
+  Route,
+  BrowserRouter as Router,
+  Routes,
+} from "react-router-dom";
 import { AppLayout } from "@/components/layout/app-layout";
-import Logging from "@/pages/Logging";
 import { Ableton } from "@/pages/ableton";
+import { ApiDocsPage } from "@/pages/api-docs";
 import { Apps } from "@/pages/apps";
 import { Chat } from "@/pages/chat";
 import { Control } from "@/pages/control";
 import { Dashboard } from "@/pages/dashboard";
 import { Help } from "@/pages/help";
+import Logging from "@/pages/Logging";
 import { MaxMSP } from "@/pages/maxmsp";
 import { Settings } from "@/pages/settings";
 import { Skills } from "@/pages/skills";
@@ -17,12 +23,6 @@ import { TouchDesigner } from "@/pages/touchdesigner";
 import { VCVRack } from "@/pages/vcvrack";
 import { Visualizer } from "@/pages/visualizer";
 import { VRChat } from "@/pages/vrchat";
-import {
-  Navigate,
-  Route,
-  BrowserRouter as Router,
-  Routes,
-} from "react-router-dom";
 
 function App() {
   return (

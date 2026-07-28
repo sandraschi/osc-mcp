@@ -1,3 +1,5 @@
+import { Activity, Database, Play, Settings, Square } from "lucide-react";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -7,8 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Activity, Database, Play, Settings, Square } from "lucide-react";
-import { useState } from "react";
 
 export function VCVRack() {
   const [loading, setLoading] = useState(false);

@@ -1,25 +1,25 @@
-import { cn } from "@/common/utils";
 import {
   Activity,
   Bot,
   Boxes,
   ChevronLeft,
   ChevronRight,
+  Code2,
   Cpu,
   HelpCircle,
   LayoutDashboard,
-  Map,
+  Map as MapIcon,
   Monitor,
   Music,
   Radio,
   ScrollText,
   Server,
   Settings,
-  Code2,
   User,
   Wrench,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { cn } from "@/common/utils";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -34,7 +34,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     { path: "/apps", label: "Apps Hub", icon: Server },
     { path: "/status", label: "Status", icon: Activity },
     { path: "/control", label: "Signal Center", icon: Activity },
-    { path: "/visualizer", label: "Spectrum", icon: Map },
+    { path: "/visualizer", label: "Spectrum", icon: MapIcon },
     { path: "/tools", label: "Tools Hub", icon: Wrench },
     { path: "/skills", label: "Skills", icon: Code2 },
     { path: "/chat", label: "Chat Orchestrator", icon: Bot },

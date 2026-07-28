@@ -143,7 +143,7 @@ async def start_osc_listener(port: int, address: str = "0.0.0.0") -> dict[str, A
         _osc_servers.append(osc_server_instance)
 
         # Start the server
-        transport, _ = await osc_server_instance.create_serve_endpoint()
+        _transport, _ = await osc_server_instance.create_serve_endpoint()
 
         logger.info(f"Started OSC listener on {address}:{port}")
         return {

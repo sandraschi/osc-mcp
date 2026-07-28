@@ -291,7 +291,7 @@ class SuperColliderOSC:
         """Set multiple controls on a node."""
         self.n_set(node_id, **controls)
 
-    def load_sound(self, path: str, bufnum: int = None) -> int:
+    def load_sound(self, path: str, bufnum: int | None = None) -> int:
         """Load a sound file into a buffer and return the buffer number."""
         if bufnum is None:
             import random

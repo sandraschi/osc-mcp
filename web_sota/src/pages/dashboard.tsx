@@ -1,5 +1,3 @@
-import { API_BASE } from "../lib/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Activity,
   Beaker,
@@ -13,6 +11,8 @@ import {
   Radio,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { API_BASE } from "../lib/api";
 
 type Health = { status: string; server: string; version: string };
 type Stats = {
@@ -46,8 +46,8 @@ export function Dashboard() {
     const fetchHealth = async () => {
       try {
         const [h, s] = await Promise.all([
-          fetch(API_BASE + "/api/v1/health").then((r) => r.json()),
-          fetch(API_BASE + "/api/v1/stats").then((r) => r.json()),
+          fetch(`${API_BASE}/api/v1/health`).then((r) => r.json()),
+          fetch(`${API_BASE}/api/v1/stats`).then((r) => r.json()),
         ]);
         if (!cancelled) {
           setHealth(h);
@@ -59,7 +59,9 @@ export function Dashboard() {
         if (!cancelled) {
           setErr(e instanceof Error ? e.message : String(e));
           setBackendOk(false);
-          const delay = BACKOFF_INTERVALS[Math.min(attempt, BACKOFF_INTERVALS.length - 1)] * 1000;
+          const delay =
+            BACKOFF_INTERVALS[Math.min(attempt, BACKOFF_INTERVALS.length - 1)] *
+            1000;
           attempt++;
           setTimeout(fetchHealth, delay);
         }
@@ -67,7 +69,9 @@ export function Dashboard() {
     };
 
     fetchHealth();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const targetCount = stats ? Object.keys(stats.targets).length : 0;
@@ -115,7 +119,10 @@ export function Dashboard() {
 
       {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card data-testid="kpi-targets" className="border-slate-800 bg-slate-950/50">
+        <Card
+          data-testid="kpi-targets"
+          className="border-slate-800 bg-slate-950/50"
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-slate-200">
               Available Targets
@@ -130,7 +137,10 @@ export function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card data-testid="kpi-messages" className="border-slate-800 bg-slate-950/50">
+        <Card
+          data-testid="kpi-messages"
+          className="border-slate-800 bg-slate-950/50"
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-slate-200">
               Messages Sent
@@ -145,7 +155,10 @@ export function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card data-testid="kpi-uptime" className="border-slate-800 bg-slate-950/50">
+        <Card
+          data-testid="kpi-uptime"
+          className="border-slate-800 bg-slate-950/50"
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-slate-200">
               Uptime
@@ -158,7 +171,10 @@ export function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card data-testid="kpi-backend" className="border-slate-800 bg-slate-950/50">
+        <Card
+          data-testid="kpi-backend"
+          className="border-slate-800 bg-slate-950/50"
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-slate-200">
               Backend
@@ -178,8 +194,16 @@ export function Dashboard() {
 
       {/* Backend Status Dot */}
       <div data-testid="backend-dot" className="flex items-center gap-2">
-        <span className={`w-2 h-2 rounded-full ${backendOk === null ? "bg-gray-500" : backendOk ? "bg-green-500" : "bg-red-500"} animate-pulse`} />
-        <span className="text-xs text-slate-400">{backendOk === null ? "Connecting..." : backendOk ? "Connected" : "Offline"}</span>
+        <span
+          className={`w-2 h-2 rounded-full ${backendOk === null ? "bg-gray-500" : backendOk ? "bg-green-500" : "bg-red-500"} animate-pulse`}
+        />
+        <span className="text-xs text-slate-400">
+          {backendOk === null
+            ? "Connecting..."
+            : backendOk
+              ? "Connected"
+              : "Offline"}
+        </span>
       </div>
 
       {/* Target Grid */}

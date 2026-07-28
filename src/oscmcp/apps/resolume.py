@@ -177,7 +177,7 @@ class ResolumeArena:
         """
         self.send(f"/composition/layers/{layer}/opacity", float(opacity))
 
-    def toggle_layer_visibility(self, layer: int, visible: bool = None) -> None:
+    def toggle_layer_visibility(self, layer: int, visible: bool | None = None) -> None:
         """Toggle or set the visibility of a layer.
 
         Args:
@@ -256,7 +256,7 @@ class ResolumeArena:
             float(value),
         )
 
-    def toggle_effect_bypass(self, layer: int, effect: int, bypassed: bool = None) -> None:
+    def toggle_effect_bypass(self, layer: int, effect: int, bypassed: bool | None = None) -> None:
         """Toggle or set effect bypass.
 
         Args:

@@ -1,9 +1,9 @@
+import { MessageSquare, Terminal, User, Zap } from "lucide-react";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
-import { MessageSquare, Terminal, User, Zap } from "lucide-react";
-import { useState } from "react";
 
 export function VRChat() {
   const [status, setStatus] = useState<Record<string, unknown> | null>(null);
@@ -28,8 +28,7 @@ export function VRChat() {
 
       let resultStatus = data;
       if (
-        data &&
-        data.content &&
+        data?.content &&
         Array.isArray(data.content) &&
         data.content.length > 0
       ) {

@@ -12,7 +12,6 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Dict, Optional, Tuple
 
 import pytest
 from pythonosc import dispatcher, osc_server, udp_client
@@ -48,7 +47,7 @@ class MCPClient:
         self.writer = writer
         self.request_id = 0
 
-    async def send_request(self, method: str, params: Optional[Dict] = None) -> Dict:
+    async def send_request(self, method: str, params: dict | None = None) -> dict:
         """Send a JSON-RPC request to the server."""
         self.request_id += 1
         request = {
@@ -70,11 +69,11 @@ class MCPClient:
 
         return json.loads(response.decode("utf-8"))
 
-    async def list_tools(self) -> Dict:
+    async def list_tools(self) -> dict:
         """List available tools."""
         return await self.send_request("tools/list")
 
-    async def call_tool(self, tool_name: str, **kwargs) -> Dict:
+    async def call_tool(self, tool_name: str, **kwargs) -> dict:
         """Call a tool by name with the given parameters."""
         return await self.send_request("tools/call", {"name": tool_name, "arguments": kwargs})
 
@@ -107,9 +106,7 @@ class OSCServer:
 
         # Start the OSC server in a separate thread
         def start_server():
-            self.server = osc_server.ThreadingOSCUDPServer(
-                (self.host, self.port), dispatcher=self.dispatcher
-            )
+            self.server = osc_server.ThreadingOSCUDPServer((self.host, self.port), dispatcher=self.dispatcher)
             self.server.serve_forever()
 
         # Start the server in a background thread
@@ -132,7 +129,7 @@ class OSCServer:
         """Clear the list of received messages."""
         self.received_messages = []
 
-    def wait_for_message(self, address: str, timeout: float = 2.0) -> Tuple[str, tuple]:
+    def wait_for_message(self, address: str, timeout: float = 2.0) -> tuple[str, tuple]:
         """Wait for a message with the given address.
 
         Args:
@@ -224,7 +221,7 @@ def mcp_client(mcp_server):
             self.process = process
             self.request_id = 0
 
-        def send_request(self, method: str, params: Optional[Dict] = None) -> Dict:
+        def send_request(self, method: str, params: dict | None = None) -> dict:
             """Send a JSON-RPC request to the server and return the response."""
             self.request_id += 1
             request = {
@@ -246,7 +243,7 @@ def mcp_client(mcp_server):
 
             return json.loads(response_line.strip())
 
-        def call_tool(self, name: str, **kwargs) -> Dict:
+        def call_tool(self, name: str, **kwargs) -> dict:
             """Call a tool by name with the given parameters."""
             return self.send_request("tools/call", {"name": name, "arguments": kwargs})
 

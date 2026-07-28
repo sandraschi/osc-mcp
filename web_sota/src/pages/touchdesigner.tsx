@@ -1,9 +1,9 @@
+import { Layers, Monitor, Terminal } from "lucide-react";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { Layers, Monitor, Terminal } from "lucide-react";
-import { useState } from "react";
 
 export function TouchDesigner() {
   const [status, setStatus] = useState<Record<string, unknown> | null>(null);
@@ -28,8 +28,7 @@ export function TouchDesigner() {
 
       let resultStatus = data;
       if (
-        data &&
-        data.content &&
+        data?.content &&
         Array.isArray(data.content) &&
         data.content.length > 0
       ) {

@@ -1,4 +1,5 @@
 """Test the shared _error_response helper."""
+
 from oscmcp.tools import _error_response
 
 

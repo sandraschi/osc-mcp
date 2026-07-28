@@ -1,5 +1,7 @@
 """Test the FastAPI health endpoints."""
+
 from fastapi.testclient import TestClient
+
 from oscmcp.api.main import app
 
 client = TestClient(app)

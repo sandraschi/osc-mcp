@@ -1,3 +1,5 @@
+import { Activity, ExternalLink, Search, Server } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -7,8 +9,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Activity, ExternalLink, Search, Server } from "lucide-react";
-import { useEffect, useState } from "react";
 
 interface AppRegistryInfo {
   name: string;
@@ -21,10 +21,6 @@ export function Apps() {
   const [apps, setApps] = useState<AppRegistryInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-
-  useEffect(() => {
-    fetchApps();
-  }, []);
 
   const fetchApps = async () => {
     setLoading(true);
@@ -72,6 +68,10 @@ export function Apps() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    void fetchApps();
+  }, []);
 
   const filteredApps = apps.filter(
     (app) =>

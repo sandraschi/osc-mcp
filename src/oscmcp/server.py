@@ -860,7 +860,7 @@ def show_recent_messages(
     if port in osc_servers:
         osc_server_instance = osc_servers[port]
         messages = osc_server_instance.get_received_messages(limit=limit)
-        for idx, m in enumerate(messages):
+        for _idx, m in enumerate(messages):
             import datetime
 
             time_str = datetime.datetime.fromtimestamp(m.get("timestamp", 0)).strftime("%H:%M:%S.%f")[:-3]
