@@ -24,7 +24,7 @@ Write-Host "Waiting for backend on port $BackendPort..." -ForegroundColor Yellow
 for ($i = 0; $i -lt 60; $i++) {
     try {
         $r = Invoke-WebRequest -Uri "http://127.0.0.1:$BackendPort/api/v1/health" -TimeoutSec 2 -UseBasicParsing -ErrorAction SilentlyContinue
-        if ($r.StatusCode -eq 200) { Write-Host "Backend ready ✓" -ForegroundColor Green; break }
+        if ($r.StatusCode -eq 200) { Write-Host "Backend ready OK" -ForegroundColor Green; break }
     } catch {}
     Start-Sleep 1
 }
