@@ -92,7 +92,7 @@ async def status_resource() -> dict:
     return {
         "status": "ok",
         "listeners": len(_osc_transports),
-        "tool_count": len((getattr(server, "_tool_manager", None) and server._tool_manager.tools) or []),
+        "tool_count": len(await server.list_tools()),
     }
 
 

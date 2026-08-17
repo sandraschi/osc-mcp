@@ -64,11 +64,8 @@ async def stats():
 @app.get("/api/v1/diagnostics")
 async def diagnostics():
     """Return server diagnostics: tool count, version, system info."""
-    tool_count = 0
-    if hasattr(mcp_server, "_tool_manager") and hasattr(mcp_server._tool_manager, "tools"):
-        tool_count = len(mcp_server._tool_manager.tools)
-    elif hasattr(mcp_server, "_tools"):
-        tool_count = len(mcp_server._tools)
+    tools = await mcp_server.list_tools()
+    tool_count = len(tools)
 
     return {
         "status": "ok",
@@ -91,9 +88,9 @@ async def capabilities():
     """Return server capabilities for SOTA discovery."""
     from oscmcp.server import server as mcp_srv
 
-    tool_count = 0
-    if hasattr(mcp_srv, "_tool_manager") and hasattr(mcp_srv._tool_manager, "tools"):
-        tool_count = len(mcp_srv._tool_manager.tools)
+    tools = await mcp_srv.list_tools()
+    tool_count = len(tools)
+
     return {
         "server": "OSC-MCP",
         "version": "0.3.2",

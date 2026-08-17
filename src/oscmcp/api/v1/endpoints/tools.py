@@ -47,11 +47,8 @@ async def list_tools() -> list[ToolInfo]:
         tools: list[ToolInfo] = []
 
         # FastMCP 2.14.3 tool manager access
-        tool_sources = []
-        if hasattr(server, "_tool_manager") and hasattr(server._tool_manager, "tools"):
-            tool_sources = list(server._tool_manager.tools.values())
-        elif hasattr(server, "_tools"):
-            tool_sources = list(server._tools.values())
+        # FastMCP 3.4+ public async API (private attrs removed)
+        tool_sources = await server.list_tools()
 
         for tool in tool_sources:
             params = []
