@@ -1,4 +1,4 @@
-"""Skills API — expose MCP skill preprompts over REST."""
+"""Skills API - expose MCP skill preprompts over REST."""
 
 import logging
 from pathlib import Path

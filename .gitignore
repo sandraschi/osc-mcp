@@ -206,3 +206,6 @@ native/gen/
 
 # Environment (real .env is personal, only .env.example should exist)
 .env
+
+# quality-check reports
+reports/

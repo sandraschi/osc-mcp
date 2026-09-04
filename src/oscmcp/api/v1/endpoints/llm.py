@@ -1,4 +1,4 @@
-"""LLM discovery API — probe local Ollama instance."""
+"""LLM discovery API - probe local Ollama instance."""
 
 import asyncio
 import logging

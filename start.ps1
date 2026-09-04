@@ -32,7 +32,7 @@ if ($SkipFrontend) { return }
 
 # Start frontend
 $WebRoot = Join-Path $ScriptRoot "web_sota"
-Start-Process -NoNewWindow -FilePath "npx" -ArgumentList "vite --port $FrontendPort --host" -WorkingDirectory $WebRoot
+Start-Process -NoNewWindow -FilePath "cmd.exe" -ArgumentList "/c","npx vite --port $FrontendPort --host" -WorkingDirectory $WebRoot
 
 # Auto-open browser
 if (-not $NoBrowser) {

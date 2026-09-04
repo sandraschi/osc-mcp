@@ -55,7 +55,7 @@ export function ApiDocsPage() {
           <CardContent className="text-xs text-slate-400 space-y-1">
             <code className="block text-purple-400">GET /api/v1/skills/</code>
             <code className="block text-purple-400">
-              GET /api/v1/skills/{name}
+              {"GET /api/v1/skills/{name}"}
             </code>
             <code className="block text-purple-400">
               GET /api/v1/llm/discover

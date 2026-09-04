@@ -1307,8 +1307,10 @@ dev = [
 dev = [
     { name = "httpx" },
     { name = "pre-commit" },
+    { name = "pyinstaller" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
+    { name = "pywin32" },
     { name = "ruff" },
 ]
 
@@ -1339,8 +1341,10 @@ provides-extras = ["dev"]
 dev = [
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "pre-commit", specifier = ">=4.6.1" },
+    { name = "pyinstaller", specifier = ">=6.21.0" },
     { name = "pytest", specifier = ">=9.0.2" },
     { name = "pytest-asyncio", specifier = ">=1.3.0" },
+    { name = "pywin32", specifier = ">=311" },
     { name = "ruff", specifier = ">=0.16.0,<0.17" },
 ]
 
