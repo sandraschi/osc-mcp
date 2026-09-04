@@ -161,18 +161,12 @@ async def main():
     """Main function."""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Play Frère Jacques continuously - perfect for patching!"
-    )
+    parser = argparse.ArgumentParser(description="Play Frère Jacques continuously - perfect for patching!")
     parser.add_argument("--module-id", type=int, default=1, help="VCO module ID (default: 1)")
-    parser.add_argument(
-        "--param-id", type=int, default=0, help="Frequency parameter ID (default: 0)"
-    )
+    parser.add_argument("--param-id", type=int, default=0, help="Frequency parameter ID (default: 0)")
     parser.add_argument("--port", type=int, default=10001, help="OSC port (default: 10001)")
     parser.add_argument("--tempo", type=int, default=120, help="Tempo in BPM (default: 120)")
-    parser.add_argument(
-        "--loops", type=int, default=None, help="Number of loops (default: infinite)"
-    )
+    parser.add_argument("--loops", type=int, default=None, help="Number of loops (default: infinite)")
     args = parser.parse_args()
 
     client = OSCClient("127.0.0.1", args.port)

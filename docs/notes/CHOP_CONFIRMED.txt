@@ -21,4 +21,3 @@ Create a temporary operator to verify:
 3. If connection works, oscin1 output is working!
 
 The circle is definitely there - it's a core CHOP feature.
-

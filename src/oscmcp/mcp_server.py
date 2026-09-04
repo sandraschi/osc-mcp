@@ -1,16 +1,16 @@
-"""OSC-MCP Server with stdio transport for MCP clients.
+"""OSC-MCP app-manager tools (Ableton, VCV Rack, TouchDesigner, VRChat, SuperCollider,
+Max/MSP, Resolume, Pure Data, audio workflows, OSC recording, music orchestration).
 
-This module implements a FastMCP 2.13 compliant server that provides OSC functionality
-through the MCP protocol over stdio, making it compatible with MCP clients like Claude or Windsurf.
+Imported for side effects by `oscmcp.server` — every `@server.tool()` below registers
+onto the shared FastMCP instance from `.server`. Do not run this module directly or as
+`__main__`; process-level stdio binary-mode setup and logging config belong to the real
+entry points (`run_server.py`, `oscmcp.__main__`), not here — a second, competing
+stdout/logging setup in this module previously caused it to be dropped from the import
+graph entirely (osc-mcp quality-check, 2026-09-04).
 """
 
-# CRITICAL: Set stdio to binary mode on Windows for Antigravity IDE compatibility
-# Antigravity IDE is strict about JSON-RPC protocol and interprets trailing \r as "invalid trailing data"
-# This must happen BEFORE any imports that might write to stdout
 import asyncio
 import logging
-import os
-import sys
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -19,74 +19,10 @@ from .osc.client import OSCClient
 from .osc.server import OSCServer
 from .transport import run_server
 
-if os.name == "nt":  # Windows only
-    try:
-        # Force binary mode for stdin/stdout to prevent CRLF conversion
-        import msvcrt
-
-        msvcrt.setmode(sys.stdin.fileno(), os.O_BINARY)
-        msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
-    except (OSError, AttributeError):
-        # Fallback: just ensure no CRLF conversion
-        pass
-
-
-# DevNullStdout class for stdio mode suppression
-class DevNullStdout:
-    def __init__(self, original_stdout):
-        self.original_stdout = original_stdout
-
-    def write(self, data):
-        # Suppress all writes to stdout during initialization
-        pass
-
-    def flush(self):
-        pass
-
-    def restore(self):
-        sys.stdout = self.original_stdout
-
-
-# Set up logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
-
-# Detect if we're running in stdio mode (for MCP)
-_is_stdio_mode = (
-    len(sys.argv) == 1  # No arguments provided
-    or (len(sys.argv) == 2 and sys.argv[1] == "-m")  # Just module flag
-    or any(arg in ["--stdio", "stdio"] for arg in sys.argv)  # Explicit stdio flag
-)
-
-# Suppress stdout during FastMCP initialization in stdio mode
-if _is_stdio_mode:
-    # Save original getLogger function
-    original_getLogger = logging.getLogger
-
-    # Redirect stdout to prevent initialization output
-    sys.stdout = DevNullStdout(sys.stdout)
 
 # Create FastMCP instance with stdio transport
 from .server import _DESTRUCTIVE, _MUTATING, _README_ONLY, server
-
-# CRITICAL: After server initialization, restore stdout for stdio mode
-# This allows the server to communicate via JSON-RPC while preventing initialization logging
-if _is_stdio_mode:
-    if hasattr(sys.stdout, "restore"):
-        sys.stdout.restore()
-        # Now we can safely write to stdout for JSON-RPC communication
-
-    # Restore the original logging functionality
-    logging.getLogger = original_getLogger
-
-    # Set up proper logging to stderr only (not stdout)
-    import logging
-
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        stream=sys.stderr,  # Critical: log to stderr, not stdout
-    )
 
 # Store OSC clients and servers
 osc_clients: dict[str, OSCClient] = {}

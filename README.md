@@ -53,14 +53,21 @@ See [INSTALL.md](INSTALL.md) for manual setup and Claude Desktop configuration.
 
 ## Tools
 
+47 tools, verified against `server.list_tools()` (see `tests/test_tool_registration.py`):
+
 | Category | Tools |
 |----------|-------|
-| **Core OSC** | `send_osc`, `start_osc_server`, `stop_osc_server`, `get_received_messages`, `get_latest_message`, `get_osc_server_stats`, `clear_osc_message_buffer`, `test_osc_echo` |
+| **Core OSC** | `send_osc`, `send_osc_message`, `start_osc_server`, `start_osc_listener`, `stop_osc_server`, `get_received_messages`, `get_latest_message`, `get_osc_server_stats`, `clear_osc_message_buffer`, `test_osc_echo`, `scan_subnet_osc` |
 | **Discovery** | `oscquery_list_services`, `oscquery_get_parameters` |
-| **MIDI Bridge** | `get_midi_ports`, `start_midi_bridge`, `add_midi_mapping` |
-| **Reactive** | `register_reactive_trigger` |
-| **Managers** | `ableton_manager`, `vcv_manager`, `touchdesigner_manager`, `vrchat_manager`, `supercollider_manager`, `maxmsp_manager`, `resolume_manager`, `puredata_manager`, `audio_workflow_manager`, `osc_recorder_manager`, `music_orchestrator` |
-| **Workflows** | `list_arazzo_workflows`, `execute_osc_workflow`, `generate_osc_workflow` |
+| **MIDI Bridge** | `get_midi_ports`, `start_midi_bridge`, `stop_midi_bridge`, `add_midi_mapping`, `get_midi_mappings` |
+| **Reactive** | `register_reactive_trigger`, `get_reactive_triggers`, `remove_reactive_trigger` |
+| **Managers** | `ableton_manager`, `vcv_manager`, `touchdesigner_manager`, `vrchat_manager`, `supercollider_manager`, `maxmsp_manager`, `resolume_manager`, `puredata_manager`, `audio_workflow_manager`, `osc_recorder_manager`, `music_orchestrator`, `music_loader_manager`, `obs_manager`, `qlab_manager`, `set_vrchat_expression`, `trigger_vrchat_haptic_lfo` |
+| **Workflows** | `list_arazzo_workflows`, `execute_osc_workflow`, `generate_osc_workflow`, `save_workflow_descriptor` |
+| **Dashboard cards** | `show_active_mappings`, `show_discovered_devices`, `show_recent_messages`, `show_available_workflows`, `show_control_faders`, `show_osc_oscilloscope` |
+
+`send_osc`/`send_osc_message` and `start_osc_server`/`start_osc_listener` are two independent
+implementations (older + newer code paths, both wired) rather than aliases — pick one per
+workflow rather than mixing them for the same port/session.
 
 ## Stack
 
@@ -97,4 +104,3 @@ To control OBS Studio over OSC without installing native C++ plugins, you can ru
 # Starts the OSC UDP receiver on port 7000 and connects to OBS WebSocket on port 4455
 .\scripts\start-obs-bridge.ps1 -ObsPassword "your_obs_websocket_password"
 ```
-

@@ -5,8 +5,8 @@ Open Sound Control Model Context Protocol (OSC-MCP) server built with FastMCP 3.
 ## Key Information
 - **Main Entry Point**: `python -m oscmcp`
 - **MCPB Package**: `dist/oscmcp.mcpb`
-- **Dashboard Port**: `10767`
-- **API Base**: `http://localhost:10767`
+- **Dashboard Port (frontend)**: `10766`
+- **API Base (backend)**: `http://localhost:10767`
 
 ## Module Structure
 - `src/oscmcp/server.py`: Core FastMCP server instance and tool declarations.

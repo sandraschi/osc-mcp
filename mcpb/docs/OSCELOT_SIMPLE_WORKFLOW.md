@@ -53,30 +53,30 @@ await vcv_manager("set_parameter", module_id=3, param_id=0, value=0.7)
 
 ## What You DON'T Need to Do
 
-❌ Configure controller slots (dots)  
-❌ Set OSC address patterns (`/fader`, `/button`, etc.)  
-❌ Assign Controller IDs  
-❌ Link parameters to slots  
-❌ Understand the tag system  
-❌ Fight with right-click menus  
+❌ Configure controller slots (dots)
+❌ Set OSC address patterns (`/fader`, `/button`, etc.)
+❌ Assign Controller IDs
+❌ Link parameters to slots
+❌ Understand the tag system
+❌ Fight with right-click menus
 
 ## What You DO Need
 
-✅ Map parameters (click Map, click knob)  
-✅ Note Module ID and Parameter ID  
-✅ Use `/param` format or OSC-MCP tools  
+✅ Map parameters (click Map, click knob)
+✅ Note Module ID and Parameter ID
+✅ Use `/param` format or OSC-MCP tools
 
 ## Quick Reference
 
-**OSCelot receives on port:** 10001  
-**OSCelot sends on port:** 10002 (optional)  
+**OSCelot receives on port:** 10001
+**OSCelot sends on port:** 10002 (optional)
 
 **Direct parameter format:**
 ```
 /param [ModuleID, ParamID, Value]
 ```
 
-**Module IDs start at 1** (first module = 1, second = 2, etc.)  
+**Module IDs start at 1** (first module = 1, second = 2, etc.)
 **Parameter IDs vary** (check OSCelot's display)
 
 ## Example: Complete Workflow
@@ -109,9 +109,8 @@ We're using mode #2 and ignoring mode #1 entirely!
 
 **Don't know the IDs?**
 - Look at OSCelot's parameter list
-- Or use `read_oscelot_mapping.py` script to discover them
+- Or use `scripts/debug/read_oscelot_mapping.py` script to discover them
 
 ## Bottom Line
 
 **Ignore OSCelot's confusing UI.** Just map parameters and use `/param` format. Life's too short to fight with dots and slots!
-

@@ -13,4 +13,3 @@ NOW CONNECT AND TEST:
 4. Watch constant1 value change to 0.5
 
 The green color is just your TD theme - the operator works!
-

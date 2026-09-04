@@ -6,7 +6,7 @@ NEEDED:  OSC In CHOP (blue, channel operator)
 
 WHY THIS MATTERS:
 - DATs are for text/data manipulation (green)
-- CHOPs are for audio/video signals (blue) 
+- CHOPs are for audio/video signals (blue)
 - COMPs need CHOP inputs, not DAT inputs
 
 CORRECT SETUP:
@@ -15,4 +15,3 @@ CORRECT SETUP:
 3. Connect CHOP output -> COMP input
 
 The blue CHOP will have the circle on the RIGHT side!
-

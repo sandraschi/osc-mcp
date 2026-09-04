@@ -1,7 +1,7 @@
 # osc-mcp - Project Assessment
 
-**Category**: MCP Server  
-**Assessment Date**: 2026-07-11  
+**Category**: MCP Server
+**Assessment Date**: 2026-07-11
 **Status**: Verified Production Ready (SOTA v12.2)
 
 ---
@@ -52,6 +52,22 @@
 - [FastMCP 3.4 Migration Guide](../FASTMCP_3.4_MIGRATION.md)
 - [MCPB Packaging Standards](../MCPB_PACKAGING_STANDARDS.md)
 - [Monitoring Standards](../monitoring/README.md)
+
+---
+
+## ⚠️ Correction (2026-09-04)
+
+The 2026-07-11 claims above — "Unified tool registration (All 25 tools from mcp_server and
+server registered on main instance)" and "DONE: Integrate legacy tools from monolithic
+server.py" — were **false** as of 2026-09-04: `server.py` imported exactly one symbol
+(`osc_servers`) from `mcp_server.py`; none of its 11 `@server.tool()`-decorated app managers
+(Ableton, VCV Rack, TouchDesigner, SuperCollider, Max/MSP, Resolume, Pure Data, audio workflow,
+OSC recorder, music orchestrator/loader) were reachable via `server.list_tools()`, and 6 Prefab
+dashboard tools crashed on every call (`DataTableColumn(name=, label=)` vs. the installed
+`prefab_ui` 0.19.1's real `key=`/`header=` fields). Either this regressed after 07-11 or the
+claim was never actually verified against a running server. Both are now fixed and covered by
+`tests/test_tool_registration.py`; live server now reports 47 tools. Full writeup:
+`reports/quality-osc-mcp-2026-09-04.md`.
 
 ---
 

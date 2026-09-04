@@ -208,20 +208,12 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Play Frère Jacques with note gating")
     parser.add_argument("--vco-module", type=int, default=1, help="VCO module ID (default: 1)")
-    parser.add_argument(
-        "--vco-param", type=int, default=0, help="VCO frequency parameter ID (default: 0)"
-    )
-    parser.add_argument(
-        "--vca-module", type=int, default=None, help="VCA module ID (optional, for gating)"
-    )
-    parser.add_argument(
-        "--vca-param", type=int, default=0, help="VCA level parameter ID (default: 0)"
-    )
+    parser.add_argument("--vco-param", type=int, default=0, help="VCO frequency parameter ID (default: 0)")
+    parser.add_argument("--vca-module", type=int, default=None, help="VCA module ID (optional, for gating)")
+    parser.add_argument("--vca-param", type=int, default=0, help="VCA level parameter ID (default: 0)")
     parser.add_argument("--port", type=int, default=10001, help="OSC port (default: 10001)")
     parser.add_argument("--tempo", type=int, default=120, help="Tempo in BPM (default: 120)")
-    parser.add_argument(
-        "--no-gating", action="store_true", help="Disable gating (just rapid frequency changes)"
-    )
+    parser.add_argument("--no-gating", action="store_true", help="Disable gating (just rapid frequency changes)")
     args = parser.parse_args()
 
     asyncio.run(

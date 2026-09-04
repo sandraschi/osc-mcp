@@ -117,12 +117,8 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Query VCV Rack modules")
-    parser.add_argument(
-        "--listen-port", type=int, default=10002, help="Port to listen on (default: 10002)"
-    )
-    parser.add_argument(
-        "--query-port", type=int, default=10001, help="Port to query (default: 10001)"
-    )
+    parser.add_argument("--listen-port", type=int, default=10002, help="Port to listen on (default: 10002)")
+    parser.add_argument("--query-port", type=int, default=10001, help="Port to query (default: 10001)")
     args = parser.parse_args()
 
     asyncio.run(query_vcv_modules(listen_port=args.listen_port, query_port=args.query_port))

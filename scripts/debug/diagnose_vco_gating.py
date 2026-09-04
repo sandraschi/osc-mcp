@@ -93,6 +93,4 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int, default=10001, help="OSC port (default: 10001)")
     args = parser.parse_args()
 
-    asyncio.run(
-        test_gating_methods(module_id=args.module_id, param_id=args.param_id, port=args.port)
-    )
+    asyncio.run(test_gating_methods(module_id=args.module_id, param_id=args.param_id, port=args.port))

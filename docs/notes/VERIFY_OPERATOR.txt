@@ -29,4 +29,3 @@ IF IT'S A CHOP (right):
 ALTERNATIVE: Use OSC In CHOP -> Constant CHOP (both CHOPs)
 - Easier to connect CHOP to CHOP
 - Same functionality, simpler connection
-

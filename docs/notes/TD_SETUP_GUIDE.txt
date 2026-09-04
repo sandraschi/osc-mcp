@@ -9,7 +9,7 @@ TOUCHDESIGNER OSC SETUP GUIDE
 COMP TAB:
 - Constant (under 'Basic' section)
 
-CHOP TAB:  
+CHOP TAB:
 - OSC In (under 'Network' section)
 
 4. Create operators in this order:
@@ -34,4 +34,3 @@ ALTERNATIVE: Use a simple Constant CHOP instead:
 - CHOP tab -> Constant (under 'Basic')
 - This creates a CHOP that outputs a constant value
 - Connect OSC In -> Constant CHOP
-

@@ -157,9 +157,7 @@ async def interactive_control(module_id=1, param_id=0, port=10001):
                     print(f"Frequency {freq} Hz is out of range (20-20000 Hz)")
             except ValueError:
                 print(f"Unknown command: {command}")
-                print(
-                    "Type 'help' for commands, or a note name (e.g., 'C4') or frequency (e.g., '440')"
-                )
+                print("Type 'help' for commands, or a note name (e.g., 'C4') or frequency (e.g., '440')")
 
         except KeyboardInterrupt:
             print("\nGoodbye!")

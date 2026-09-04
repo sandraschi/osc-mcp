@@ -52,8 +52,6 @@ async def lifespan(app):
     await dynamic_mapper.stop()
 
 
-# Import legacy/integration tools from mcp_server
-
 # Store OSC server instances and transports for cleanup
 _osc_transports: list[Any] = []
 
@@ -61,6 +59,13 @@ _osc_transports: list[Any] = []
 _README_ONLY = {"readonly": True}
 _MUTATING = {}
 _DESTRUCTIVE = {"destructive": True}
+
+# Register app-manager tools (Ableton, VCV Rack, TouchDesigner, VRChat, SuperCollider,
+# Max/MSP, Resolume, Pure Data, audio workflows, OSC recording, music orchestration).
+# mcp_server imports `server` + the annotation constants above, so this must come after
+# they're defined. Side-effect import: every @server.tool() in mcp_server.py registers
+# onto the `server` instance created above.
+from . import mcp_server as _mcp_server  # noqa: F401
 
 
 # Pydantic models for input validation (FastMCP 2.13)
@@ -791,12 +796,12 @@ def show_active_mappings() -> PrefabApp:
 
     with PrefabApp() as app:
         DataTable(
-            data=mappings_data,
+            rows=mappings_data,
             columns=[
-                DataTableColumn(name="type", label="Mapping Type"),
-                DataTableColumn(name="source", label="Source Signal"),
-                DataTableColumn(name="target", label="Target Destination"),
-                DataTableColumn(name="details", label="Configuration Details"),
+                DataTableColumn(key="type", header="Mapping Type"),
+                DataTableColumn(key="source", header="Source Signal"),
+                DataTableColumn(key="target", header="Target Destination"),
+                DataTableColumn(key="details", header="Configuration Details"),
             ],
         )
     return app
@@ -830,12 +835,12 @@ def show_discovered_devices() -> PrefabApp:
 
     with PrefabApp() as app:
         DataTable(
-            data=data,
+            rows=data,
             columns=[
-                DataTableColumn(name="name", label="Device Name"),
-                DataTableColumn(name="host", label="IP Address"),
-                DataTableColumn(name="osc_port", label="OSC Port"),
-                DataTableColumn(name="ws_port", label="OSCQuery WS Port"),
+                DataTableColumn(key="name", header="Device Name"),
+                DataTableColumn(key="host", header="IP Address"),
+                DataTableColumn(key="osc_port", header="OSC Port"),
+                DataTableColumn(key="ws_port", header="OSCQuery WS Port"),
             ],
         )
     return app
@@ -878,12 +883,12 @@ def show_recent_messages(
 
     with PrefabApp() as app:
         DataTable(
-            data=data,
+            rows=data,
             columns=[
-                DataTableColumn(name="time", label="Timestamp"),
-                DataTableColumn(name="address", label="OSC Address"),
-                DataTableColumn(name="values", label="Values"),
-                DataTableColumn(name="age", label="Age"),
+                DataTableColumn(key="time", header="Timestamp"),
+                DataTableColumn(key="address", header="OSC Address"),
+                DataTableColumn(key="values", header="Values"),
+                DataTableColumn(key="age", header="Age"),
             ],
         )
     return app
@@ -927,12 +932,12 @@ def show_available_workflows() -> PrefabApp:
 
     with PrefabApp() as app:
         DataTable(
-            data=found_workflows,
+            rows=found_workflows,
             columns=[
-                DataTableColumn(name="id", label="Workflow ID"),
-                DataTableColumn(name="title", label="Workflow Title"),
-                DataTableColumn(name="description", label="Description Summary"),
-                DataTableColumn(name="steps", label="Steps Count"),
+                DataTableColumn(key="id", header="Workflow ID"),
+                DataTableColumn(key="title", header="Workflow Title"),
+                DataTableColumn(key="description", header="Description Summary"),
+                DataTableColumn(key="steps", header="Steps Count"),
             ],
         )
     return app
@@ -1098,12 +1103,12 @@ def show_control_faders() -> PrefabApp:
     ]
     with PrefabApp() as app:
         DataTable(
-            data=controls,
+            rows=controls,
             columns=[
-                DataTableColumn(name="control", label="Control Name"),
-                DataTableColumn(name="type", label="Control Type"),
-                DataTableColumn(name="address", label="OSC Target Path"),
-                DataTableColumn(name="current_value", label="Current Value"),
+                DataTableColumn(key="control", header="Control Name"),
+                DataTableColumn(key="type", header="Control Type"),
+                DataTableColumn(key="address", header="OSC Target Path"),
+                DataTableColumn(key="current_value", header="Current Value"),
             ],
         )
     return app
@@ -1130,11 +1135,11 @@ def show_osc_oscilloscope() -> PrefabApp:
         )
     with PrefabApp() as app:
         DataTable(
-            data=intensity_data,
+            rows=intensity_data,
             columns=[
-                DataTableColumn(name="channel", label="OSC Channel"),
-                DataTableColumn(name="activity", label="Signal Level Monitor"),
-                DataTableColumn(name="status", label="Channel Status"),
+                DataTableColumn(key="channel", header="OSC Channel"),
+                DataTableColumn(key="activity", header="Signal Level Monitor"),
+                DataTableColumn(key="status", header="Channel Status"),
             ],
         )
     return app

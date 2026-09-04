@@ -78,9 +78,7 @@ async def listen_for_mapping(listen_port=10002, duration=30):
         for (module_id, param_id), values in sorted(mappings.items()):
             value_list = sorted(values)
             if len(value_list) > 5:
-                value_str = (
-                    f"{value_list[0]:.4f} ... {value_list[-1]:.4f} ({len(value_list)} values)"
-                )
+                value_str = f"{value_list[0]:.4f} ... {value_list[-1]:.4f} ({len(value_list)} values)"
             else:
                 value_str = ", ".join(f"{v:.4f}" for v in value_list)
             print(f"   {module_id:2d}    |    {param_id:2d}    | {value_str}")
@@ -105,12 +103,8 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Read OSCelot mapping")
-    parser.add_argument(
-        "--listen-port", type=int, default=10002, help="Port to listen on (default: 10002)"
-    )
-    parser.add_argument(
-        "--duration", type=int, default=30, help="Listen duration in seconds (default: 30)"
-    )
+    parser.add_argument("--listen-port", type=int, default=10002, help="Port to listen on (default: 10002)")
+    parser.add_argument("--duration", type=int, default=30, help="Listen duration in seconds (default: 30)")
     args = parser.parse_args()
 
     asyncio.run(listen_for_mapping(listen_port=args.listen_port, duration=args.duration))

@@ -30,7 +30,7 @@ POSSIBLE CAUSES & SOLUTIONS:
    - If it says 'oscout1', you have the wrong operator
 
 DEBUG STEPS:
-1. Right-click OSC operator -> 'View Parameter' 
+1. Right-click OSC operator -> 'View Parameter'
 2. Should see 'Port' parameter = 9000
 3. If no parameters show, wrong operator type
 
@@ -38,4 +38,3 @@ If still stuck, tell me:
 - What does the operator name say at the top?
 - What color/shape is the box?
 - Can you right-click it and see a menu?
-

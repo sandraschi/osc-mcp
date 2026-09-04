@@ -11,7 +11,7 @@ Visual connection:
 
 What this does:
 1. OSC In CHOP receives OSC messages from Python
-2. OSC In CHOP outputs the received values 
+2. OSC In CHOP outputs the received values
 3. Constant operator receives those values and displays them
 
 Without connection: OSC messages arrive but nothing changes visually
@@ -23,4 +23,3 @@ TEST IT:
 3. Watch the Constant operator's value change to 0.5
 
 The wire is what makes the magic happen! ⚡
-

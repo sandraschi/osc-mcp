@@ -25,4 +25,3 @@ ALTERNATIVE: Use keyboard shortcut
 - Press TAB key to open dialog
 - Type 'chop' then press TAB to switch to CHOP tab
 - Type 'osc in' and it should appear
-

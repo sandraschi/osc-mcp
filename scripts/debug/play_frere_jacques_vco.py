@@ -171,15 +171,11 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Play Frère Jacques with VCO")
     parser.add_argument("--module-id", type=int, default=1, help="VCO module ID (default: 1)")
-    parser.add_argument(
-        "--param-id", type=int, default=0, help="Frequency parameter ID (default: 0)"
-    )
+    parser.add_argument("--param-id", type=int, default=0, help="Frequency parameter ID (default: 0)")
     parser.add_argument("--port", type=int, default=10001, help="OSC port (default: 10001)")
     parser.add_argument("--tempo", type=int, default=120, help="Tempo in BPM (default: 120)")
     args = parser.parse_args()
 
     asyncio.run(
-        play_frere_jacques_vco(
-            module_id=args.module_id, param_id=args.param_id, port=args.port, tempo=args.tempo
-        )
+        play_frere_jacques_vco(module_id=args.module_id, param_id=args.param_id, port=args.port, tempo=args.tempo)
     )
