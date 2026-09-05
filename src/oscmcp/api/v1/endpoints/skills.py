@@ -67,6 +67,11 @@ _SKILLS_MANIFEST = {
         "title": "OBS Studio Expert",
         "description": "The OSC-to-obs-websocket bridge architecture and obs_manager's operations.",
     },
+    "reaper-expert": {
+        "name": "reaper-expert",
+        "title": "REAPER Expert",
+        "description": "REAPER's real default OSC pattern config and osc-mcp's narrow cross-app-sync usage of it (see reaper-mcp for full REAPER automation).",
+    },
 }
 
 

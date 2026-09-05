@@ -2333,7 +2333,9 @@ async def music_orchestrator(
         # Step 4: Configure REAPER (if available) for additional processing
         if sync_apps:
             reaper_results = []
-            reaper_results.append(await send_osc("127.0.0.1", 8000, "/tempo", [tempo or 120.0]))
+            # /tempo (bare) is REAPER's *normalized* 0.0-1.0 tempo control per its
+            # own default OSC pattern config - /tempo/raw takes an actual BPM value.
+            reaper_results.append(await send_osc("127.0.0.1", 8000, "/tempo/raw", [tempo or 120.0]))
             reaper_results.append(await send_osc("127.0.0.1", 8000, "/track/1/volume", [0.8]))
             results["steps"].append({"step": "reaper_sync", "status": "success", "results": reaper_results})
 
@@ -2699,8 +2701,9 @@ async def audio_workflow_manager(
             result = await send_osc(vcv_host, vcv_port, "/param", [module_id, 0, bpm_normalized])
             results["operations"].append({"app": "vcv_rack", "operation": "set_bpm", "result": result})
 
-        # Sync to REAPER
-        result = await send_osc(reaper_host, reaper_port, "/tempo", [bpm])
+        # Sync to REAPER - /tempo (bare) is normalized 0.0-1.0 per REAPER's own
+        # default OSC pattern config; /tempo/raw takes an actual BPM value.
+        result = await send_osc(reaper_host, reaper_port, "/tempo/raw", [bpm])
         results["operations"].append({"app": "reaper", "operation": "set_tempo", "result": result})
 
         results["message"] = f"Synced tempo {bpm} BPM across all applications"
@@ -2732,8 +2735,13 @@ async def audio_workflow_manager(
         result = await send_osc(vcv_host, vcv_port, "/transport/reset", [])
         results["operations"].append({"app": "vcv_rack", "operation": "reset_transport", "result": result})
 
-        # Reset REAPER transport (this might need REAPER-specific command)
-        result = await send_osc(reaper_host, reaper_port, "/rewind", [])
+        # Reset REAPER transport - /rewind is a hold-to-rewind gesture (REAPER's
+        # default OSC config: "b/rewind", sends 1 to begin rewinding, 0 to stop),
+        # not a jump-to-start action; REAPER's OSC protocol has no dedicated
+        # "reset to start" address. The real fix is REAPER's generic action-by-ID
+        # mechanism ("i/action" in its own OSC config): action 40042 is "Transport:
+        # Go to start of project", confirmed against REAPER's own action list.
+        result = await send_osc(reaper_host, reaper_port, "/action", [40042])
         results["operations"].append({"app": "reaper", "operation": "reset_position", "result": result})
 
         results["message"] = "Reset all applications to beginning"
