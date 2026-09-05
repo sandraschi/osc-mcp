@@ -6,7 +6,6 @@ of 'osc' and its variations with 'osc' equivalents across all text files.
 """
 
 import os
-import sys
 
 REPLACEMENTS = [
     # Specific project name formatting
@@ -16,21 +15,17 @@ REPLACEMENTS = [
     ("OSC", "OSC"),
     ("OSC", "OSC"),
     ("OSC", "OSC"),
-    ("Osc", "Osc")
+    ("Osc", "Osc"),
 ]
 
-ALLOWED_EXTENSIONS = {
-    ".md", ".py", ".txt", ".json", ".toml", ".ps1", ".just", ".spec", ".yml", ".yaml"
-}
+ALLOWED_EXTENSIONS = {".md", ".py", ".txt", ".json", ".toml", ".ps1", ".just", ".spec", ".yml", ".yaml"}
 
-EXCLUDED_DIRS = {
-    ".git", ".venv", "node_modules", "dist", "build", "target"
-}
+EXCLUDED_DIRS = {".git", ".venv", "node_modules", "dist", "build", "target"}
 
 
 def process_file(filepath: str) -> None:
     try:
-        with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
+        with open(filepath, encoding="utf-8", errors="ignore") as f:
             content = f.read()
 
         new_content = content

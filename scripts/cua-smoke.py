@@ -124,6 +124,7 @@ def log_warn(msg: str):
 try:
     import pywinauto
     import pywinauto.findwindows
+
     _HAS_PYWAUTO = True
 except ImportError:
     _HAS_PYWAUTO = False
@@ -163,7 +164,11 @@ def cua_find_window(title_re: str = "") -> dict | None:
         rect = win.rectangle()
         w = rect.width if isinstance(rect.width, int) else rect.width()
         h = rect.height if isinstance(rect.height, int) else rect.height()
-        return {"handle": handle, "title": win.window_text(), "rect": {"left": rect.left, "top": rect.top, "width": w, "height": h}}
+        return {
+            "handle": handle,
+            "title": win.window_text(),
+            "rect": {"left": rect.left, "top": rect.top, "width": w, "height": h},
+        }
     except Exception:
         return None
 
@@ -200,12 +205,15 @@ def cua_ocr_text(window_handle: int = 0, image_path: str = "") -> str:
     """Run OCR on a window screenshot. Returns text."""
     try:
         import pytesseract
+
         pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
         if image_path and os.path.exists(image_path):
             from PIL import Image
+
             return pytesseract.image_to_string(Image.open(image_path))
         if window_handle:
             from PIL import Image
+
             capture = cua_screenshot(window_handle, f"{image_path or 'capture'}.png")
             if capture and os.path.exists(capture):
                 return pytesseract.image_to_string(Image.open(capture))
@@ -218,6 +226,7 @@ def cua_click(window_handle: int, x: int, y: int):
     """Click at (x,y) relative to window."""
     try:
         import pywinauto.mouse
+
         pywinauto.mouse.click(button="left", coords=(x, y))
     except Exception:
         pass
@@ -227,6 +236,7 @@ def _release_mouse():
     """Release all mouse buttons — call after any clicking to prevent stuck input."""
     try:
         import ctypes
+
         MOUSEEVENTF_LEFTUP = 0x0004
         MOUSEEVENTF_RIGHTUP = 0x0010
         MOUSEEVENTF_MIDDLEUP = 0x0040
@@ -431,6 +441,7 @@ def _verify_page_ocr(text: str, label: str, expected: str) -> bool:
 def _nav_click_element(win_handle: int, wx: int, wy: int, idx: int, label: str = ""):
     """Click a nav item. Tries title-based UIA matching first, then index, then coordinates."""
     import pywinauto
+
     app = pywinauto.Application(backend="uia").connect(handle=win_handle)
     w = app.window(handle=win_handle)
 
@@ -461,7 +472,7 @@ def _nav_click_element(win_handle: int, wx: int, wy: int, idx: int, label: str =
             return
     except Exception:
         pass
-    # Try Pane (some WebView versions)  
+    # Try Pane (some WebView versions)
     try:
         elements = w.descendants(control_type="Pane")
         nav_elements = [e for e in elements if e.rectangle().left < wx + 200]
@@ -486,7 +497,10 @@ def nav_click_through(output_dir: str):
     _release_mouse()
     _show_automation_warning()
 
-    nav_routes = cfg("nav_routes", [["Dashboard", "Automation Dashboard"], ["Logging", "Logs"], ["Settings", "Settings"], ["Help", "Help"]])
+    nav_routes = cfg(
+        "nav_routes",
+        [["Dashboard", "Automation Dashboard"], ["Logging", "Logs"], ["Settings", "Settings"], ["Help", "Help"]],
+    )
     nav_routes = [(r[0], r[1]) for r in nav_routes if len(r) >= 2]
     win = cua_find_window(WINDOW_TITLE_RE)
     if not win:
@@ -501,6 +515,7 @@ def nav_click_through(output_dir: str):
     # Bring window to front and maximize (user was warned)
     try:
         import pywinauto
+
         app = pywinauto.Application(backend="uia").connect(handle=handle)
         w = app.window(handle=handle)
         w.set_focus()

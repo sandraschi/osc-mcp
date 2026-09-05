@@ -15,7 +15,7 @@ import logging
 import os
 import sys
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any
 
 import websockets
 from pythonosc.dispatcher import Dispatcher
@@ -23,9 +23,7 @@ from pythonosc.osc_server import AsyncIOOSCUDPServer
 
 # Configure Logging
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.StreamHandler(sys.stdout)]
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", handlers=[logging.StreamHandler(sys.stdout)]
 )
 logger = logging.getLogger("obs-bridge")
 
@@ -38,15 +36,9 @@ def get_uuid() -> str:
     return str(uuid.uuid4())
 
 
-def make_request(request_type: str, request_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def make_request(request_type: str, request_data: dict[str, Any] | None = None) -> dict[str, Any]:
     """Format OBS WebSocket v5 Request payload."""
-    payload = {
-        "op": 6,
-        "d": {
-            "requestType": request_type,
-            "requestId": get_uuid()
-        }
-    }
+    payload = {"op": 6, "d": {"requestType": request_type, "requestId": get_uuid()}}
     if request_data is not None:
         payload["d"]["requestData"] = request_data
     return payload
@@ -66,6 +58,7 @@ def compute_auth_response(password: str, salt: str, challenge: str) -> str:
 
 
 # ── OSC Message Handlers ───────────────────────────────────────────────
+
 
 def osc_handle_scene(address: str, *args: Any) -> None:
     """Handle /scene <scene_name> OSC message."""
@@ -138,7 +131,8 @@ def osc_handle_custom_request(address: str, *args: Any) -> None:
 
 # ── Core WebSocket Client ──────────────────────────────────────────────
 
-async def manage_websocket(uri: str, password: Optional[str]) -> None:
+
+async def manage_websocket(uri: str, password: str | None) -> None:
     """Connect to OBS WebSocket, handle authentication, and forward queued requests."""
     while True:
         try:
@@ -158,16 +152,18 @@ async def manage_websocket(uri: str, password: Optional[str]) -> None:
                     "op": 1,
                     "d": {
                         "rpcVersion": 1,
-                    }
+                    },
                 }
 
                 if auth_req is not None:
                     if not password:
-                        logger.error("OBS WebSocket requires password, but none was provided via --obs-password or OBS_WEBSOCKET_PASSWORD")
+                        logger.error(
+                            "OBS WebSocket requires password, but none was provided via --obs-password or OBS_WEBSOCKET_PASSWORD"
+                        )
                         await ws.close()
                         await asyncio.sleep(5)
                         continue
-                    
+
                     salt = auth_req["salt"]
                     challenge = auth_req["challenge"]
                     auth_resp = compute_auth_response(password, salt, challenge)
@@ -210,13 +206,16 @@ async def manage_websocket(uri: str, password: Optional[str]) -> None:
 
 # ── Main Entrypoint ────────────────────────────────────────────────────
 
+
 async def main() -> None:
     parser = argparse.ArgumentParser(description="OSC-to-OBS WebSocket v5 Bridge")
     parser.add_argument("--host", default="127.0.0.1", help="OSC UDP server host (default: 127.0.0.1)")
     parser.add_argument("--port", type=int, default=7000, help="OSC UDP server port (default: 7000)")
     parser.add_argument("--obs-host", default="127.0.0.1", help="OBS WebSocket host (default: 127.0.0.1)")
     parser.add_argument("--obs-port", type=int, default=4455, help="OBS WebSocket port (default: 4455)")
-    parser.add_argument("--obs-password", default=os.environ.get("OBS_WEBSOCKET_PASSWORD"), help="OBS WebSocket password")
+    parser.add_argument(
+        "--obs-password", default=os.environ.get("OBS_WEBSOCKET_PASSWORD"), help="OBS WebSocket password"
+    )
     args = parser.parse_args()
 
     # Set up OSC Dispatcher
