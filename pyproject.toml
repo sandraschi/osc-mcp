@@ -36,6 +36,7 @@ dependencies = [
     "mido>=1.3.0",
     "zeroconf>=0.132.0",
     "aiohttp>=3.9.0",
+    "psutil>=5.9.0",
 ]
 
 [project.optional-dependencies]
