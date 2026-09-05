@@ -52,8 +52,16 @@ def _parse_enum_block(src: str, kind: str) -> list[str]:
     for m in re.finditer(rf"enum\s+{kind}s?Ids?\s*\{{([^}}]*)\}}", src, re.DOTALL):
         body = m.group(1)
         names = []
-        for line in _split_top_level_commas(body):
-            line = line.split("//")[0].strip()
+        for part in _split_top_level_commas(body):
+            # Strip "//" comments per physical line, not from the whole part -
+            # a part can span multiple lines (e.g. a standalone comment line
+            # like "// added in 2.0.0" followed by the real member on the next
+            # line, with no comma between them). Taking text-before-first-"//"
+            # across the whole part silently ate the real member that followed
+            # a leading full-line comment - confirmed on SEQ3.cpp's RUN_INPUT
+            # and STEPS_OUTPUT, both dropped (and everything after STEPS_OUTPUT
+            # off-by-one) before this fix.
+            line = " ".join(pl.split("//")[0].strip() for pl in part.split("\n")).strip()
             if not line:
                 continue
             enums_match = re.match(r"ENUMS\(\s*(\w+)\s*,\s*(\d+)\s*\)", line)

@@ -11,8 +11,8 @@ mattered here.
 
 import pytest
 
-from oscmcp.vcv_patch_builder import PatchBuilder
-from oscmcp.vcv_presets import PRESETS, classic_subtractive_voice
+from oscmcp.vcv_patch_builder import PORT_SCHEMAS, PatchBuilder
+from oscmcp.vcv_presets import PRESETS, classic_subtractive_voice, grand_generative_patch, sequenced_arpeggio_trio
 
 
 def test_add_unknown_module_raises():
@@ -88,3 +88,40 @@ def test_classic_subtractive_voice_wires_gate_and_envelope():
     assert len(envelope_cables) == 2
     targets = {models[c["inputModuleId"]] for c in envelope_cables}
     assert targets == {"VCF", "VCA-1"}
+
+
+def test_fundamental_lfo_schema_has_all_five_real_inputs():
+    """Regression guard: the first extraction of LFO.cpp silently dropped
+    RESET_INPUT/CLOCK_INPUT and shifted PW_INPUT from its real index 3 down
+    to 2, because a "// added in X.Y.Z" comment sat on its own line right
+    before the dropped enum members - see vcv_port_schema_extract.py's
+    per-line comment-stripping fix. Nothing shipped ever wired into the
+    wrong slot (no preset patched anything into Fundamental LFO's inputs),
+    but the schema itself was wrong until re-verified against real source.
+    """
+    inputs = PORT_SCHEMAS[("Fundamental", "LFO")]["inputs"]
+    by_id = {p["id"]: p["index"] for p in inputs}
+    assert by_id["RESET_INPUT"] == 2
+    assert by_id["PW_INPUT"] == 3
+    assert by_id["CLOCK_INPUT"] == 4
+
+
+def test_sequenced_arpeggio_trio_seq3_drives_three_distinct_oscillators():
+    patch = sequenced_arpeggio_trio()
+    models = {m["id"]: m["model"] for m in patch["modules"]}
+    seq_id = next(mid for mid, model in models.items() if model == "SEQ3")
+    seq_cables = [c for c in patch["cables"] if c["outputModuleId"] == seq_id]
+    pitch_targets = {models[c["inputModuleId"]] for c in seq_cables if c["outputId"] in (1, 2, 3)}
+    assert pitch_targets == {"VCO", "Bogaudio-VCO", "Bogaudio-FMOp"}
+    # Trigger (outputId 0) fans out to both the FM voice's own gate and the shared ADSR.
+    trigger_targets = {models[c["inputModuleId"]] for c in seq_cables if c["outputId"] == 0}
+    assert trigger_targets == {"Bogaudio-FMOp", "ADSR"}
+
+
+def test_grand_generative_patch_has_no_midi_and_uses_two_mixers():
+    patch = grand_generative_patch()
+    plugins_models = [(m["plugin"], m["model"]) for m in patch["modules"]]
+    assert ("Core", "MIDIToCVInterface") not in plugins_models
+    assert plugins_models.count(("Fundamental", "Mixer")) == 2
+    assert ("Fundamental", "Scope") in plugins_models
+    assert len(patch["modules"]) == 19

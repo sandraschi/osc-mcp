@@ -80,11 +80,19 @@ PORT_SCHEMAS: dict[tuple[str, str], dict[str, Any]] = {
         ],
     },
     ("Fundamental", "LFO"): {
+        # Re-verified after a real extractor bug (see vcv_port_schema_extract.py's
+        # per-line comment stripping fix) was found to have silently dropped
+        # RESET_INPUT/CLOCK_INPUT and shifted PW_INPUT from index 3 to 2 in the
+        # first extraction - this entry was wrong from the start and never used
+        # in a preset that patched anything into these inputs, so it shipped
+        # undetected. Re-confirmed against real LFO.cpp source before this fix.
         "version": "2.6.4",
         "inputs": [
             {"index": 0, "id": "FM_INPUT", "label": "Frequency modulation"},
             {"index": 1, "id": "FM2_INPUT", "label": "Frequency modulation 2"},
-            {"index": 2, "id": "PW_INPUT", "label": "Pulse width modulation"},
+            {"index": 2, "id": "RESET_INPUT", "label": "Reset"},
+            {"index": 3, "id": "PW_INPUT", "label": "Pulse width modulation"},
+            {"index": 4, "id": "CLOCK_INPUT", "label": "Clock"},
         ],
         "outputs": [
             {"index": 0, "id": "SIN_OUTPUT", "label": "Sine"},
@@ -120,7 +128,12 @@ PORT_SCHEMAS: dict[tuple[str, str], dict[str, Any]] = {
             {"index": 1, "id": "Y_INPUT", "label": "Ch 2"},
             {"index": 2, "id": "TRIG_INPUT", "label": "External trigger"},
         ],
-        "outputs": [],
+        # Same silent-drop bug as LFO above - Scope's real 2 outputs (passthrough
+        # monitor taps) were dropped to an empty list on first extraction.
+        "outputs": [
+            {"index": 0, "id": "X_OUTPUT", "label": "Ch 1"},
+            {"index": 1, "id": "Y_OUTPUT", "label": "Ch 2"},
+        ],
     },
     ("Fundamental", "Noise"): {
         "version": "2.6.4",
@@ -133,6 +146,37 @@ PORT_SCHEMAS: dict[tuple[str, str], dict[str, Any]] = {
             {"index": 4, "id": "BLUE_OUTPUT", "label": "Blue noise"},
             {"index": 5, "id": "GRAY_OUTPUT", "label": "Gray noise"},
             {"index": 6, "id": "BLACK_OUTPUT", "label": "Black noise"},
+        ],
+    },
+    ("Fundamental", "SEQ3"): {
+        # 3x8 step sequencer. Free-runs on its own internal clock (TEMPO_PARAM,
+        # default ~2 Hz) when CLOCK_INPUT is left unpatched - no external clock
+        # source is required for a self-playing sequenced preset.
+        "version": "2.6.4",
+        "inputs": [
+            {"index": 0, "id": "TEMPO_INPUT", "label": "Tempo"},
+            {"index": 1, "id": "CLOCK_INPUT", "label": "Clock"},
+            {"index": 2, "id": "RESET_INPUT", "label": "Reset"},
+            {"index": 3, "id": "STEPS_INPUT", "label": "Steps"},
+            {"index": 4, "id": "RUN_INPUT", "label": "Run"},
+        ],
+        "outputs": [
+            {"index": 0, "id": "TRIG_OUTPUT", "label": "Trigger"},
+            {"index": 1, "id": "CV_OUTPUTS_0", "label": "CV 1"},
+            {"index": 2, "id": "CV_OUTPUTS_1", "label": "CV 2"},
+            {"index": 3, "id": "CV_OUTPUTS_2", "label": "CV 3"},
+            {"index": 4, "id": "STEP_OUTPUTS_0", "label": "Step 1"},
+            {"index": 5, "id": "STEP_OUTPUTS_1", "label": "Step 2"},
+            {"index": 6, "id": "STEP_OUTPUTS_2", "label": "Step 3"},
+            {"index": 7, "id": "STEP_OUTPUTS_3", "label": "Step 4"},
+            {"index": 8, "id": "STEP_OUTPUTS_4", "label": "Step 5"},
+            {"index": 9, "id": "STEP_OUTPUTS_5", "label": "Step 6"},
+            {"index": 10, "id": "STEP_OUTPUTS_6", "label": "Step 7"},
+            {"index": 11, "id": "STEP_OUTPUTS_7", "label": "Step 8"},
+            {"index": 12, "id": "STEPS_OUTPUT", "label": "Steps"},
+            {"index": 13, "id": "CLOCK_OUTPUT", "label": "Clock"},
+            {"index": 14, "id": "RUN_OUTPUT", "label": "Run"},
+            {"index": 15, "id": "RESET_OUTPUT", "label": "Reset"},
         ],
     },
     ("Bogaudio", "Bogaudio-VCO"): {
