@@ -115,3 +115,13 @@ resets 2026-09-06 evening). Everything below is committed and pushed to
    separate repo.
 4. Nothing urgent is broken — this is a "keep going" list, not a
    "something's on fire" list.
+5. **User's explicit direction for next session**: bring every other
+   wrapped app's webapp page up to the standard the VCV Rack pages now
+   have (VCV Module Library, Community Patches). The other apps'
+   dashboard pages (Ableton, TouchDesigner, VRChat, SuperCollider,
+   Max/MSP, Resolume, QLab, Pure Data, OBS - `web_sota/src/pages/*.tsx`)
+   are "primitive" today and need real UI work, e.g. horizontal tabs for
+   subpages within each app's page, matching the depth/polish VCV Rack
+   got this session. This is a frontend design/build task, not a bug
+   audit - read each existing page first to see current state before
+   redesigning.
