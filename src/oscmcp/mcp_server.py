@@ -2600,7 +2600,7 @@ async def music_orchestrator(
 async def supercollider_manager(
     operation: str,
     host: str = "127.0.0.1",
-    port: int = 57120,
+    port: int = 57110,
     def_name: str | None = None,
     node_id: int | None = None,
     add_action: int | None = None,
@@ -2619,7 +2619,7 @@ async def supercollider_manager(
             - "free_node" - Free synth node
             - "set_control" - Set control value
         host: Target host (default: 127.0.0.1)
-        port: Target port (default: 57120)
+        port: Target port (default: 57110)
         def_name: Synth definition name (for create_synth)
         node_id: Node ID (for all operations)
         add_action: Add action (default: 0, for create_synth)
