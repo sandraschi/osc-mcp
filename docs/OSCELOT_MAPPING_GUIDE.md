@@ -8,6 +8,28 @@ workflow that **do not exist in the real plugin**. Both were fabricated;
 neither matches OSCelot's actual, documented OSC protocol. See git history
 if you need the old (wrong) version for reference.
 
+## Enable the Send/Receive toggles first (they default OFF)
+
+**Live-verified 2026-09-05**: a freshly-placed OSCelot module has both its
+Send and Receive toggle buttons OFF (the panel's status dots render orange).
+In this state `oscReceiver.start(port)` is never called, so OSCelot has no
+UDP socket bound at all — every message sent to it is silently dropped, no
+error, nothing in Rack's log. Click the small button under each of the
+"Send"/"Receive" dots once (they're tiny — the round dot itself is the
+button's light, not a separate control) until the dot turns green before
+sending anything. This one step isn't mentioned anywhere in OSCelot's own
+manual and is easy to miss entirely.
+
+**Also live-verified**: the very first OSC message to a freshly-clicked
+mapping slot only *creates and types* the slot (locks it to `/fader`,
+`/encoder`, or `/button` and records the `Id`) — it does **not** move the
+parameter yet. Send the identical message (`same address, same Id`) a
+**second time** to actually apply the value. This matches OSCelot's own
+source (`processOscMessage` in `Oscelot.cpp`): the create/learn branch never
+sets the internal `oscReceived` flag that the value-apply step in `process()`
+checks for, so the learn message and the first real value-apply message are
+never the same message.
+
 ## The real protocol: three fixed message types, slot-addressed
 
 OSCelot has **numbered mapping slots** (not one per module/param — one per
