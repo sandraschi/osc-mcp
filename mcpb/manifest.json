@@ -1,15 +1,22 @@
 {
   "manifest_version": "0.2",
-  "name": "oscmcp",
-  "version": "0.3.0",
-  "description": "FastMCP 3.1.0 OSC Server with conversational AI and LLM sampling",
-  "author": { "name": "sandraschi" },
+  "name": "osc-mcp",
+  "version": "0.3.3",
+  "description": "FastMCP 3.4 Open Sound Control server \u2014 bidirectional OSC, MIDI-to-OSC bridge, OSCQuery/Zeroconf discovery, reactive triggers, Arazzo workflows, and per-app managers for Ableton Live (via AbletonOSC), TouchDesigner, VRChat, VCV Rack (via OSCelot), SuperCollider, Max/MSP, Resolume, QLab, Pure Data, OBS Studio WebSockets.",
+  "author": {
+    "name": "sandraschi"
+  },
   "server": {
     "type": "python",
     "entry_point": "run_server.py",
     "mcp_config": {
       "command": "uv",
-      "args": ["run","--directory","${PWD}","run_server.py"],
+      "args": [
+        "run",
+        "--directory",
+        "${PWD}",
+        "run_server.py"
+      ],
       "env": {
         "PYTHONPATH": "${PWD}/src",
         "PYTHONUNBUFFERED": "1"
@@ -17,35 +24,193 @@
     }
   },
   "tools": [
-    { "name": "send_osc", "description": "send_osc" },
-    { "name": "start_osc_server", "description": "start_osc_server" },
-    { "name": "stop_osc_server", "description": "stop_osc_server" },
-    { "name": "get_received_messages", "description": "get_received_messages" },
-    { "name": "get_latest_message", "description": "get_latest_message" },
-    { "name": "get_osc_server_stats", "description": "get_osc_server_stats" },
-    { "name": "clear_osc_message_buffer", "description": "clear_osc_message_buffer" },
-    { "name": "test_osc_echo", "description": "test_osc_echo" },
-    { "name": "ableton_manager", "description": "ableton_manager" },
-    { "name": "vrchat_manager", "description": "vrchat_manager" },
-    { "name": "touchdesigner_manager", "description": "touchdesigner_manager" },
-    { "name": "vcv_manager", "description": "vcv_manager" },
-    { "name": "osc_recorder_manager", "description": "osc_recorder_manager" },
-    { "name": "music_loader_manager", "description": "music_loader_manager" },
-    { "name": "music_orchestrator", "description": "music_orchestrator" },
-    { "name": "supercollider_manager", "description": "supercollider_manager" },
-    { "name": "maxmsp_manager", "description": "maxmsp_manager" },
-    { "name": "resolume_manager", "description": "resolume_manager" },
-    { "name": "audio_workflow_manager", "description": "audio_workflow_manager" },
-    { "name": "puredata_manager", "description": "puredata_manager" },
-    { "name": "send_osc_message", "description": "send_osc_message" },
-    { "name": "start_osc_listener", "description": "start_osc_listener" },
-    { "name": "generate_osc_workflow", "description": "generate_osc_workflow" },
-    { "name": "execute_osc_workflow", "description": "execute_osc_workflow" },
-    { "name": "list_arazzo_workflows", "description": "list_arazzo_workflows" },
-    { "name": "main_stdio", "description": "main(stdio)" },
-    { "name": "main_http", "description": "main(http)" },
-    { "name": "main_sse", "description": "main(sse)" },
-    { "name": "health", "description": "health" },
-    { "name": "stats", "description": "stats" }
+    {
+      "name": "get_midi_ports",
+      "description": "Retrieve lists of available physical/virtual MIDI inputs and outputs on the host."
+    },
+    {
+      "name": "start_midi_bridge",
+      "description": "Start the bidirectional MIDI-to-OSC loopback bridge."
+    },
+    {
+      "name": "stop_midi_bridge",
+      "description": "Stop the currently running MIDI-OSC Bridge."
+    },
+    {
+      "name": "add_midi_mapping",
+      "description": "Add a dynamic CC or Note mapping rule to the running bridge."
+    },
+    {
+      "name": "get_midi_mappings",
+      "description": "Retrieve all currently active MIDI and OSC mapping rules in the bridge."
+    },
+    {
+      "name": "send_osc",
+      "description": "Send an OSC message to the specified address."
+    },
+    {
+      "name": "start_osc_server",
+      "description": "Start an OSC server to receive incoming messages."
+    },
+    {
+      "name": "stop_osc_server",
+      "description": "Stop a running OSC server and free the port."
+    },
+    {
+      "name": "get_received_messages",
+      "description": "Get OSC messages received by a running OSC server."
+    },
+    {
+      "name": "get_latest_message",
+      "description": "Get the most recent OSC message from a running server."
+    },
+    {
+      "name": "get_osc_server_stats",
+      "description": "Get statistics about a running OSC server's message buffer."
+    },
+    {
+      "name": "clear_osc_message_buffer",
+      "description": "Clear all messages from an OSC server's buffer."
+    },
+    {
+      "name": "ableton_manager",
+      "description": "Ableton Live Manager - Professional DAW control."
+    },
+    {
+      "name": "vrchat_manager",
+      "description": "VRChat Manager - Avatar, world, and input control."
+    },
+    {
+      "name": "touchdesigner_manager",
+      "description": "TouchDesigner Manager - Comprehensive real-time visual programming control."
+    },
+    {
+      "name": "vcv_manager",
+      "description": "VCV Rack Manager - modular synthesis control via OSCelot."
+    },
+    {
+      "name": "osc_recorder_manager",
+      "description": "OSC Recorder Manager - Record and playback OSC message sequences."
+    },
+    {
+      "name": "music_loader_manager",
+      "description": "Music Loader Manager - High-level orchestration for loading and playing music."
+    },
+    {
+      "name": "music_orchestrator",
+      "description": "Music Orchestrator - High-level multi-step workflow automation."
+    },
+    {
+      "name": "supercollider_manager",
+      "description": "SuperCollider Manager - Algorithmic composition and audio synthesis."
+    },
+    {
+      "name": "maxmsp_manager",
+      "description": "Max/MSP Manager - Audio/visual programming control."
+    },
+    {
+      "name": "resolume_manager",
+      "description": "Resolume Arena Manager - VJ software and live video mixing."
+    },
+    {
+      "name": "audio_workflow_manager",
+      "description": "Audio Workflow Manager - Coordinate multi-application audio workflows."
+    },
+    {
+      "name": "puredata_manager",
+      "description": "Pure Data Manager - Visual programming and audio processing."
+    },
+    {
+      "name": "send_osc_message",
+      "description": "Send OSC message to target application with conversational guidance."
+    },
+    {
+      "name": "start_osc_listener",
+      "description": "Start OSC server to receive messages."
+    },
+    {
+      "name": "generate_osc_workflow",
+      "description": "Generate a complete OSC automation workflow using AI sampling."
+    },
+    {
+      "name": "execute_osc_workflow",
+      "description": "Execute a generated OSC workflow with intelligent validation."
+    },
+    {
+      "name": "test_osc_echo",
+      "description": "Test OSC functionality with conversational guidance and intelligent validation."
+    },
+    {
+      "name": "list_arazzo_workflows",
+      "description": "List all available Arazzo mission descriptors in this server."
+    },
+    {
+      "name": "oscquery_list_services",
+      "description": "List dynamically discovered OSCQuery devices on the local network."
+    },
+    {
+      "name": "oscquery_get_parameters",
+      "description": "Retrieve full parameter tree for a discovered OSCQuery device."
+    },
+    {
+      "name": "register_reactive_trigger",
+      "description": "Register an event action triggering an MCP tool when an OSC message matches a pattern."
+    },
+    {
+      "name": "get_reactive_triggers",
+      "description": "Retrieve list of all active reactive trigger actions."
+    },
+    {
+      "name": "remove_reactive_trigger",
+      "description": "Remove a reactive trigger action matching the specified pattern."
+    },
+    {
+      "name": "trigger_vrchat_haptic_lfo",
+      "description": "Trigger VRChat haptic feedback modulated by an LFO waveform."
+    },
+    {
+      "name": "set_vrchat_expression",
+      "description": "Set VRChat avatar Unified Expressions (face/eye tracking) parameters."
+    },
+    {
+      "name": "show_active_mappings",
+      "description": "Display an interactive data table of active MIDI and reactive trigger mappings."
+    },
+    {
+      "name": "show_discovered_devices",
+      "description": "Display an interactive data table of discovered OSCQuery devices on the network."
+    },
+    {
+      "name": "show_recent_messages",
+      "description": "Display an interactive data table of recently received OSC messages on a port."
+    },
+    {
+      "name": "show_available_workflows",
+      "description": "Display an interactive data table of available Arazzo automation workflows."
+    },
+    {
+      "name": "obs_manager",
+      "description": "Control OBS Studio via OSC."
+    },
+    {
+      "name": "qlab_manager",
+      "description": "Control Figure 53 QLab workspaces via OSC."
+    },
+    {
+      "name": "scan_subnet_osc",
+      "description": "Scan a subnet prefix for active OSC ports."
+    },
+    {
+      "name": "show_control_faders",
+      "description": "Display interactive faders and buttons to send immediate OSC values."
+    },
+    {
+      "name": "show_osc_oscilloscope",
+      "description": "Display a simulated real-time oscilloscope tracking incoming/outgoing OSC activity intensity."
+    },
+    {
+      "name": "save_workflow_descriptor",
+      "description": "Save a newly created workflow descriptor as an Arazzo YAML file."
+    }
   ]
 }

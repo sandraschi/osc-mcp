@@ -15,6 +15,7 @@ import {
   ScrollText,
   Server,
   Settings,
+  Store,
   User,
   Wrench,
 } from "lucide-react";
@@ -32,6 +33,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const navItems = [
     { path: "/", label: "Overview", icon: LayoutDashboard },
     { path: "/apps", label: "Apps Hub", icon: Server },
+    { path: "/vcv-library", label: "VCV Module Library", icon: Store },
     { path: "/status", label: "Status", icon: Activity },
     { path: "/control", label: "Signal Center", icon: Activity },
     { path: "/visualizer", label: "Spectrum", icon: MapIcon },

@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "oscmcp"
-version = "0.3.0"
-description = "FastMCP 3.1.0 OSC Server with conversational AI and LLM sampling"
+version = "0.3.3"
+description = "FastMCP 3.4 OSC Server — bidirectional OSC, MIDI bridge, OSCQuery, reactive triggers, Arazzo workflows"
 readme = "README.md"
 requires-python = ">=3.12"
 license = {text = "MIT"}
@@ -77,11 +77,11 @@ ignore_errors = true
 exclude_dirs = ["tests", ".git", "__pycache__"]
 skips = ["B101", "B601"]  # Skip assert checks and shell usage
 
-# FastMCP 3.1+ server configuration
+# FastMCP 3.4 server configuration
 [tool.fastmcp]
 name = "OSC-MCP"
-version = "0.3.0"
-description = "FastMCP 3.1.0+ OSC Server with conversational AI and LLM sampling"
+version = "0.3.3"
+description = "FastMCP 3.4 OSC Server — bidirectional OSC, MIDI bridge, OSCQuery, reactive triggers, Arazzo workflows"
 entry_point = "oscmcp.server:server"
 transport = "stdio"
 capabilities = ["conversational_tools", "llm_sampling", "osc_automation"]

@@ -20,6 +20,7 @@ import { Status } from "@/pages/status";
 import { SuperCollider } from "@/pages/supercollider";
 import { Tools } from "@/pages/tools";
 import { TouchDesigner } from "@/pages/touchdesigner";
+import { VcvLibrary } from "@/pages/vcv-library";
 import { VCVRack } from "@/pages/vcvrack";
 import { Visualizer } from "@/pages/visualizer";
 import { VRChat } from "@/pages/vrchat";
@@ -42,6 +43,7 @@ function App() {
           <Route path="/maxmsp" element={<MaxMSP />} />
           <Route path="/supercollider" element={<SuperCollider />} />
           <Route path="/vcvrack" element={<VCVRack />} />
+          <Route path="/vcv-library" element={<VcvLibrary />} />
           <Route path="/tools" element={<Tools />} />
           <Route path="/skills" element={<Skills />} />
           <Route path="/api-docs" element={<ApiDocsPage />} />

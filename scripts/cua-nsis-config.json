@@ -6,7 +6,7 @@
     "backend_port": 10767,
     "health_path": "/api/v1/health",
     "diagnostics_path": "/api/v1/diagnostics",
-    "feature_smoke_path": "/api/v1/system/info",
+    "feature_smoke_path": "/api/v1/stats",
     "window_title_re": "OSC MCP",
     "nsis_glob": "native/target/release/bundle/nsis/OSC MCP_*_x64-setup.exe",
     "bridge_ok_text": "REST bridge reachable",

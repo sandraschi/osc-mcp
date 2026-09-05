@@ -115,10 +115,39 @@ export function Dashboard() {
               {health?.status === "ok" ? "Connected" : "Offline"}
             </span>
           </div>
+          <a
+            data-testid="onboarding-cue"
+            href="https://github.com/sandraschi/osc-mcp/blob/main/docs/ONBOARDING.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-5 inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-900/30 hover:bg-red-700 transition-colors"
+          >
+            Get Started — Enable OSC in your apps →
+          </a>
+          <p className="mt-2 text-xs text-slate-500">
+            First time? Enable OSC input in each app per the onboarding guide.
+          </p>
         </div>
       </div>
 
       <AppsOnboarding />
+
+      {/* MOCK-until-onboarded banner: visible only while backend has never reported healthy or stats missing */}
+      {!stats && (
+        <div
+          data-testid="mock-banner"
+          className="rounded-lg border border-amber-800/50 bg-amber-950/20 px-4 py-3 flex items-center gap-3"
+        >
+          <span className="rounded bg-amber-500 px-2 py-0.5 text-xs font-bold text-black">
+            MOCK
+          </span>
+          <span className="text-xs text-amber-200">
+            Sample data — e.g., Joe Mocky / Sandra Mockinger — showing how the
+            dashboard looks before any of the 10 wrapped apps are detected.
+            Connect the backend and enable OSC in an app to clear.
+          </span>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

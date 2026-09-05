@@ -5,6 +5,17 @@ $ScriptRoot = Split-Path -Parent $PSCommandPath
 $BackendPort = 10767
 $FrontendPort = 10766
 
+function Require-Command($Name, $Hint) {
+    if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) {
+        throw "$Name not found on PATH. $Hint"
+    }
+}
+Require-Command "uv" "Install via winget install --id astral-sh.uv (or pipx install uv)."
+if (-not $SkipFrontend) {
+    Require-Command "node" "Install via winget install OpenJS.NodeJS.LTS"
+    Require-Command "npx" "Comes with Node.js"
+}
+
 # Port zombie clearing
 Get-NetTCPConnection -LocalPort $BackendPort -ErrorAction SilentlyContinue |
     ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }

@@ -1,5 +1,5 @@
 import { Activity, ExternalLink, Search, Server } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -22,7 +22,7 @@ export function Apps() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const fetchApps = async () => {
+  const fetchApps = useCallback(async () => {
     setLoading(true);
     try {
       // Fleet Discovery endpoint from mcp-central-docs
@@ -67,11 +67,11 @@ export function Apps() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     void fetchApps();
-  }, []);
+  }, [fetchApps]);
 
   const filteredApps = apps.filter(
     (app) =>

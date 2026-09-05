@@ -1,13 +1,18 @@
 {
   "$schema": "https://glama.ai/mcp/schemas/server.json",
-  "maintainers": ["sandraschi"],
+  "maintainers": [
+    "sandraschi"
+  ],
   "name": "osc-mcp",
   "description": "FastMCP 3.4 Open Sound Control MCP server for audio/visual automation. Control of Ableton Live, TouchDesigner, VRChat, Max/MSP, and other OSC-enabled applications. Beta status.",
   "type": "mcp_server",
   "status": "beta",
   "framework": "FastMCP 3.4",
-  "tools": 25,
-  "transport": ["stdio", "http"],
+  "tools": 47,
+  "transport": [
+    "stdio",
+    "http"
+  ],
   "keywords": [
     "osc",
     "open-sound-control",
@@ -31,8 +36,15 @@
     },
     "applications": {
       "enabled": true,
-      "supported": ["Ableton Live", "TouchDesigner", "VRChat", "Max/MSP", "SuperCollider", "Pure Data"]
+      "supported": [
+        "Ableton Live",
+        "TouchDesigner",
+        "VRChat",
+        "Max/MSP",
+        "SuperCollider",
+        "Pure Data"
+      ]
     }
-  }
+  },
+  "version": "0.3.3"
 }
-

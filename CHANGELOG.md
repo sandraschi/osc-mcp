@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.3] — 2026-09-05
+
+### Fixed
+- **Packaging CM-2 FAIL** — Root `manifest.json` was CMS fiction (`name: oscmcp`, CMS keywords, `main: server/server.py`, `fastmcp >=2.10`); rewired to `manifest_version 0.2`, `entry_point src/oscmcp/server.py`, `47` tools with real descriptions, `version 0.3.3`, `author sandraschi` — now matches `mcpb/manifest.json`.
+- **`mcpb/manifest.json` CM-2** — Tool table was placeholder echoes + fake entries (`main_stdio`, `health`); regenerated from `await server.list_tools()` (47 real tools).
+- **`.mcpbignore` missing** — Added root + `mcpb/.mcpbignore` (covers `.venv/`, `node_modules/`, `tests/`, `dist/`, `*.bak`, Tauri `target/`, web `dist/`).
+- **Frontend lint CM-3** — `web_sota` had `useExhaustiveDependencies` on `fetchApps`/`fetchTools`/`fetchData`; wrapped all three in `useCallback`.
+- **Dashboard onboarding CM-1** — Added big-red `data-testid="onboarding-cue"` CTA under hero (→ `docs/ONBOARDING.md`) + `MOCK`-until-onboarded banner (`data-testid="mock-banner"`) with fake names Joe Mocky/Sandra Mockinger that clears when `/api/v1/onboarding/apps` reports healthy.
+- **`native/tauri.conf.json` version drift** — `0.1.0 → 0.3.3` (matches `pyproject.toml`).
+- **`start.ps1` — NAKED_PC** — Added `Require-Command` guards for `uv`/`node`/`npx`; fixed `.env.example` port `57120 → 57110` + VCV note.
+- **`justfile`** — Added `mcpb-pack` recipe (`scripts/mcpb-pack.ps1` fresh wipe+recopy per `PACKAGING_STANDARDS.md §2.5`).
+- **`assets/prompts` CM-6** — Rewrote `system.md` (3245w), `user.md` (4238w), regenerated `examples.json` (105 entries) covering full 47-tool surface — passes 3-4-100 word-count + JSON-length gates. Mirrored to `mcpb/assets/prompts/` and added `assets/icon.png` 256×256.
+- **`pyproject.toml`** — `version 0.3.0 → 0.3.3`, `fastmcp` floor `3.4` description, `[tool.fastmcp]` `0.3.3`.
+- **`scripts/cua-nsis-config.json`** — `feature_smoke_path /api/v1/system/info → /api/v1/stats` (real route).
+- **CUA webapp** — Added `web_sota/e2e/dashboard.spec.ts` (hero, onboarding-cue, KPIs, backend-dot, MOCK banner) + `playwright.config.ts` (port 10766, `reuseExistingServer`).
+
 ## [Unreleased]
 
 ### Fixed

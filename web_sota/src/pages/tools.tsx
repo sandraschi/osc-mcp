@@ -1,5 +1,5 @@
 import { Play, Search, Terminal, Wrench } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,7 +34,7 @@ export function Tools() {
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
-  const fetchTools = async () => {
+  const fetchTools = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE}/api/v1/tools/`);
       const data = await response.json();
@@ -42,11 +42,11 @@ export function Tools() {
     } catch (error) {
       console.error("Error fetching tools:", error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     void fetchTools();
-  }, []);
+  }, [fetchTools]);
 
   const handleCallTool = async () => {
     if (!selectedTool) return;
