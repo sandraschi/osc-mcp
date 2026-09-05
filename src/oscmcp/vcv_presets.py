@@ -285,6 +285,25 @@ def bach_organ() -> dict:
     """
     b = PatchBuilder()
     midi = b.add("Core", "MIDIToCVInterface", 0, 0)
+    # Pre-select loopMIDI Port 1 (WinMM input index 1, driver 4) so the patch
+    # sounds with zero clicks: scripts/vcv_cua_bach.py sends on the matching
+    # 'loopMIDI Port 2' output (same loop). Full data block mirrors Rack's own
+    # autosave shape — verified to load (Rack may still reset an index that is
+    # absent at load time; the CUA path clicks the device in the UI instead).
+    midi.data = {
+        "channels": 1,
+        "monoMode": 0,
+        "retriggerOnResume": False,
+        "polyMode": 0,
+        "releaseVelocityEnabled": False,
+        "pwRange": 2.0,
+        "smooth": True,
+        "clockDivision": 24,
+        "lastPw": 0,
+        "lastMod": 0,
+        "filterLambda": 30.0,
+        "midi": {"driver": 4, "device": 1, "channel": -1},
+    }
     vco1 = b.add("Fundamental", "VCO", 1 * COL, 0)
     vco2 = b.add("Fundamental", "VCO", 1 * COL, ROW_HEIGHT)
     # vco2 an octave up: 1V/oct pitch is 1.0V per octave, so add 1.0V via

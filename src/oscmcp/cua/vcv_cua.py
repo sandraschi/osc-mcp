@@ -178,6 +178,12 @@ def launch_vcv_with_patch(patch_path: Path, vcv_exe: Path | None = None, kill_ex
         except Exception:
             pass
 
+    # Rack already running and no kill requested: NEVER spawn a second
+    # Rack.exe (it lingers as a windowless orphan and never forwards the
+    # patch). Instead drive the running instance via File > Open (Ctrl+O).
+    if already_running:
+        return open_patch_in_running_instance(patch_path)
+
     try:
         proc = subprocess.Popen([str(exe), str(patch_path)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         # Wait for window title to update to patch name (single-instance may delay)
@@ -236,6 +242,63 @@ def launch_vcv_with_patch(patch_path: Path, vcv_exe: Path | None = None, kill_ex
         }
     except Exception as e:
         return {"launched": False, "error": str(e), "patch": str(patch_path)}
+
+
+def open_patch_in_running_instance(patch_path: Path, timeout_s: float = 15.0) -> dict[str, Any]:
+    """Open a .vcv patch in the already-running Rack via File > Open (Ctrl+O).
+
+    Spawns NO new process — connects to the existing window with pywinauto,
+    sends Ctrl+O, types the patch path, Enter. Returns {launched, ...} with
+    launched=True and forwarded_to_running_instance=True on success.
+    """
+    if not patch_path.is_file():
+        return {"launched": False, "error": f"Patch not found: {patch_path}"}
+    try:
+        from pywinauto.application import Application
+        from pywinauto.keyboard import send_keys
+
+        app = Application(backend="uia").connect(title_re="VCV Rack.*", timeout=10)
+        win = app.window(title_re="VCV Rack.*")
+        win.set_focus()
+        time.sleep(0.5)
+        # NOTE: Rack is GLFW — wrapper type_keys() raises ElementNotEnabled.
+        # Use global send_keys to the focused window instead.
+        send_keys("^o")
+        time.sleep(1.0)
+        # The File Open dialog: type full path + Enter
+        send_keys(str(patch_path.resolve()), with_spaces=True)
+        time.sleep(0.5)
+        send_keys("{ENTER}")
+        # Wait for title/autosave to reflect the new patch
+        deadline = time.time() + timeout_s
+        ok = False
+        while time.time() < deadline:
+            time.sleep(1.0)
+            try:
+                cur = app.window(title_re="VCV Rack.*").window_text()
+                if patch_path.stem.lower() in cur.lower():
+                    ok = True
+                    break
+            except Exception:
+                pass
+        return {
+            "launched": ok,
+            "pid": None,
+            "exe": str(find_vcv_executable() or ""),
+            "patch": str(patch_path),
+            "window_found": True,
+            "title_hint": "",
+            "forwarded_to_running_instance": True,
+            "cua_method": "ctrl+o",
+            "next_step": "Patch should now be open in your running Rack — no new process spawned",
+        }
+    except Exception as e:
+        return {
+            "launched": False,
+            "error": f"CUA File>Open failed: {e}",
+            "patch": str(patch_path),
+            "hint": f"Rack is already running — open {patch_path} via File > Open manually (no new process was spawned)",
+        }
 
 
 def play_midi_file_via_virtual_port(

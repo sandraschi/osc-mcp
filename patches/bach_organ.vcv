@@ -16,7 +16,25 @@
       "pos": [
         0,
         0
-      ]
+      ],
+      "data": {
+        "channels": 1,
+        "monoMode": 0,
+        "retriggerOnResume": false,
+        "polyMode": 0,
+        "releaseVelocityEnabled": false,
+        "pwRange": 2.0,
+        "smooth": true,
+        "clockDivision": 24,
+        "lastPw": 0,
+        "lastMod": 0,
+        "filterLambda": 30.0,
+        "midi": {
+          "driver": 4,
+          "device": 1,
+          "channel": -1
+        }
+      }
     },
     {
       "id": 2,

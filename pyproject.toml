@@ -118,6 +118,7 @@ dev = [
     "ruff>=0.16.0,<0.17",
     "pyinstaller>=6.21.0",
     "pywin32>=311",
+    "pywinauto>=0.6.9",
 ]
 
 
