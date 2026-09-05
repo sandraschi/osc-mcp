@@ -109,9 +109,19 @@ def find_vcv_executable() -> Path | None:
         Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "VCV Rack 2 Free" / "Rack.exe",
         Path(os.environ.get("PROGRAMFILES", r"C:\Program Files")) / "VCV Rack 2 Free" / "Rack.exe",
         Path(r"C:\Program Files\VCV Rack 2 Free\Rack.exe"),
+        Path(r"C:\Program Files\VCV\Rack2Free\Rack.exe"),
+        Path(r"C:\Program Files\VCV\Rack2\Rack.exe"),
         Path.home() / "AppData" / "Local" / "Programs" / "VCV Rack 2 Free" / "Rack.exe",
     ]:
         candidates.append(p)
+    # Fallback: scan C:\Program Files\VCV\*\Rack.exe
+    try:
+        for parent in [Path(r"C:\Program Files\VCV"), Path(r"C:\Program Files (x86)\VCV")]:
+            if parent.is_dir():
+                for exe in parent.rglob("Rack.exe"):
+                    candidates.append(exe)
+    except Exception:
+        pass
 
     for c in candidates:
         if c.is_file():
@@ -119,8 +129,31 @@ def find_vcv_executable() -> Path | None:
     return None
 
 
-def launch_vcv_with_patch(patch_path: Path, vcv_exe: Path | None = None) -> dict[str, Any]:
-    """Launch VCV Rack with a patch file. Returns {launched, pid, exe, patch}."""
+def rack_running() -> bool:
+    """True if a Rack.exe process is currently running (read-only check, never kills)."""
+    try:
+        import subprocess as _sp
+
+        out = _sp.run(["tasklist", "/FI", "IMAGENAME eq Rack.exe", "/FO", "CSV"], capture_output=True, timeout=10)
+        text = out.stdout.decode("utf-8", errors="replace") if isinstance(out.stdout, bytes) else str(out.stdout)
+        # CSV header + at least one data row means a process matched
+        lines = [ln for ln in text.splitlines() if "Rack.exe" in ln]
+        return len(lines) > 0
+    except Exception:
+        return False
+
+
+def launch_vcv_with_patch(patch_path: Path, vcv_exe: Path | None = None, kill_existing: bool = False) -> dict[str, Any]:
+    """Open a patch file in VCV Rack. Returns {launched, pid, exe, patch}.
+
+    NEVER kills the user's Rack by default (kill_existing=False). VCV Rack is
+    single-instance: if it is already running, launching `Rack.exe <patch>`
+    safely forwards the open to the existing window. If kill_existing=True is
+    explicitly passed, existing Rack processes are terminated first — only use
+    this when the user asked for a fresh window (e.g. scripts/vcv_cua_bach.py
+    --force). Window check waits up to 8s for the title to reflect the new
+    patch name.
+    """
     exe = vcv_exe or find_vcv_executable()
     if exe is None:
         return {
@@ -132,25 +165,74 @@ def launch_vcv_with_patch(patch_path: Path, vcv_exe: Path | None = None) -> dict
     if not patch_path.is_file():
         return {"launched": False, "error": f"Patch not found: {patch_path}"}
 
-    try:
-        proc = subprocess.Popen([str(exe), str(patch_path)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        time.sleep(2)
-        # Optional pywinauto window check
-        window_found = False
-        try:
-            import pywinauto.findwindows
+    already_running = rack_running()
 
-            wins = pywinauto.findwindows.find_elements(title_re="VCV Rack.*")
-            window_found = len(wins) > 0
+    # Explicit opt-in only: kill existing Rack for a fresh window
+    if kill_existing:
+        try:
+            import subprocess as _sp
+
+            _sp.run(["taskkill", "/F", "/IM", "Rack.exe"], capture_output=True, timeout=5)
+            time.sleep(1.5)
+            already_running = False
         except Exception:
             pass
+
+    try:
+        proc = subprocess.Popen([str(exe), str(patch_path)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # Wait for window title to update to patch name (single-instance may delay)
+        window_found = False
+        title = ""
+        for _ in range(16):
+            time.sleep(0.5)
+            try:
+                # Prefer win32 backend for MainWindowTitle, fallback to uia
+                for _backend in ("win32", "uia"):
+                    try:
+                        import pywinauto.findwindows
+
+                        wins = pywinauto.findwindows.find_elements(title_re="VCV Rack.*")
+                        if wins:
+                            window_found = True
+                            # Try to read actual title
+                            try:
+                                import psutil
+
+                                for pr in psutil.process_iter(["pid", "name"]):
+                                    if pr.info["name"] and "Rack" in pr.info["name"]:
+                                        pass
+                            except Exception:
+                                pass
+                            title = wins[0].name if hasattr(wins[0], "name") else str(wins[0])
+                            if patch_path.stem.lower() in title.lower():
+                                break
+                    except Exception:
+                        continue
+                if window_found and patch_path.stem.lower() in title.lower():
+                    break
+            except Exception:
+                pass
+        # Fallback: check running processes
+        if not window_found:
+            try:
+                import psutil
+
+                for p in psutil.process_iter(["name"]):
+                    if p.info["name"] == "Rack.exe":
+                        window_found = True
+                        break
+            except Exception:
+                window_found = proc.poll() is None
+
         return {
             "launched": True,
             "pid": proc.pid,
             "exe": str(exe),
             "patch": str(patch_path),
             "window_found": window_found,
-            "next_step": "In Rack's MIDIToCVInterface, select MIDI device 'BachOrgan' (virtual port), then play the MIDI file via the helper below",
+            "title_hint": title,
+            "forwarded_to_running_instance": already_running and not kill_existing,
+            "next_step": "In Rack's MIDIToCVInterface, select MIDI device 'loopMIDI Port 1' (or 'BachOrgan' if you created it), then play the MIDI file via the helper below",
         }
     except Exception as e:
         return {"launched": False, "error": str(e), "patch": str(patch_path)}
@@ -159,8 +241,11 @@ def launch_vcv_with_patch(patch_path: Path, vcv_exe: Path | None = None) -> dict
 def play_midi_file_via_virtual_port(
     midi_path: Path, port_name: str = "BachOrgan", velocity: int = 80
 ) -> dict[str, Any]:
-    """Send a MIDI file's notes out a virtual MIDI port (loopMIDI) for VCV's
-    MIDIToCVInterface to receive. Requires python-rtmidi + mido.
+    """Send a MIDI file's notes out a MIDI port for VCV's MIDIToCVInterface.
+
+    On Windows virtual ports are *not* supported by the WinMM backend, so we
+    fall back to any existing loopMIDI output port (e.g. loopMIDI Port 2).
+    Requires python-rtmidi + mido.
 
     Returns {played, notes_sent, port, duration_s} or error.
     """
@@ -171,17 +256,40 @@ def play_midi_file_via_virtual_port(
     except Exception as e:
         return {"played": False, "error": f"Could not read MIDI file: {e}", "midi_path": str(midi_path)}
 
+    # Try virtual first (macOS/Linux), then existing loopMIDI / hardware outputs on Windows
     try:
         import mido.backends.rtmidi  # ensure rtmidi backend
 
         outport = mido.open_output(port_name, virtual=True, autoreset=True)
+        actual_port = port_name
     except Exception as e:
-        return {
-            "played": False,
-            "error": f"Could not open virtual MIDI port '{port_name}': {e}. Install loopMIDI or use Mac IAC; ensure python-rtmidi is installed",
-            "midi_path": str(midi_path),
-            "hint": "On Windows, install loopMIDI and create a port named 'BachOrgan'; in Rack select that port in MIDIToCVInterface",
-        }
+        # Windows fallback: pick an existing loopMIDI output that loops to an input VCV can see
+        err_virtual = str(e)
+        try:
+            outputs = mido.get_output_names()
+            # Prefer a port that looks like loopMIDI
+            candidates = (
+                [n for n in outputs if "loopmidi" in n.lower()] + [n for n in outputs if "BachOrgan" in n] + outputs
+            )
+            # Filter out Microsoft GS synth (not a loopback)
+            candidates = [c for c in candidates if "microsoft" not in c.lower()]
+            if not candidates:
+                return {
+                    "played": False,
+                    "error": f"Could not open virtual MIDI port '{port_name}': {err_virtual}. No loopback output found.",
+                    "midi_path": str(midi_path),
+                    "available_outputs": outputs,
+                    "hint": "Create a loopMIDI port named 'BachOrgan' (or use existing loopMIDI Port 1/2 pair); in Rack select the *input* side (e.g. loopMIDI Port 1)",
+                }
+            actual_port = candidates[0]
+            outport = mido.open_output(actual_port, virtual=False, autoreset=True)
+        except Exception as e2:
+            return {
+                "played": False,
+                "error": f"Could not open virtual MIDI port '{port_name}': {err_virtual}; fallback to '{candidates[0] if 'candidates' in locals() else '?'}' also failed: {e2}",
+                "midi_path": str(midi_path),
+                "hint": "Create a loopMIDI port named 'BachOrgan' (or use existing loopMIDI Port 1/2 pair); in Rack select the *input* side (e.g. loopMIDI Port 1)",
+            }
 
     notes_sent = 0
     start = time.time()
@@ -199,7 +307,8 @@ def play_midi_file_via_virtual_port(
     return {
         "played": True,
         "notes_sent": notes_sent,
-        "port": port_name,
+        "port": actual_port,
+        "requested_port": port_name,
         "duration_s": round(time.time() - start, 2),
         "midi_path": str(midi_path),
     }

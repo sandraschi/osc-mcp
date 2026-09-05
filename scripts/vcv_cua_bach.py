@@ -37,6 +37,11 @@ def main() -> None:
     parser.add_argument("--midi", type=str, default=None, help="Path to Bach MIDI file (default: generate snippet)")
     parser.add_argument("--no-launch", action="store_true", help="Don't launch VCV Rack, just generate files")
     parser.add_argument("--patch", type=str, default=None, help="Output patch path (default: patches/bach_organ.vcv)")
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Kill any running Rack first for a fresh window (default: safe forward to running instance, never kills)",
+    )
     args = parser.parse_args()
 
     patch_path = Path(args.patch) if args.patch else None
@@ -61,7 +66,7 @@ def main() -> None:
     vcv_exe = find_vcv_executable()
     print(f"VCV exe: {vcv_exe or 'NOT FOUND — install from https://vcvrack.com/downloads'}")
 
-    launch = launch_vcv_with_patch(patch_path, vcv_exe)
+    launch = launch_vcv_with_patch(patch_path, vcv_exe, kill_existing=args.force)
     print(f"Launch: {launch}")
 
     if launch.get("launched"):
