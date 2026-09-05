@@ -973,29 +973,57 @@ async def vrchat_manager(
     duration: float | None = None,
     amplitude: float | None = None,
     frequency: float | None = None,
+    input_name: str | None = None,
+    tracking_type: str | None = None,
+    enabled: bool = True,
+    notify: bool = False,
 ) -> dict[str, Any]:
     """
-    VRChat Manager - Avatar and world control.
+    VRChat Manager - Avatar, world, and input control.
 
     PORTMANTEAU TOOL: Consolidates all VRChat operations into one tool.
 
     Args:
         operation: Operation to perform
-            - "set_parameter" - Set avatar parameter
-            - "send_chat" - Send chat message
+            - "set_parameter" - Set avatar parameter (float/int/bool)
+            - "send_chat" - Send chatbox message immediately
+            - "chatbox_typing" - Show the "..." typing indicator without sending
             - "trigger_haptic" - Trigger haptic feedback
+            - "input" - Simulate a movement/camera/action input
+            - "tracking_control" - Enable/disable a body tracker
+            - "afk_toggle" - Convenience wrapper for the AFK avatar parameter
         host: Target host (default: 127.0.0.1)
         port: Target port (default: 9000)
         param_name: Parameter name (for set_parameter)
-        value: Parameter value (for set_parameter)
-        message: Chat message (for send_chat)
+        value: Parameter value (for set_parameter); input magnitude 0.0-1.0 or
+            0/1 for buttons (for input)
+        message: Chat message (for send_chat / chatbox_typing)
         device: Haptic device ('left', 'right', or 'both', for trigger_haptic)
         duration: Haptic duration (default: 0.1, for trigger_haptic)
         amplitude: Haptic amplitude (default: 0.5, for trigger_haptic)
         frequency: Haptic frequency (default: 0.0, for trigger_haptic)
+        input_name: Input control name (for input) - Movement: "MoveForward",
+            "MoveBackward", "MoveLeft", "MoveRight"; Look: "LookLeft",
+            "LookRight", "LookUp", "LookDown"; Actions: "Jump", "Run",
+            "GrabLeft"/"GrabRight", "UseLeft"/"UseRight", "DropLeft"/"DropRight",
+            "ComfortLeft"/"ComfortRight", "QuickMenuToggleLeft"/"...Right", "Voice"
+        tracking_type: Tracker to control (for tracking_control) - "Head",
+            "LeftHand", "RightHand", "Hip", "LeftFoot", "RightFoot",
+            "LeftElbow", "RightElbow", "LeftKnee", "RightKnee", "Chest"
+        enabled: True to enable, False to disable (for tracking_control /
+            afk_toggle - AFK when enabled=True)
+        notify: Play the chatbox notification sound (for send_chat, default
+            False - matches VRChat's own default of no sound for OSC-driven text)
 
     Returns:
         Operation result with status and details
+
+    Examples:
+        >>> await vrchat_manager("input", input_name="MoveForward", value=1.0)
+        >>> await vrchat_manager("input", input_name="Jump", value=1)
+        >>> await vrchat_manager("chatbox_typing", message="thinking...")
+        >>> await vrchat_manager("tracking_control", tracking_type="LeftFoot", enabled=False)
+        >>> await vrchat_manager("afk_toggle", enabled=True)
     """
 
     if operation == "set_parameter":
@@ -1010,7 +1038,31 @@ async def vrchat_manager(
     if operation == "send_chat":
         if message is None:
             return {"status": "error", "message": "message required for send_chat"}
-        return await send_osc(host, port, "/chatbox/input", [message, True, False])
+        return await send_osc(host, port, "/chatbox/input", [message, True, notify])
+
+    if operation == "chatbox_typing":
+        if message is None:
+            return {"status": "error", "message": "message required for chatbox_typing"}
+        return await send_osc(host, port, "/chatbox/typing", [message])
+
+    if operation == "input":
+        if input_name is None or value is None:
+            return {
+                "status": "error",
+                "message": "input_name and value required for input",
+            }
+        return await send_osc(host, port, f"/input/{input_name}", [float(value)])
+
+    if operation == "tracking_control":
+        if tracking_type is None:
+            return {
+                "status": "error",
+                "message": "tracking_type required for tracking_control",
+            }
+        return await send_osc(host, port, f"/tracking/{tracking_type}/enabled", [1 if enabled else 0])
+
+    if operation == "afk_toggle":
+        return await send_osc(host, port, "/avatar/parameters/AFK", [1 if enabled else 0])
 
     if operation == "trigger_haptic":
         device = device or "both"
