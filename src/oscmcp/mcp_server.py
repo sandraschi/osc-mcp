@@ -1756,6 +1756,12 @@ async def vcv_manager(
 
     PORTMANTEAU TOOL: Consolidates all VCV Rack operations into one tool.
 
+    VCV Rack has no native OSC support. These addresses assume the
+    community OSCelot module (TheModularMind, via the VCV Library) patched
+    in and configured in its direct `/param` mode - see
+    docs/OSCELOT_MAPPING_GUIDE.md. A different bridge module (e.g.
+    trowaSoft's cvOSCcv) will not respond to these addresses.
+
     Args:
         operation: Operation to perform
             - "set_parameter" - Set module parameter (0.0-1.0)

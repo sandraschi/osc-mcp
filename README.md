@@ -91,6 +91,7 @@ SOTA web interface at `http://localhost:10766` — real-time OSC monitoring, app
 
 - [Installation Guide](INSTALL.md) — all install methods
 - [Onboarding Guide](docs/ONBOARDING.md) — per-app install/OSC-setup steps, costs, and pitfalls for all 9+ wrapped apps
+- [OSCelot Mapping Guide](docs/OSCELOT_MAPPING_GUIDE.md) — VCV Rack has no native OSC; OSCelot is the bridge module `vcv_manager`'s addressing assumes
 - [Arazzo Workflows](docs/ARAZZO_WORKFLOWS_GUIDE.md) — multi-step mission descriptors
 - [OBS Studio Guide](docs/OBS_PLUGINS_GUIDE.md) — C++ plugins, SLOBS history, VTubers, and built-in bridge setup
 - [Tool Analysis](docs/APPLICATION_TOOLS_ANALYSIS.md) — comprehensive tool reference

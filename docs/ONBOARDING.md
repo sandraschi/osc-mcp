@@ -45,7 +45,18 @@ pricing, unrelated to this MCP server.
   - *TouchDesigner* needs an **OSC In CHOP or OSC In DAT** placed in the project,
     listening on the port you configure.
   - *VRChat*: Settings → OSC → **Enabled**.
-  - *VCV Rack*: patch in a **CV-OSC / OSCcv** module to bridge OSC to the modular rack.
+  - *VCV Rack* has no native OSC either. Install **OSCelot** (TheModularMind, via
+    the VCV Library — needs a free VCV account) and patch it in, then map
+    parameters using OSCelot's **direct `/param` mode** (click Map, click the
+    knob, note the Module ID/Param ID it shows) rather than its controller-slot
+    fader/button/encoder mode - `vcv_manager`'s addressing
+    (`/param [module_id, param_id, value]`) matches OSCelot's direct-param
+    format exactly. See `docs/OSCELOT_MAPPING_GUIDE.md` for the full click-through
+    and `docs/OSCELOT_UI_MAPPING_EXPLAINED.md` for how the slot-type-by-address
+    behavior works. `trowaSoft`'s cvOSCcv module family is a documented
+    alternative with a different address scheme - not what this repo's
+    `vcv_manager` currently assumes, so stick with OSCelot unless you're willing
+    to adjust the addresses yourself.
   - *SuperCollider*: run `scsynth` (the audio server) — the IDE (`scide`) alone does
     not answer OSC.
   - *Max/MSP*: patch `udpreceive`/`udpsend` or `[oscformat]`/`[oscparse]` objects.
