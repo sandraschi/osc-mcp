@@ -2061,31 +2061,80 @@ async def music_loader_manager(
     """
 
     # VCV Rack has NO OSC API for adding modules / wiring cables / loading MIDI files.
-    # The real way to create a patch is to generate a .vcv file via
-    # vcv_patch_builder / vcv_presets and load it in Rack, or use a prebuilt
-    # file from patches/*.vcv. See skills/vcvrack-expert/SKILL.md and
-    # docs/OSCELOT_MAPPING_GUIDE.md. The previous implementation sent
-    # fabricated addresses (/param, /midi/file/load, /module/add, /connect,
-    # /tempo, /transport/*) that have never existed in OSCelot or VCV.
+    # The previous implementation sent fabricated addresses (/param,
+    # /midi/file/load, /module/add, /connect, /tempo, /transport/*) that have
+    # never existed in OSCelot or VCV. Instead we now do the honest thing:
+    # generate a real, loadable .vcv patch file on disk and (optionally) CUA-
+    # launch VCV Rack with it. If OSC support for something is missing, we just
+    # do CUA automation in the patch — see src/oscmcp/cua/vcv_cua.py.
     if operation in ("load_bach_organ", "load_midi_file", "setup_organ_rig"):
-        return {
-            "status": "error",
-            "error_code": "UNSUPPORTED_OPERATION",
-            "message": (
-                f"music_loader_manager '{operation}' has no real OSC implementation -- "
-                "VCV Rack exposes no OSC surface for adding modules, wiring cables, "
-                "or loading MIDI files (only OSCelot's /fader /encoder /button on "
-                "already-mapped slots, see docs/OSCELOT_MAPPING_GUIDE.md). "
-                "Use the real alternative: generate a .vcv patch file via "
-                "src/oscmcp/vcv_patch_builder.py / src/oscmcp/vcv_presets.py "
-                "(or load a prebuilt file from patches/*.vcv -- 7 presets ship "
-                "with the repo, e.g. patches/grand_generative_patch.vcv), then "
-                "open it in VCV Rack. For MIDI file playback without OSC, use the "
-                "Entrian Timeline path documented in CHANGELOG [Unreleased]."
-            ),
-            "operation": operation,
-            "hint": "Try vcv_patch_builder.generate_patch() or patches/grand_generative_patch.vcv",
-        }
+        # CUA fallback: generate a Bach-ready organ patch
+        try:
+            import json as _json
+            from pathlib import Path as _Path
+
+            from oscmcp.vcv_presets import bach_organ as _bach_preset
+
+            patch = _bach_preset()
+            # Use per-operation filename so repeated calls don't clobber
+            patch_name = {
+                "load_bach_organ": "bach_organ",
+                "load_midi_file": f"bach_organ_{Path(midi_file_path).stem if midi_file_path else 'custom'}",
+                "setup_organ_rig": "bach_organ",
+            }[operation]
+            out = _Path(__file__).resolve().parents[2] / "patches" / f"{patch_name}.vcv"
+            # sanitize filename
+            out = _Path(str(out).replace(" ", "_").replace("/", "_"))
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_text(_json.dumps(patch, indent=2) + "\n", encoding="utf-8")
+            patch_path = str(out)
+
+            # Optionally CUA-launch VCV Rack with the patch (best-effort, never fatal)
+            cua_result = None
+            try:
+                from oscmcp.cua.vcv_cua import launch_vcv_with_patch
+
+                cua_result = launch_vcv_with_patch(_Path(patch_path))
+            except Exception as _e:
+                cua_result = {"launched": False, "error": str(_e)}
+
+            msg = (
+                f"Generated real VCV patch '{patch_path}' ({len(patch['modules'])} modules, "
+                f"{len(patch['cables'])} cables) — open it in VCV Rack via File > Open "
+                f"(OSC cannot add modules; this is the CUA fallback). "
+                f"Then select MIDI device 'BachOrgan' in the MIDIToCVInterface and "
+                f"play your MIDI file (use scripts/vcv_cua_bach.py for one-click CUA demo)."
+            )
+            if midi_file_path:
+                msg += f" Requested MIDI file: {midi_file_path} — load it in REAPER or send via virtual MIDI port."
+
+            return {
+                "status": "success",
+                "osc_status": "unsupported",
+                "error_code": "OSC_UNSUPPORTED_CUA_FALLBACK",
+                "message": msg,
+                "operation": operation,
+                "patch_path": patch_path,
+                "modules": len(patch["modules"]),
+                "cables": len(patch["cables"]),
+                "cua": cua_result,
+                "hint": "Try scripts/vcv_cua_bach.py for full CUA demo (patch + virtual MIDI playback)",
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "error_code": "UNSUPPORTED_OPERATION",
+                "message": (
+                    f"music_loader_manager '{operation}' has no real OSC implementation -- "
+                    "VCV Rack exposes no OSC surface for adding modules, wiring cables, "
+                    "or loading MIDI files (only OSCelot's /fader /encoder /button on "
+                    "already-mapped slots, see docs/OSCELOT_MAPPING_GUIDE.md). "
+                    f"CUA fallback also failed: {e}. Generate a .vcv patch via "
+                    "src/oscmcp/vcv_patch_builder.py / src/oscmcp/vcv_presets.py "
+                    "(patches/*.vcv) and open in Rack."
+                ),
+                "operation": operation,
+            }
 
     if operation == "start_performance":
         # VCV Rack has no global /transport OSC -- only REAPER part is real.

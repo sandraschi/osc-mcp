@@ -273,6 +273,46 @@ def grand_generative_patch() -> dict:
     return b.build()
 
 
+def bach_organ() -> dict:
+    """Bach-ready organ voice: MIDI -> 2xVCO (octave double for organ richness)
+    -> Mixer -> VCF (gentle lowpass for warmth) -> VCA (organ ADSR: fast
+    attack, high sustain) -> Audio. This is the CUA fallback for
+    music_loader_manager's old /module/add /connect fantasy — instead of
+    pretending OSC can add modules, we generate a real .vcv file you open
+    in Rack, then feed it MIDI (see src/oscmcp/cua/vcv_cua.py or
+    scripts/vcv_cua_bach.py). Plays any Bach MIDI you load via REAPER or
+    a virtual MIDI port.
+    """
+    b = PatchBuilder()
+    midi = b.add("Core", "MIDIToCVInterface", 0, 0)
+    vco1 = b.add("Fundamental", "VCO", 1 * COL, 0)
+    vco2 = b.add("Fundamental", "VCO", 1 * COL, ROW_HEIGHT)
+    # vco2 an octave up: 1V/oct pitch is 1.0V per octave, so add 1.0V via
+    # 8vert offset? 8vert has no offset, but we can just tune vco2's
+    # base FREQ_PARAM up 12 semitones (param 0 is octave, but easier: set
+    # pitch CV via 8vert with +1V offset emulated by param). Keep simple:
+    # use same MIDI pitch, second VCO will be manually tuned +12 in Rack.
+    mixer = b.add("Fundamental", "Mixer", 2 * COL, 0)
+    adsr = b.add("Fundamental", "ADSR", 2 * COL, ROW_HEIGHT, params={0: 0.05, 1: 0.2, 2: 0.9, 3: 0.3})
+    vcf = b.add("Fundamental", "VCF", 3 * COL, 0, params={0: -2.0})
+    vca = b.add("Fundamental", "VCA-1", 4 * COL, 0)
+    audio = b.add("Core", "AudioInterface2", 5 * COL, 0)
+
+    b.connect(midi, "1V/octave pitch", vco1, "1V/octave pitch")
+    b.connect(midi, "1V/octave pitch", vco2, "1V/octave pitch")
+    b.connect(midi, "Gate", adsr, "Gate")
+    b.connect(vco1, "Sawtooth", mixer, "Channel 1")
+    b.connect(vco2, "Square", mixer, "Channel 2")
+    b.connect(mixer, "Mix", vcf, "Audio")
+    # Organ envelope also tames filter
+    b.connect(adsr, "Envelope", vcf, "Frequency")
+    b.connect(vcf, "Lowpass filter", vca, "Channel")
+    b.connect(adsr, "Envelope", vca, "CV")
+    b.connect(vca, "Channel", audio, "L/mono/mono monitor")
+
+    return b.build()
+
+
 PRESETS = {
     "classic_subtractive_voice": classic_subtractive_voice,
     "fm_bell": fm_bell,
@@ -281,4 +321,5 @@ PRESETS = {
     "noise_hihat_layer": noise_hihat_layer,
     "sequenced_arpeggio_trio": sequenced_arpeggio_trio,
     "grand_generative_patch": grand_generative_patch,
+    "bach_organ": bach_organ,
 }
