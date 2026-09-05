@@ -33,7 +33,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 try:
     from src.oscmcp.mcp_server import (
-        audio_workflow_manager,
         music_orchestrator,
         osc_recorder_manager,
         start_osc_server,
@@ -107,9 +106,7 @@ async def bach_organ_demo():
 
         # Step 6: Stop performance and save recording
         print("\n6. Stopping performance and saving recording...")
-        stop_result = await music_orchestrator(
-            operation="performance_stop", recording_name="bach_toccata_performance"
-        )
+        stop_result = await music_orchestrator(operation="performance_stop", recording_name="bach_toccata_performance")
 
         print("✅ Performance stopped:")
         for app in stop_result["stopped_apps"]:
@@ -206,7 +203,7 @@ def show_free_module_recommendations():
     ]
 
     for name, desc, cost in recommendations:
-        print("15")
+        print(f"  {name} ({cost}) - {desc}")
 
     print("\n📥 Install: Open VCV Rack → Library → Search for module name → Add")
     print("🎵 For organs: Surge XT gives professional results!")
@@ -227,7 +224,7 @@ def show_bach_midi_sources():
     ]
 
     for site, url, desc in sources:
-        print("15")
+        print(f"  {site} ({url}) - {desc}")
 
     print("\n🔍 Search for: 'Bach organ toccata fugue MIDI'")
 
