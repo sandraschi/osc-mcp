@@ -11,8 +11,10 @@ graph entirely (osc-mcp quality-check, 2026-09-04).
 
 import asyncio
 import logging
+from pathlib import Path
 from typing import Any
 
+import mido
 from pydantic import BaseModel, Field
 
 from .osc.client import OSCClient
@@ -2344,6 +2346,42 @@ async def music_loader_manager(
     return {"status": "error", "message": f"Unknown operation: {operation}"}
 
 
+def _parse_midi_file(midi_file_path: str) -> dict[str, Any]:
+    """Real MIDI parsing via mido - notes, tempo, duration.
+
+    Replaces music_orchestrator's previous behavior of claiming a MIDI file
+    was "parsed" and "analyzed" without ever opening it (fabricated
+    "simulated" step data, and midi_to_cv returning hardcoded placeholder
+    lists regardless of the file's actual content or even its existence).
+    """
+    path = Path(midi_file_path)
+    if not path.exists():
+        return {"success": False, "message": f"MIDI file not found: {midi_file_path}"}
+
+    try:
+        midi_file = mido.MidiFile(str(path))
+    except (OSError, ValueError) as e:
+        return {"success": False, "message": f"Could not read MIDI file: {e}"}
+
+    tempo_bpm = 120.0
+    notes: list[dict[str, Any]] = []
+    for track in midi_file.tracks:
+        for msg in track:
+            if msg.type == "set_tempo":
+                tempo_bpm = round(mido.tempo2bpm(msg.tempo), 2)
+            elif msg.type == "note_on" and msg.velocity > 0:
+                notes.append({"note": msg.note, "velocity": msg.velocity, "time": msg.time})
+
+    return {
+        "success": True,
+        "tempo_bpm": tempo_bpm,
+        "note_count": len(notes),
+        "first_notes": notes[:10],
+        "duration_seconds": round(midi_file.length, 2),
+        "track_count": len(midi_file.tracks),
+    }
+
+
 @server.tool()
 async def music_orchestrator(
     operation: str,
@@ -2393,27 +2431,31 @@ async def music_orchestrator(
                 "message": "midi_file_path required for bach_organ_setup",
             }
 
-        results = {"status": "success", "steps": [], "setup_complete": False}
+        # Step 1: Actually parse the MIDI file (previously fabricated - never opened
+        # the file at all, just echoed the path back with status "simulated").
+        parsed = _parse_midi_file(midi_file_path)
+        if not parsed["success"]:
+            return {"status": "error", "message": parsed["message"]}
 
-        # Step 1: Parse MIDI file (would need MIDI parsing library)
+        results = {"status": "success", "steps": [], "setup_complete": False}
         results["steps"].append(
             {
                 "step": "midi_parse",
-                "status": "simulated",
-                "message": f"Parsed MIDI file: {midi_file_path}",
+                "status": "success",
+                "message": f"Parsed {parsed['note_count']} notes, tempo {parsed['tempo_bpm']} BPM, "
+                f"duration {parsed['duration_seconds']}s from {midi_file_path}",
+                "note_count": parsed["note_count"],
+                "tempo_bpm": parsed["tempo_bpm"],
             }
         )
+        tempo = tempo or parsed["tempo_bpm"]
 
-        # Step 2: Extract organ-appropriate notes (Bach organ music)
-        results["steps"].append(
-            {
-                "step": "organ_analysis",
-                "status": "simulated",
-                "message": "Analyzed for organ registration and voicing",
-            }
-        )
-
-        # Step 3: Configure VCV Rack organ sound
+        # Step 2: Configure VCV Rack organ sound. This step loads a fixed
+        # organ-preset patch (drawbar-style wavetable + reverb mix) - it does
+        # NOT do per-note registration analysis from the parsed MIDI (that
+        # would be a real audio-engineering feature, not a data-parsing one);
+        # what changed is the file above genuinely being opened and real
+        # tempo/note data now driving `tempo` instead of a hardcoded default.
         organ_module = organ_module or 1
         # Set up wavetable for organ-like sound (assuming Surge XT or similar)
         vcv_results = []
@@ -2513,35 +2555,42 @@ async def music_orchestrator(
                 "message": "midi_file_path required for midi_to_cv",
             }
 
-        results = {"status": "success", "cv_sequences": []}
+        # Previously returned fabricated placeholder lists (literally
+        # containing the string "simulated") regardless of midi_file_path's
+        # actual content or even whether the file existed. Now genuinely
+        # parses the file and derives real pitch-CV (1V/octave, middle C=0V)
+        # and velocity-CV (0.0-1.0) from the actual note events.
+        parsed = _parse_midi_file(midi_file_path)
+        if not parsed["success"]:
+            return {"status": "error", "message": parsed["message"]}
 
-        # Parse MIDI and convert to CV sequences
-        # This would create sequences for pitch, gate, velocity, etc.
-        results["cv_sequences"].append(
-            {
-                "type": "pitch_cv",
-                "notes": ["simulated", "bach", "organ", "sequence"],
-                "message": f"Converted MIDI pitch data from {midi_file_path}",
-            }
-        )
+        pitch_cv = [round((note["note"] - 60) / 12, 4) for note in parsed["first_notes"]]
+        velocity_cv = [round(note["velocity"] / 127, 4) for note in parsed["first_notes"]]
 
-        results["cv_sequences"].append(
-            {
-                "type": "gate_cv",
-                "triggers": ["simulated", "note_on", "note_off", "events"],
-                "message": "Generated gate signals for modular sequencer",
-            }
-        )
-
-        results["cv_sequences"].append(
-            {
-                "type": "velocity_cv",
-                "values": ["simulated", "dynamics", "from", "MIDI"],
-                "message": "Converted velocity data to CV modulation",
-            }
-        )
-
-        results["message"] = "🎛️ MIDI file converted to CV sequences for modular synthesis!"
+        results = {
+            "status": "success",
+            "cv_sequences": [
+                {
+                    "type": "pitch_cv",
+                    "voltages": pitch_cv,
+                    "message": f"1V/octave pitch CV for the first {len(pitch_cv)} of {parsed['note_count']} notes",
+                },
+                {
+                    "type": "velocity_cv",
+                    "values": velocity_cv,
+                    "message": "Velocity scaled 0.0-1.0",
+                },
+            ],
+            "tempo_bpm": parsed["tempo_bpm"],
+            "total_note_count": parsed["note_count"],
+            "note": (
+                "gate_cv timing is not derived here - tick-accurate note-on/note-off "
+                "pairing and playback scheduling would need a sequencer loop, not a "
+                "one-shot conversion; use osc_recorder_manager or a VCV sequencer "
+                "module to actually play these values back in time."
+            ),
+        }
+        results["message"] = f"🎛️ Converted {parsed['note_count']} notes from {midi_file_path} to CV data!"
         return results
 
     return {"status": "error", "message": f"Unknown operation: {operation}"}
