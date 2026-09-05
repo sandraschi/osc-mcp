@@ -2060,151 +2060,69 @@ async def music_loader_manager(
         Operation result with setup details and playback status
     """
 
-    if operation == "load_bach_organ":
-        if midi_file_path is None:
-            return {
-                "status": "error",
-                "message": "midi_file_path required for load_bach_organ",
-            }
-
-        # Step 1: Setup organ modules in VCV Rack
-        setup_results = []
-
-        if auto_setup:
-            # Setup wavetable oscillator for organ sound (Bogaudio WT recommended)
-            result = await send_osc(vcv_host, vcv_port, "/param", [1, 0, 0.5])  # WT wavetable select (organ preset)
-            setup_results.append({"step": "wavetable_setup", "result": result})
-
-            # Setup envelope for organ attack/decay
-            result = await send_osc(vcv_host, vcv_port, "/param", [2, 0, 0.8])  # Attack
-            setup_results.append({"step": "envelope_attack", "result": result})
-            result = await send_osc(vcv_host, vcv_port, "/param", [2, 1, 0.7])  # Decay
-            setup_results.append({"step": "envelope_decay", "result": result})
-
-            # Setup filter for organ warmth
-            result = await send_osc(vcv_host, vcv_port, "/param", [3, 0, 0.3])  # Cutoff
-            setup_results.append({"step": "filter_cutoff", "result": result})
-
-        # Step 2: Load MIDI file (would need MIDI file parsing)
-        # For now, assume MIDI data is available and send note events
-        result = await send_osc(vcv_host, vcv_port, "/midi/file/load", [midi_file_path])
-        setup_results.append({"step": "midi_load", "result": result})
-
-        # Step 3: Set tempo if provided
-        if tempo:
-            result = await send_osc(vcv_host, vcv_port, "/tempo", [tempo])
-            setup_results.append({"step": "tempo_set", "result": result})
-
+    # VCV Rack has NO OSC API for adding modules / wiring cables / loading MIDI files.
+    # The real way to create a patch is to generate a .vcv file via
+    # vcv_patch_builder / vcv_presets and load it in Rack, or use a prebuilt
+    # file from patches/*.vcv. See skills/vcvrack-expert/SKILL.md and
+    # docs/OSCELOT_MAPPING_GUIDE.md. The previous implementation sent
+    # fabricated addresses (/param, /midi/file/load, /module/add, /connect,
+    # /tempo, /transport/*) that have never existed in OSCelot or VCV.
+    if operation in ("load_bach_organ", "load_midi_file", "setup_organ_rig"):
         return {
-            "status": "success",
-            "message": f"Loaded Bach organ music from {midi_file_path}",
-            "instrument_type": instrument_type,
-            "setup_steps": setup_results,
-            "next_action": "Use start_performance to begin playback",
-        }
-
-    if operation == "load_midi_file":
-        if midi_file_path is None:
-            return {
-                "status": "error",
-                "message": "midi_file_path required for load_midi_file",
-            }
-
-        # Intelligent MIDI file loading with instrument detection
-        # Parse MIDI file and setup appropriate modules based on content
-
-        results = []
-
-        # Load MIDI file
-        result = await send_osc(vcv_host, vcv_port, "/midi/file/load", [midi_file_path])
-        results.append({"step": "midi_load", "result": result})
-
-        # Auto-detect instrument needs based on MIDI content
-        if instrument_type == "organ":
-            # Setup organ-like sound
-            result = await send_osc(vcv_host, vcv_port, "/module/load", ["Bogaudio-WT", 1])
-            results.append({"step": "load_organ_module", "result": result})
-
-        elif instrument_type == "piano":
-            # Setup piano-like sound
-            result = await send_osc(vcv_host, vcv_port, "/module/load", ["PianoModule", 1])
-            results.append({"step": "load_piano_module", "result": result})
-
-        return {
-            "status": "success",
-            "message": f"Loaded MIDI file {midi_file_path} as {instrument_type}",
-            "setup_results": results,
-        }
-
-    if operation == "setup_organ_rig":
-        # Complete organ rig setup for Bach music
-        setup_results = []
-
-        # Load Bogaudio WT wavetable oscillator (free, excellent for organs)
-        result = await send_osc(vcv_host, vcv_port, "/module/add", ["Bogaudio-WT", 1, 100, 100])
-        setup_results.append({"step": "add_wavetable_osc", "result": result})
-
-        # Add envelope generator
-        result = await send_osc(vcv_host, vcv_port, "/module/add", ["Envelope", 2, 200, 100])
-        setup_results.append({"step": "add_envelope", "result": result})
-
-        # Add filter
-        result = await send_osc(vcv_host, vcv_port, "/module/add", ["Filter", 3, 300, 100])
-        setup_results.append({"step": "add_filter", "result": result})
-
-        # Add audio output
-        result = await send_osc(vcv_host, vcv_port, "/module/add", ["AudioOut", 4, 400, 100])
-        setup_results.append({"step": "add_audio_out", "result": result})
-
-        # Connect modules
-        result = await send_osc(vcv_host, vcv_port, "/connect", [1, "out", 3, "in"])  # Osc -> Filter
-        setup_results.append({"step": "connect_osc_filter", "result": result})
-        result = await send_osc(vcv_host, vcv_port, "/connect", [2, "out", 1, "gate"])  # Env -> Osc gate
-        setup_results.append({"step": "connect_env_osc", "result": result})
-        result = await send_osc(vcv_host, vcv_port, "/connect", [3, "out", 4, "in"])  # Filter -> Audio Out
-        setup_results.append({"step": "connect_filter_out", "result": result})
-
-        return {
-            "status": "success",
-            "message": "Organ rig setup complete with Bogaudio WT",
-            "modules_added": ["Bogaudio-WT", "Envelope", "Filter", "AudioOut"],
-            "connections_made": 3,
-            "setup_results": setup_results,
+            "status": "error",
+            "error_code": "UNSUPPORTED_OPERATION",
+            "message": (
+                f"music_loader_manager '{operation}' has no real OSC implementation -- "
+                "VCV Rack exposes no OSC surface for adding modules, wiring cables, "
+                "or loading MIDI files (only OSCelot's /fader /encoder /button on "
+                "already-mapped slots, see docs/OSCELOT_MAPPING_GUIDE.md). "
+                "Use the real alternative: generate a .vcv patch file via "
+                "src/oscmcp/vcv_patch_builder.py / src/oscmcp/vcv_presets.py "
+                "(or load a prebuilt file from patches/*.vcv -- 7 presets ship "
+                "with the repo, e.g. patches/grand_generative_patch.vcv), then "
+                "open it in VCV Rack. For MIDI file playback without OSC, use the "
+                "Entrian Timeline path documented in CHANGELOG [Unreleased]."
+            ),
+            "operation": operation,
+            "hint": "Try vcv_patch_builder.generate_patch() or patches/grand_generative_patch.vcv",
         }
 
     if operation == "start_performance":
-        # Synchronized start across all applications
+        # VCV Rack has no global /transport OSC -- only REAPER part is real.
         results = []
-
-        # Start VCV Rack sequencer
-        result = await send_osc(vcv_host, vcv_port, "/transport/play", [])
-        results.append({"app": "vcv_rack", "action": "start_transport", "result": result})
-
-        # Start REAPER if available
+        results.append(
+            {
+                "app": "vcv_rack",
+                "action": "start_transport",
+                "status": "unsupported",
+                "error_code": "UNSUPPORTED_OPERATION",
+                "message": "No VCV Rack OSC transport -- open a .vcv patch and press play in Rack. See patches/ for prebuilt examples.",
+            }
+        )
         result = await send_osc(reaper_host, reaper_port, "/play", [])
         results.append({"app": "reaper", "action": "start_playback", "result": result})
-
         return {
             "status": "success",
-            "message": "Performance started across all applications",
+            "message": "Performance start: REAPER via /play; VCV Rack has no OSC transport (see above)",
             "results": results,
         }
 
     if operation == "stop_performance":
-        # Synchronized stop across all applications
         results = []
-
-        # Stop VCV Rack sequencer
-        result = await send_osc(vcv_host, vcv_port, "/transport/stop", [])
-        results.append({"app": "vcv_rack", "action": "stop_transport", "result": result})
-
-        # Stop REAPER if available
+        results.append(
+            {
+                "app": "vcv_rack",
+                "action": "stop_transport",
+                "status": "unsupported",
+                "error_code": "UNSUPPORTED_OPERATION",
+                "message": "No VCV Rack OSC transport -- stop via Rack UI.",
+            }
+        )
         result = await send_osc(reaper_host, reaper_port, "/stop", [])
         results.append({"app": "reaper", "action": "stop_playback", "result": result})
-
         return {
             "status": "success",
-            "message": "Performance stopped across all applications",
+            "message": "Performance stop: REAPER via /stop; VCV Rack has no OSC transport",
             "results": results,
         }
 
