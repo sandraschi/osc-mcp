@@ -2647,7 +2647,9 @@ async def resolume_manager(
                 "status": "error",
                 "message": "layer and opacity required for set_layer_opacity",
             }
-        return await send_osc(host, port, f"/composition/layers/{layer}/opacity", [opacity])
+        # Verified live against Resolume Avenue 7.27.1: /composition/layers/{n}/opacity
+        # is silently ignored (no error, no effect) - the real address needs /video/.
+        return await send_osc(host, port, f"/composition/layers/{layer}/video/opacity", [opacity])
 
     if operation == "set_bpm":
         if bpm is None:
