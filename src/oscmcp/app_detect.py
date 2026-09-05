@@ -105,11 +105,15 @@ APP_SPECS: list[AppSpec] = [
         display_name="VCV Rack",
         path_globs=[r"C:\Program Files\VCV\Rack2*\Rack.exe", r"C:\Program Files\VCV\Rack\Rack.exe"],
         process_names=["Rack.exe"],
-        default_osc_port=7000,
+        default_osc_port=None,  # OSCelot's receive port is fully user-configured, no fixed default
         license="free",
         platform="cross-platform",
         download_url="https://vcvrack.com/",
-        notes="Free (Rack 2 Free edition). Needs a CV-OSC / OSCcv module patched in to bridge OSC to the modular rack.",
+        notes=(
+            "Free (Rack 2 Free edition). Needs OSCelot (via the VCV Library, needs a "
+            "free VCV account) patched in and each parameter manually mapped to a slot - "
+            "see docs/OSCELOT_MAPPING_GUIDE.md. No direct module/param OSC addressing exists."
+        ),
     ),
     AppSpec(
         key="supercollider",

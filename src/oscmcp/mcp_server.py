@@ -1723,256 +1723,108 @@ async def touchdesigner_manager(
 # --- Application Manager Tools ---
 
 
+_VCV_UNSUPPORTED_OPERATIONS = {
+    "send_cv": (
+        "OSCelot has no OSC-settable CV concept - its Expander adds a physical "
+        "CV/trigger *output* wired into your patch by cable, not something "
+        "addressable over the network. There is no verified way to send an "
+        "arbitrary CV voltage into VCV Rack via OSC."
+    ),
+    "set_light": (
+        "OSCelot's OSC input only supports /fader, /encoder, /button on mapped "
+        "slots - there is no light/LED-brightness message in its documented "
+        "protocol (github.com/The-Modular-Mind/oscelot/blob/main/docs/Oscelot.md)."
+    ),
+    "play_midi": "VCV Rack has no native OSC-to-MIDI bridge; this address was never verified against any real module.",
+    "stop_midi": "VCV Rack has no native OSC-to-MIDI bridge; this address was never verified against any real module.",
+    "send_midi_cc": "VCV Rack has no native OSC-to-MIDI bridge; this address was never verified against any real module.",
+    "start_transport": "No VCV Rack module is documented to expose a global /transport/* OSC surface; this was never verified.",
+    "stop_transport": "No VCV Rack module is documented to expose a global /transport/* OSC surface; this was never verified.",
+    "reset_transport": "No VCV Rack module is documented to expose a global /transport/* OSC surface; this was never verified.",
+    "set_transport_position": "No VCV Rack module is documented to expose a global /transport/* OSC surface; this was never verified.",
+}
+
+
 @server.tool()
 async def vcv_manager(
     operation: str,
     host: str = "127.0.0.1",
     port: int = 10001,
     module_id: int | None = None,
-    param_id: int | None = None,
     value: float | None = None,
-    cv_id: int | None = None,
-    voltage: float | None = None,
-    light_id: int | None = None,
-    brightness: float | None = None,
-    trigger_id: int | None = None,
-    note: int | None = None,
-    velocity: int | None = None,
-    channel: int | None = None,
-    controller: int | None = None,
-    frequency: float | None = None,
-    level: float | None = None,
-    rate: float | None = None,
-    cutoff: float | None = None,
-    attack: float | None = None,
-    decay: float | None = None,
-    sustain: float | None = None,
-    release: float | None = None,
     reaper_tempo: float | None = None,
-    position: float | None = None,
 ) -> dict[str, Any]:
     """
-    VCV Rack Manager - Comprehensive modular synthesis control.
+    VCV Rack Manager - modular synthesis control via OSCelot.
 
-    PORTMANTEAU TOOL: Consolidates all VCV Rack operations into one tool.
+    PORTMANTEAU TOOL: Consolidates VCV Rack OSC operations into one tool.
 
-    VCV Rack has no native OSC support. These addresses assume the
-    community OSCelot module (TheModularMind, via the VCV Library) patched
-    in and configured in its direct `/param` mode - see
-    docs/OSCELOT_MAPPING_GUIDE.md. A different bridge module (e.g.
-    trowaSoft's cvOSCcv) will not respond to these addresses.
+    VCV Rack has no native OSC support at all. Every operation below assumes
+    the community OSCelot module (TheModularMind, via the VCV Library)
+    patched in - see docs/OSCELOT_MAPPING_GUIDE.md for the full setup.
+    OSCelot's real, documented protocol (verified against
+    github.com/The-Modular-Mind/oscelot/blob/main/docs/Oscelot.md) only
+    supports THREE message types - `/fader`, `/encoder`, `/button` - each
+    addressed by a **mapping slot Id you assigned by hand in OSCelot's UI**,
+    never by a VCV module/parameter ID directly. There is no way to address
+    an arbitrary, not-yet-mapped parameter over OSC.
+
+    `module_id` below means "the OSCelot slot Id" (confusing name kept for
+    backward compatibility - it is NOT a VCV Rack module ID).
 
     Args:
         operation: Operation to perform
-            - "set_parameter" - Set module parameter (0.0-1.0)
-            - "trigger" - Trigger event
-            - "send_cv" - Send control voltage (-10.0 to 10.0)
-            - "set_light" - Set light brightness (0.0-1.0)
-            - "play_midi" - Play MIDI note (0-127)
-            - "stop_midi" - Stop MIDI note
-            - "send_midi_cc" - Send MIDI CC message
-            - "set_vco_frequency" - Set VCO frequency in Hz
-            - "set_vca_level" - Set VCA level (0.0-1.0)
-            - "set_lfo_rate" - Set LFO rate (0.0-1.0)
-            - "set_filter_cutoff" - Set filter cutoff (0.0-1.0)
-            - "set_envelope_attack" - Set envelope attack (0.0-1.0)
-            - "set_envelope_decay" - Set envelope decay (0.0-1.0)
-            - "set_envelope_sustain" - Set envelope sustain (0.0-1.0)
-            - "set_envelope_release" - Set envelope release (0.0-1.0)
-            - "sync_reaper_tempo" - Sync tempo from REAPER (requires reaper_tempo)
-            - "start_transport" - Start VCV Rack transport/sequencer
-            - "stop_transport" - Stop VCV Rack transport/sequencer
-            - "reset_transport" - Reset transport to beginning
-            - "set_transport_position" - Set transport position (0.0-1.0)
+            - "set_parameter" - Send a value to a mapped fader slot (0.0-1.0)
+            - "trigger" - Press a mapped button slot
+            - "sync_reaper_tempo" - Send REAPER's tempo to a mapped fader slot
+              (normalized against 120 BPM = 1.0 - crude, no better convention
+              is documented anywhere)
         host: Target host (default: 127.0.0.1)
-        port: Target port (default: 10001)
-        module_id: Module ID (required for most operations)
-        param_id: Parameter ID (for set_parameter)
-        value: Parameter value (0.0-1.0)
-        cv_id: CV input ID (for send_cv)
-        voltage: CV voltage (-10.0 to 10.0)
-        light_id: Light ID (for set_light)
-        brightness: Light brightness (0.0-1.0)
-        trigger_id: Trigger ID (for trigger)
-        note: MIDI note (0-127, for MIDI operations)
-        velocity: MIDI velocity (0-127, for play_midi)
-        channel: MIDI channel (1-16, for MIDI operations)
-        controller: MIDI CC controller (0-127, for send_midi_cc)
-        frequency: Frequency in Hz (for set_vco_frequency)
-        level: Level (0.0-1.0, for set_vca_level)
-        rate: Rate (0.0-1.0, for set_lfo_rate)
-        cutoff: Cutoff (0.0-1.0, for set_filter_cutoff)
-        attack: Attack time (0.0-1.0, for envelope)
-        decay: Decay time (0.0-1.0, for envelope)
-        sustain: Sustain level (0.0-1.0, for envelope)
-        release: Release time (0.0-1.0, for envelope)
+        port: Target port (default: 10001) - must match OSCelot's own
+            configured receive port, which has no fixed default
+        module_id: OSCelot mapping slot Id (see docstring above)
+        value: Fader value 0.0-1.0 (for set_parameter)
         reaper_tempo: Tempo from REAPER in BPM (for sync_reaper_tempo)
-        position: Transport position (0.0-1.0, for set_transport_position)
 
     Returns:
-        Operation result with status and details
+        Operation result with status and details. Operations with no
+        verified real OSC surface (send_cv, set_light, MIDI, transport)
+        return a clear "unsupported" error instead of silently sending an
+        unverified address into the void - see git history if you want the
+        previous (unverified) addresses.
     """
 
+    if operation in _VCV_UNSUPPORTED_OPERATIONS:
+        return {
+            "status": "error",
+            "error_code": "UNSUPPORTED_OPERATION",
+            "message": _VCV_UNSUPPORTED_OPERATIONS[operation],
+        }
+
     if operation == "set_parameter":
-        if module_id is None or param_id is None or value is None:
+        if module_id is None or value is None:
             return {
                 "status": "error",
-                "message": "module_id, param_id, and value required for set_parameter",
+                "message": "module_id (OSCelot slot Id) and value required for set_parameter",
             }
-        return await send_osc(host, port, "/param", [module_id, param_id, value])
+        return await send_osc(host, port, "/fader", [module_id, value])
 
     if operation == "trigger":
-        if module_id is None or trigger_id is None:
+        if module_id is None:
             return {
                 "status": "error",
-                "message": "module_id and trigger_id required for trigger",
+                "message": "module_id (OSCelot slot Id) required for trigger",
             }
-        return await send_osc(host, port, "/trigger", [module_id, trigger_id])
+        return await send_osc(host, port, "/button", [module_id, 1.0])
 
-    if operation == "send_cv":
-        if module_id is None or cv_id is None or voltage is None:
-            return {
-                "status": "error",
-                "message": "module_id, cv_id, and voltage required for send_cv",
-            }
-        return await send_osc(host, port, "/cv", [module_id, cv_id, voltage])
-
-    if operation == "set_light":
-        if module_id is None or light_id is None or brightness is None:
-            return {
-                "status": "error",
-                "message": "module_id, light_id, and brightness required for set_light",
-            }
-        return await send_osc(host, port, "/light", [module_id, light_id, brightness])
-
-    if operation == "play_midi":
-        if note is None:
-            return {"status": "error", "message": "note required for play_midi"}
-        velocity = velocity or 100
-        channel = channel or 1
-        return await send_osc(host, port, "/midi/note", [channel, note, velocity])
-
-    if operation == "stop_midi":
-        if note is None:
-            return {"status": "error", "message": "note required for stop_midi"}
-        channel = channel or 1
-        return await send_osc(host, port, "/midi/note", [channel, note, 0])
-
-    if operation == "send_midi_cc":
-        if controller is None or value is None:
-            return {
-                "status": "error",
-                "message": "controller and value required for send_midi_cc",
-            }
-        channel = channel or 1
-        return await send_osc(host, port, "/midi/cc", [channel, controller, value])
-
-    if operation == "set_vco_frequency":
-        if module_id is None or frequency is None:
-            return {
-                "status": "error",
-                "message": "module_id and frequency required for set_vco_frequency",
-            }
-        value = min(max(0.0, frequency / 10000.0), 1.0)
-        return await send_osc(host, port, "/param", [module_id, 0, value])
-
-    if operation == "set_vca_level":
-        if module_id is None or level is None:
-            return {
-                "status": "error",
-                "message": "module_id and level required for set_vca_level",
-            }
-        value = min(max(0.0, level), 1.0)
-        return await send_osc(host, port, "/param", [module_id, 0, value])
-
-    if operation == "set_lfo_rate":
-        if module_id is None or rate is None:
-            return {
-                "status": "error",
-                "message": "module_id and rate required for set_lfo_rate",
-            }
-        value = min(max(0.0, rate), 1.0)
-        return await send_osc(host, port, "/param", [module_id, 0, value])
-
-    if operation == "set_filter_cutoff":
-        if module_id is None or cutoff is None:
-            return {
-                "status": "error",
-                "message": "module_id and cutoff required for set_filter_cutoff",
-            }
-        value = min(max(0.0, cutoff), 1.0)
-        return await send_osc(host, port, "/param", [module_id, 0, value])
-
-    if operation == "set_envelope_attack":
-        if module_id is None or attack is None:
-            return {
-                "status": "error",
-                "message": "module_id and attack required for set_envelope_attack",
-            }
-        value = min(max(0.0, attack), 1.0)
-        return await send_osc(host, port, "/param", [module_id, 0, value])
-
-    if operation == "set_envelope_decay":
-        if module_id is None or decay is None:
-            return {
-                "status": "error",
-                "message": "module_id and decay required for set_envelope_decay",
-            }
-        value = min(max(0.0, decay), 1.0)
-        return await send_osc(host, port, "/param", [module_id, 1, value])
-
-    if operation == "set_envelope_sustain":
-        if module_id is None or sustain is None:
-            return {
-                "status": "error",
-                "message": "module_id and sustain required for set_envelope_sustain",
-            }
-        value = min(max(0.0, sustain), 1.0)
-        return await send_osc(host, port, "/param", [module_id, 2, value])
-
-    if operation == "set_envelope_release":
-        if module_id is None or release is None:
-            return {
-                "status": "error",
-                "message": "module_id and release required for set_envelope_release",
-            }
-        value = min(max(0.0, release), 1.0)
-        return await send_osc(host, port, "/param", [module_id, 3, value])
-
-    # REAPER-VCV Rack Bridge Operations
     if operation == "sync_reaper_tempo":
-        # Listen for REAPER tempo changes and apply to VCV Rack
-        # This would typically be used with get_received_messages to monitor REAPER
-        if reaper_tempo is None:
+        if reaper_tempo is None or module_id is None:
             return {
                 "status": "error",
-                "message": "reaper_tempo required for sync_reaper_tempo",
+                "message": "module_id (OSCelot slot Id) and reaper_tempo required for sync_reaper_tempo",
             }
-        # Convert BPM to VCV Rack clock rate (this is module-specific)
-        # Most VCV sequencers expect BPM or clock division
-        bpm_value = reaper_tempo / 120.0  # Normalize assuming 120 BPM = 1.0
-        return await send_osc(host, port, "/param", [module_id or 1, 0, bpm_value])
-
-    if operation == "start_transport":
-        # Start VCV Rack transport/sequencer
-        return await send_osc(host, port, "/transport/play", [])
-
-    if operation == "stop_transport":
-        # Stop VCV Rack transport/sequencer
-        return await send_osc(host, port, "/transport/stop", [])
-
-    if operation == "reset_transport":
-        # Reset VCV Rack transport to beginning
-        return await send_osc(host, port, "/transport/reset", [])
-
-    if operation == "set_transport_position":
-        # Set transport position (0.0-1.0 for normalized position)
-        if position is None:
-            return {
-                "status": "error",
-                "message": "position required for set_transport_position",
-            }
-        return await send_osc(host, port, "/transport/position", [position])
+        bpm_value = min(max(0.0, reaper_tempo / 120.0), 1.0)  # crude normalization, no better convention documented
+        return await send_osc(host, port, "/fader", [module_id, bpm_value])
 
     return {"status": "error", "message": f"Unknown operation: {operation}"}
 

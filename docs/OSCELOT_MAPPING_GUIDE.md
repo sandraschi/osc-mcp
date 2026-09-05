@@ -1,166 +1,99 @@
 # OSCelot Detailed Mapping Guide
 
-## Understanding OSCelot's UI
+**Corrected 2026-09-05 against the real, primary-source manual**
+(`github.com/The-Modular-Mind/oscelot/blob/main/docs/Oscelot.md`) — the
+previous version of this file had a "Direct `/param [ModuleID, ParamID,
+Value]`" mode and a "right-click a dot to choose Slider/Button/Encoder"
+workflow that **do not exist in the real plugin**. Both were fabricated;
+neither matches OSCelot's actual, documented OSC protocol. See git history
+if you need the old (wrong) version for reference.
 
-### The Dots/Tags System
+## The real protocol: three fixed message types, slot-addressed
 
-OSCelot has **controller slots** on the left side of its interface. These appear as dots initially, but can be configured as different controller types:
+OSCelot has **numbered mapping slots** (not one per module/param — one per
+control you've manually mapped). Each slot is bound to exactly one VCV Rack
+parameter, done once through OSCelot's own UI (see "Mapping parameters"
+below) — **there is no way to address an arbitrary module/param pair
+directly by ID over OSC**. You can only drive a slot that a human already
+mapped.
 
-- **Dot (unconfigured)** - Empty slot, not assigned
-- **Slider/Fader** - For continuous parameters (knobs, sliders)
-- **Button** - For on/off parameters (switches, buttons)
-- **Encoder** - For rotary encoders (incremental values)
+Every message **must** end with one of these three addresses and carry
+exactly two arguments:
 
-### How to Configure Controller Slots
+| Type | Address suffix | Arguments | Example |
+|---|---|---|---|
+| Fader | `/fader` | `(Id: int, Value: float 0.0-1.0)` | `/fader, (1, 0.5573)` |
+| Encoder | `/encoder` | `(Id: int, Delta: ±1.0 multiples)` | `/encoder, (1, -1.0)` |
+| Button | `/button` | `(Id: int, Value: 0.0 or 1.0)` | `/button, (1, 1.0)` |
 
-1. **Click on a dot** on the left side of OSCelot
-2. **Right-click** (or check context menu) to see controller type options
-3. **Select controller type**: Slider, Button, or Encoder
-4. **Configure OSC address**: Each slot needs an OSC address pattern
-   - Slider: `/fader` or `/slider`
-   - Button: `/button`
-   - Encoder: `/encoder`
+`Id` is the mapping slot's number, assigned when you mapped it in OSCelot's
+UI — it has no fixed relationship to VCV's own internal module ID or
+parameter ID. There is no `/param` address, no direct ModuleID/ParamID
+addressing, and no way to skip the manual-mapping step.
 
-### Detailed Mapping Process
+Encoders are always in `DIRECT` mode. Faders/buttons default to `DIRECT`
+too, but can be switched to `Pickup (snap)`, `Pickup (jump)`, `Toggle`, or
+`Toggle + Value` in OSCelot's own controller-mode setting per slot.
 
-#### Step 1: Map a Parameter to OSCelot
+## OSC feedback
 
-1. **Click "Map" button** in OSCelot (enters mapping mode)
-2. **Click on a knob/slider** on your module (e.g., VCO frequency)
-3. OSCelot automatically creates a mapping entry
-4. The parameter appears in OSCelot's list with:
-   - Module ID
-   - Parameter ID
-   - Parameter name
-
-#### Step 2: Assign to Controller Slot
-
-1. **Find the mapped parameter** in OSCelot's list
-2. **Click on an empty dot** (controller slot) on the left
-3. **Right-click** to set controller type:
-   - For knobs/sliders → Choose **"Slider"** or **"Fader"**
-   - For buttons/switches → Choose **"Button"**
-   - For incremental controls → Choose **"Encoder"**
-4. **Set OSC address pattern**:
-   - Slider: `/fader` (or `/slider`)
-   - Button: `/button`
-   - Encoder: `/encoder`
-5. **Set Controller ID**: This is the slot number (0, 1, 2, etc.)
-   - First slot = ID 0
-   - Second slot = ID 1
-   - etc.
-
-#### Step 3: Link Parameter to Controller Slot
-
-1. **Drag** the parameter from the list to the controller slot
-2. OR **Click** the parameter, then **click** the controller slot
-3. The dot should change to show the controller type (slider/button/encoder icon)
-4. The parameter is now linked to that controller slot
-
-### OSC Message Formats
-
-Once configured, OSCelot expects these message formats:
-
-#### Slider/Fader Format
-```
-Address: /fader
-Arguments: [ControllerID, Value]
-Example: /fader [1, 0.75]  (Controller slot 1, value 0.75)
-```
-
-#### Button Format
-```
-Address: /button
-Arguments: [ControllerID, Value]
-Example: /button [0, 1]  (Controller slot 0, button pressed)
-```
-
-#### Encoder Format
-```
-Address: /encoder
-Arguments: [ControllerID, Value]
-Example: /encoder [2, 0.5]  (Controller slot 2, encoder value)
-```
-
-### Alternative: Direct Parameter Mapping
-
-OSCelot also supports direct parameter control without controller slots:
-
-#### Direct /param Format
-```
-Address: /param
-Arguments: [ModuleID, ParameterID, Value]
-Example: /param [2, 0, 0.5]  (Module 2, Parameter 0, Value 0.5)
-```
-
-This bypasses the controller slot system entirely.
-
-### Visual Guide
+If OSCelot's Sender is running, every parameter change (from OSC or from
+turning the knob by hand in Rack) generates two messages back out:
 
 ```
-OSCelot Interface:
-┌─────────────────────────────────────┐
-│ [●] [●] [●] [●]  ← Controller slots │
-│                                     │
-│ Mapped Parameters:                  │
-│ ┌─────────────────────────────┐   │
-│ │ Module 2, Param 0: Frequency │   │
-│ │ Module 2, Param 1: Waveform  │   │
-│ │ Module 3, Param 0: Cutoff    │   │
-│ └─────────────────────────────┘   │
-│                                     │
-│ [Map] [Clear] [Settings]           │
-└─────────────────────────────────────┘
+/fader, (1, 0.3499999940395355)
+/fader/info, (1, 'MixMaster', '-01-: level', '-21.335', ' dB')
 ```
 
-### Step-by-Step Example: Mapping VCO Frequency
+The first repeats the slot Id + normalized value (0.0-1.0). The second,
+suffixed `/info`, carries the module name, the parameter's label, its
+current display value, and its unit — useful for confirming what a slot
+is actually bound to without opening Rack.
 
-1. **Add VCO module** to your patch
-2. **Click "Map"** in OSCelot
-3. **Click the Frequency knob** on VCO
-4. Parameter appears in list: "Module 2, Param 0: Frequency"
-5. **Click first dot** (slot 0) on left
-6. **Right-click** → Select **"Slider"**
-7. **Set address**: `/fader`
-8. **Set Controller ID**: 0
-9. **Link**: Drag parameter to slot 0 (or click parameter, then slot)
-10. Dot changes to slider icon ✓
+## Mapping parameters (the only way to bind a slot)
 
-### Testing Your Mapping
+You must do this once per parameter, in OSCelot's own UI, before any OSC
+message can reach it:
 
-After mapping, test with OSC-MCP:
+1. **Map an entire module** (fast path): click OSCelot's module-map button
+   (cursor becomes a crosshair), then click any module's panel in your
+   patch. Every mappable parameter on that module gets bound to slots at
+   once. `Ctrl/Cmd+Shift+D` clears existing mappings first;
+   `Shift+D` keeps them and re-maps onto the new module.
+2. **Map one parameter at a time**: click an empty mapping slot in
+   OSCelot, then click the target knob/slider/button in your patch, then
+   send a real `/fader`, `/encoder`, or `/button` message from your
+   controller (or from `send_osc` while testing) — **the address you send
+   is what determines the slot's type**, not a right-click menu.
+3. **MeowMory**: once you've mapped a module type, you can save that
+   mapping ("Store mapping") and re-apply it to any other instance of the
+   same module type later (`Apply`, or hotkey `Shift+V`), without
+   re-mapping by hand every time.
+
+## Testing a mapping with osc-mcp
 
 ```python
-# For controller slot mapping (slider/fader)
-await send_osc("127.0.0.1", 10001, "/fader", [0, 0.5])  # Slot 0, value 0.5
+# Slot 1, fader value 0.5573 (Id must be a slot you've already mapped in OSCelot's UI)
+await send_osc("127.0.0.1", 7000, "/fader", [1, 0.5573])
 
-# For direct parameter mapping
-await send_osc("127.0.0.1", 10001, "/param", [2, 0, 0.5])  # Module 2, Param 0
+# Slot 0, button press
+await send_osc("127.0.0.1", 7000, "/button", [0, 1.0])
+
+# Slot 2, encoder nudge
+await send_osc("127.0.0.1", 7000, "/encoder", [2, 1.0])
 ```
 
-### Common Issues
+Port `7000` above matches this repo's `app_detect.py` default note — set
+OSCelot's own "Receive port" in its UI to whatever you actually use, there
+is no fixed default.
 
-**Problem**: Dots don't change to tags/icons
-- **Solution**: Right-click the dot to configure controller type first
-- Make sure you've mapped a parameter before assigning to slot
+## Common issues
 
-**Problem**: Parameter mapped but not responding
-- **Check**: Controller slot is configured (not just a dot)
-- **Check**: OSC address matches (e.g., `/fader` not `/param`)
-- **Check**: Controller ID matches slot number
-
-**Problem**: Don't know which format to use
-- **Use `/fader` format** if you configured controller slots
-- **Use `/param` format** for direct control (simpler, no slots needed)
-
-### Recommended Approach
-
-For OSC-MCP integration, **use direct `/param` format**:
-
-1. Map parameters in OSCelot (click Map, click knob)
-2. Note the Module ID and Parameter ID from OSCelot's display
-3. Use `/param [ModuleID, ParamID, Value]` format
-4. No need to configure controller slots!
-
-This is simpler and works directly with OSC-MCP's `vcv_manager` tool.
-
+- **Nothing happens when you send a message**: the slot must already be
+  mapped to a parameter through OSCelot's UI first (see above) — OSC alone
+  cannot create a new mapping to an arbitrary module/param.
+- **Wrong Id**: `Id` is the mapping-slot number OSCelot assigned, not a
+  VCV module ID. Check OSCelot's own list to see which Id belongs to which
+  parameter.
+- **Encoder does nothing on `/fader`/`/button` addresses**: each slot only
+  responds to the one address type it was mapped with.

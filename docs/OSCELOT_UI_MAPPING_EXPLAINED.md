@@ -86,15 +86,15 @@ The documentation doesn't clearly explain that:
 - There's no right-click menu to configure slot types
 - The slot type is **inferred from the OSC message** you send
 
-## Alternative: Direct Parameter Mapping (No Slots)
+## Correction (2026-09-05)
 
-If you don't have an OSC controller to send messages during mapping, you can use **direct parameter mapping**:
-
-1. Click "Map" button
-2. Click parameter (knob/slider)
-3. Parameter appears in OSCelot's list with Module ID and Param ID
-4. Use `/param [ModuleID, ParamID, Value]` format directly
-5. No slots needed!
+**There is no `/param [ModuleID, ParamID, Value]` mode.** An earlier version
+of this section described one - verified against the real, primary-source
+manual (`github.com/The-Modular-Mind/oscelot/blob/main/docs/Oscelot.md`)
+that it does not exist in the actual plugin. There is no way to skip the
+slot system; every message must be `/fader`, `/encoder`, or `/button`
+addressed by the slot's Id, and every slot must be manually bound to a
+parameter through OSCelot's UI first (see the mapping workflow above).
 
 ## The Confusion Explained
 
@@ -104,16 +104,15 @@ The dots don't "become tags" through UI configuration. They become fader/button/
 
 **Without an OSC controller sending messages during mapping, the slots stay as dots!**
 
-## Solution for OSC-MCP Users
+## Solution for osc-mcp users
 
-Since you're using OSC-MCP programmatically, you don't need the slot system at all:
+There's no way around the slot system - use it exactly as a hardware OSC
+controller (TouchOSC, Lemur, etc.) would:
 
-1. **Map parameters** (click Map, click knob) - this creates the mapping
-2. **Use `/param` format** directly:
-   ```python
-   await send_osc("127.0.0.1", 10001, "/param", [ModuleID, ParamID, Value])
-   ```
-3. **Ignore the slots entirely** - they're for hardware OSC controllers
-
-The slots are designed for **hardware OSC controllers** (like TouchOSC, Lemur, etc.) that send `/fader`, `/button`, `/encoder` messages. For programmatic control via OSC-MCP, use `/param` format instead.
-
+1. **Map each parameter once** through OSCelot's UI (click a slot, click
+   the knob, then send one real `/fader`/`/button`/`/encoder` message so
+   OSCelot knows which type to lock the slot to).
+2. **Note the slot Id** OSCelot shows for each mapping.
+3. **Drive it via `vcv_manager`** using that same slot Id going forward -
+   see `docs/OSCELOT_MAPPING_GUIDE.md` for the exact address/argument
+   format per type.
