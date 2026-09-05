@@ -1,5 +1,9 @@
 # Installation
 
+> **First time?** Complete [docs/ONBOARDING.md](docs/ONBOARDING.md) before expecting
+> any of the wrapped apps (Ableton, TouchDesigner, VRChat, VCV Rack, SuperCollider,
+> Max/MSP, Resolume, QLab, Pure Data, OBS) to actually respond to calls.
+
 ## 🚀 Quick Start (recommended)
 
 ```powershell
