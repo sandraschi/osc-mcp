@@ -137,16 +137,22 @@ MIDI CC messages on a virtual port are bidirectionally mapped to OSC addresses.
 
 ## Common Ports
 
-| Application | Default OSC Port |
-|---|---|
-| VRChat (send) | 9000 |
-| VRChat (receive) | 9001 |
-| Ableton Live | 11000 |
-| TouchDesigner | 12000 |
-| Max/MSP | 13000 |
-| SuperCollider | 57120 |
-| VCV Rack | 14000 |
-| OBS Studio | 7000 |
-| QLab | 53000 |
-| Resolume | 7000 |
-| Pure Data | 8000 |
+Verified against `src/oscmcp/app_detect.py` (the fleet's own detection registry,
+corrected after several of these were found fabricated earlier in the project's
+history — see each app's dedicated skill for the full story and primary sources):
+
+| Application | Default OSC Port | Notes |
+|---|---|---|
+| Ableton Live | 11000 | No native OSC — needs the third-party AbletonOSC remote script |
+| TouchDesigner | 9000 | Needs an OSC In CHOP/DAT configured in the project |
+| VRChat | 9000 (send), 9001 (receive) | Must be enabled in-game: Settings > OSC > Enabled |
+| VCV Rack | **no fixed default** | OSCelot's receive port is fully user-configured — see `skills/vcvrack-expert/` |
+| SuperCollider | 57110 | scsynth (the audio server) answers OSC — running scide alone isn't enough |
+| Max/MSP | 7400 | Needs `udpreceive`/`udpsend` or `oscformat`/`oscparse` patched in |
+| Resolume | 7000 | |
+| QLab | 53000 | macOS-only |
+| Pure Data | 9000 | Needs `[netreceive]`/`[netsend]` or an OSC library patched in |
+| OBS Studio | **not OSC** | Connects via obs-websocket, not OSC — see `docs/OBS_PLUGINS_GUIDE.md` |
+
+For deeper per-app OSC address conventions, gotchas, and primary-source references,
+see the dedicated skill for that application under `skills/{app}-expert/`.

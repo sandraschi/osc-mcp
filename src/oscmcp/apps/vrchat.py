@@ -22,9 +22,14 @@ class VRChatOSC:
     Handles both sending and receiving OSC messages to/from VRChat.
     """
 
-    # Default VRChat OSC ports
-    DEFAULT_INPUT_PORT = 9000  # VRChat sends to this port
-    DEFAULT_OUTPUT_PORT = 9001  # VRChat receives on this port
+    # Default VRChat OSC ports - verified against docs.vrchat.com: VRChat itself
+    # listens (receives) on 9000, and sends its own outgoing messages on 9001.
+    # These two constants were swapped before this fix (input_port=9000 was
+    # documented as "port to receive from VRChat" but defaulted to VRChat's
+    # own receive port, not its send port) - found via web research while
+    # building per-app skills, not caught by any existing test.
+    DEFAULT_INPUT_PORT = 9001  # we listen here for VRChat's outgoing messages
+    DEFAULT_OUTPUT_PORT = 9000  # we send here; this is VRChat's own listen port
 
     def __init__(
         self,
@@ -198,6 +203,16 @@ class VRChatOSC:
         frequency: float = 0.0,
     ) -> None:
         """Trigger haptic feedback on a device.
+
+        NOT VERIFIED: VRChat has no universal, documented OSC address for
+        controller haptics - `/avatar/parameters/LeftHaptic`/`RightHaptic`
+        below are not part of VRChat's real, documented OSC protocol (there
+        is no such thing as a universal haptic parameter; real haptic
+        feedback is driven per-avatar, through Contact Receivers/PhysBones
+        the avatar creator defines, which this class has no way to know in
+        advance). Treat this as speculative and likely a silent no-op
+        against a real VRChat install unless the target avatar happens to
+        define parameters with these exact names.
 
         Args:
             device: Device to trigger haptics on ('left', 'right', or 'both')

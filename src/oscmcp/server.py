@@ -609,6 +609,14 @@ async def trigger_vrchat_haptic_lfo(
 ) -> dict[str, Any]:
     """Trigger VRChat haptic feedback modulated by an LFO waveform.
 
+    NOT VERIFIED: this depends on `VRChatOSC.trigger_haptic`, which sends to
+    `/avatar/parameters/LeftHaptic`/`RightHaptic` - addresses with no basis
+    in VRChat's real, documented OSC protocol (VRChat has no universal
+    haptic address; real haptic feedback is avatar-specific, via Contact
+    Receivers/PhysBones). This tool reports "success" once the background
+    pattern task is scheduled, regardless of whether any of it actually
+    reaches a real avatar - treat it as speculative.
+
     ## Return Format
     {"status": "success", "message": str}
 
@@ -652,16 +660,22 @@ async def trigger_vrchat_haptic_lfo(
 
 @server.tool(annotations=_MUTATING)
 async def set_vrchat_expression(
-    expression: Annotated[str, Field(description="Expression name (e.g. 'EyeLidLeft', 'JawOpen', 'Smile')")],
+    expression: Annotated[str, Field(description="Expression name (e.g. 'EyeLidLeft', 'JawOpen')")],
     intensity: Annotated[float, Field(description="Expression intensity scale from 0.0 to 1.0")] = 1.0,
 ) -> dict[str, Any]:
     """Set VRChat avatar Unified Expressions (face/eye tracking) parameters.
+
+    'EyeLidLeft' and 'JawOpen' are confirmed real Unified Expressions v2
+    parameter names; 'Smile' (previously used as an example here) is not -
+    it doesn't appear in VRChat's real FT/v2 namespace. This tool sends
+    whatever name is passed under `FT/v2/{expression}` regardless, so a
+    wrong name is a silent no-op against a real avatar, not an error here.
 
     ## Return Format
     {"status": "success"|"error", "parameter": str, "intensity": float}
 
     ## Examples
-    set_vrchat_expression(expression="Smile", intensity=0.8)
+    set_vrchat_expression(expression="JawOpen", intensity=0.8)
     set_vrchat_expression(expression="EyeLidLeft", intensity=0.5)
     """
     from .apps.vrchat import VRChatOSC
@@ -952,11 +966,21 @@ async def obs_manager(
     source_name: Annotated[
         str | None, Field(description="Audio source name (required for toggle_mute, set_volume)")
     ] = None,
-    volume: Annotated[float | None, Field(description="Volume level 0.0 to 1.0 (required for set_volume)")] = None,
+    volume: Annotated[
+        float | None, Field(description="Volume multiplier 0.0 to 2.0 (1.0 = unity gain, required for set_volume)")
+    ] = None,
     host: Annotated[str, Field(description="OBS WebSocket host")] = "127.0.0.1",
-    port: Annotated[int, Field(description="OBS WebSocket port", gt=0, le=65535)] = 7000,
+    port: Annotated[int, Field(description="OSC port of scripts/obs_websocket_bridge.py", gt=0, le=65535)] = 7000,
 ) -> dict[str, Any]:
     """Control OBS Studio via OSC.
+
+    OBS Studio has no native OSC support at all - this sends OSC to
+    `scripts/obs_websocket_bridge.py` (must be running separately; see the
+    README's "OBS Studio WebSockets Bridge" section), which translates each
+    message into a real obs-websocket v5 request (`SetCurrentProgramScene`,
+    `ToggleInputMute`, `SetInputVolume`, `StartStream`, `StopStream`). If
+    the bridge isn't running, every call here is a silent no-op - nothing
+    in this function's return value can detect that.
 
     [RATIONALE] Consolidated OBS operations into a single portmanteau tool to reduce
     tool count and keep related studio control actions grouped.
@@ -964,7 +988,8 @@ async def obs_manager(
     Supported operations:
     - switch_scene: Switch to target scene (requires scene_name)
     - toggle_mute: Toggle mute status of an audio source (requires source_name)
-    - set_volume: Set volume of an audio source 0.0 to 1.0 (requires source_name, volume)
+    - set_volume: Set volume multiplier of an audio source, 0.0-2.0 (requires source_name, volume) -
+      only toggle-mute is exposed, there is no explicit set-mute/unmute
     - start_stream: Start streaming
     - stop_stream: Stop streaming
 

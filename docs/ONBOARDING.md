@@ -59,12 +59,17 @@ pricing, unrelated to this MCP server.
     to adjust the addresses yourself.
   - *SuperCollider*: run `scsynth` (the audio server) — the IDE (`scide`) alone does
     not answer OSC.
-  - *Max/MSP*: patch `udpreceive`/`udpsend` or `[oscformat]`/`[oscparse]` objects.
+  - *Max/MSP*: patch `[udpreceive]`/`[udpsend]` (raw UDP, no OSC parsing) or CNMAT's
+    odot package (`[o.pack]`/`[o.unpack]`/`[o.route]`) for real OSC encode/decode -
+    `[oscformat]`/`[oscparse]` are Pure Data objects, not Max/MSP (a previous version
+    of this note conflated the two).
   - *Resolume*: OSC input is on by default on port 7000; check Preferences → OSC if
     it doesn't respond.
   - *QLab*: OSC is on by default; **macOS only** — cannot run or be tested on a
     Windows host at all, structurally, regardless of licensing.
-  - *Pure Data*: patch `[netreceive]`/`[netsend]` or the OSC library objects.
+  - *Pure Data*: vanilla Pd has no OSC support at all - install the mrpeach OSC library
+    via Deken (`[unpackOSC]`/`[routeOSC]`/`[packOSC]`/`[oscformat]`) and use
+    `[netreceive -b]` (binary mode), not plain `[netreceive]`, which is FUDI-only.
   - *OBS Studio*: Tools → WebSocket Server Settings → Enable WebSocket server (built
     into OBS 28+; this is obs-websocket, not OSC).
 - **Firewall**: if connecting across LAN/Tailscale rather than localhost, allow the

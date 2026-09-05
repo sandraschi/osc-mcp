@@ -18,8 +18,12 @@ export function Skills() {
         const r = await fetch(`${API_BASE}/api/v1/skills`);
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const data = await r.json();
-        const names = Array.isArray(data)
-          ? data
+        // The real endpoint returns {"skills": [...], "count": N}, not a bare
+        // array - this used to always fall through to [], so this page showed
+        // "No skills available" even when skills existed.
+        const list = Array.isArray(data) ? data : (data?.skills ?? []);
+        const names = Array.isArray(list)
+          ? list
               .map((s: any) =>
                 typeof s === "string" ? s : s.name || s.id || String(s),
               )
@@ -46,8 +50,10 @@ export function Skills() {
           `${API_BASE}/api/v1/skills/${encodeURIComponent(selected)}`,
         );
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        const text = await r.text();
-        setContent(text);
+        // The real endpoint returns {"name": ..., "content": "..."} JSON, not
+        // plain text - this used to display the raw JSON wrapper as content.
+        const data = await r.json();
+        setContent(typeof data === "string" ? data : (data?.content ?? ""));
       } catch (e) {
         setContent(
           "Error loading skill: " +

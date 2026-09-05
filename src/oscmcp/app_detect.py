@@ -135,7 +135,12 @@ APP_SPECS: list[AppSpec] = [
         license="commercial-trial",
         platform="windows",
         download_url="https://cycling74.com/downloads",
-        notes="30-day full-featured trial. Needs udpreceive/udpsend or [oscformat]/[oscparse] objects patched in.",
+        notes=(
+            "30-day full-featured trial. Needs [udpreceive]/[udpsend] (raw UDP, no OSC "
+            "parsing) patched in, or CNMAT's odot package ([o.pack]/[o.unpack]/[o.route]) "
+            "for real OSC encode/decode - [oscformat]/[oscparse] are Pure Data objects, "
+            "not Max/MSP (a prior version of this note conflated the two)."
+        ),
     ),
     AppSpec(
         key="resolume",

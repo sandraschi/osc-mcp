@@ -16,7 +16,57 @@ _SKILLS_MANIFEST = {
         "name": "osc-mcp-expert",
         "title": "OSC-MCP Expert",
         "description": "Comprehensive skill covering all OSC tool capabilities, best practices, and configuration.",
-    }
+    },
+    "ableton-expert": {
+        "name": "ableton-expert",
+        "title": "Ableton Live Expert",
+        "description": "AbletonOSC's real address space, ableton_manager's operations, and setup pitfalls.",
+    },
+    "vcvrack-expert": {
+        "name": "vcvrack-expert",
+        "title": "VCV Rack Expert",
+        "description": "OSCelot's real slot-addressed protocol, vcv_manager's operations, and the separate patch-builder feature.",
+    },
+    "touchdesigner-expert": {
+        "name": "touchdesigner-expert",
+        "title": "TouchDesigner Expert",
+        "description": "OSC In/Out CHOP and DAT conventions, and touchdesigner_manager's operations.",
+    },
+    "vrchat-expert": {
+        "name": "vrchat-expert",
+        "title": "VRChat Expert",
+        "description": "VRChat's real OSC protocol (avatar parameters, input, chatbox, trackers) and vrchat_manager's operations.",
+    },
+    "supercollider-expert": {
+        "name": "supercollider-expert",
+        "title": "SuperCollider Expert",
+        "description": "scsynth's real Server Command Reference and supercollider_manager's operations.",
+    },
+    "maxmsp-expert": {
+        "name": "maxmsp-expert",
+        "title": "Max/MSP Expert",
+        "description": "Why Max has no fixed OSC namespace, real udpreceive/udpsend/odot objects, and maxmsp_manager's operations.",
+    },
+    "resolume-expert": {
+        "name": "resolume-expert",
+        "title": "Resolume Expert",
+        "description": "Resolume's real shipped OSC address list and resolume_manager's operations.",
+    },
+    "qlab-expert": {
+        "name": "qlab-expert",
+        "title": "QLab Expert",
+        "description": "Figure 53's real OSC Dictionary and qlab_manager's operations (macOS-only).",
+    },
+    "puredata-expert": {
+        "name": "puredata-expert",
+        "title": "Pure Data Expert",
+        "description": "Why vanilla Pd has no OSC support, the mrpeach library, and puredata_manager's operations.",
+    },
+    "obs-expert": {
+        "name": "obs-expert",
+        "title": "OBS Studio Expert",
+        "description": "The OSC-to-obs-websocket bridge architecture and obs_manager's operations.",
+    },
 }
 
 

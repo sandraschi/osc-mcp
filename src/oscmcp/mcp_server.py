@@ -926,15 +926,15 @@ async def ableton_manager(
     """
 
     if operation == "play":
-        return await send_osc(host, port, "/live/play", [])
+        return await send_osc(host, port, "/live/song/start_playing", [])
 
     if operation == "stop":
-        return await send_osc(host, port, "/live/stop", [])
+        return await send_osc(host, port, "/live/song/stop_playing", [])
 
     if operation == "set_tempo":
         if bpm is None:
             return {"status": "error", "message": "bpm required for set_tempo"}
-        return await send_osc(host, port, "/live/tempo", [bpm])
+        return await send_osc(host, port, "/live/song/set/tempo", [bpm])
 
     if operation == "play_clip":
         if track_index is None or clip_slot is None:
@@ -989,30 +989,28 @@ async def vrchat_manager(
         operation: Operation to perform
             - "set_parameter" - Set avatar parameter (float/int/bool)
             - "send_chat" - Send chatbox message immediately
-            - "chatbox_typing" - Show the "..." typing indicator without sending
-            - "trigger_haptic" - Trigger haptic feedback
+            - "chatbox_typing" - Show/hide the "..." typing indicator (no message sent)
+            - "trigger_haptic" - NOT SUPPORTED - see docstring below
             - "input" - Simulate a movement/camera/action input
-            - "tracking_control" - Enable/disable a body tracker
+            - "tracking_control" - NOT SUPPORTED - see docstring below
             - "afk_toggle" - Convenience wrapper for the AFK avatar parameter
         host: Target host (default: 127.0.0.1)
         port: Target port (default: 9000)
         param_name: Parameter name (for set_parameter)
         value: Parameter value (for set_parameter); input magnitude 0.0-1.0 or
             0/1 for buttons (for input)
-        message: Chat message (for send_chat / chatbox_typing)
+        message: Chat message (for send_chat only)
         device: Haptic device ('left', 'right', or 'both', for trigger_haptic)
         duration: Haptic duration (default: 0.1, for trigger_haptic)
         amplitude: Haptic amplitude (default: 0.5, for trigger_haptic)
         frequency: Haptic frequency (default: 0.0, for trigger_haptic)
         input_name: Input control name (for input) - Movement: "MoveForward",
             "MoveBackward", "MoveLeft", "MoveRight"; Look: "LookLeft",
-            "LookRight", "LookUp", "LookDown"; Actions: "Jump", "Run",
+            "LookRight"; Actions: "Jump", "Run",
             "GrabLeft"/"GrabRight", "UseLeft"/"UseRight", "DropLeft"/"DropRight",
             "ComfortLeft"/"ComfortRight", "QuickMenuToggleLeft"/"...Right", "Voice"
-        tracking_type: Tracker to control (for tracking_control) - "Head",
-            "LeftHand", "RightHand", "Hip", "LeftFoot", "RightFoot",
-            "LeftElbow", "RightElbow", "LeftKnee", "RightKnee", "Chest"
-        enabled: True to enable, False to disable (for tracking_control /
+        tracking_type: unused - tracking_control is not supported (see below)
+        enabled: True to enable, False to disable (for chatbox_typing /
             afk_toggle - AFK when enabled=True)
         notify: Play the chatbox notification sound (for send_chat, default
             False - matches VRChat's own default of no sound for OSC-driven text)
@@ -1020,11 +1018,27 @@ async def vrchat_manager(
     Returns:
         Operation result with status and details
 
+    ## Known gaps (verified via web research against docs.vrchat.com)
+
+    `trigger_haptic` and `tracking_control` return `UNSUPPORTED_OPERATION`
+    rather than sending a guessed address:
+    - VRChat has **no universal haptic OSC address**. Real haptic feedback
+      is driven per-avatar through Contact Receivers/PhysBones the avatar
+      creator defines - there is no address this tool could send that
+      would work across avatars.
+    - VRChat has **no enable/disable-by-name address for body trackers**.
+      Its real tracking OSC surface only lets external tracking hardware
+      *send* numbered-slot position/rotation (`/tracking/trackers/{1-8|head}/
+      position` and `/rotation`) - it has no address to toggle a named
+      tracker on/off.
+
+    `input_name`'s "LookUp"/"LookDown" were removed from the documented list
+    above - VRChat's real Input OSC surface has no such addresses.
+
     Examples:
         >>> await vrchat_manager("input", input_name="MoveForward", value=1.0)
         >>> await vrchat_manager("input", input_name="Jump", value=1)
-        >>> await vrchat_manager("chatbox_typing", message="thinking...")
-        >>> await vrchat_manager("tracking_control", tracking_type="LeftFoot", enabled=False)
+        >>> await vrchat_manager("chatbox_typing", enabled=True)
         >>> await vrchat_manager("afk_toggle", enabled=True)
     """
 
@@ -1043,9 +1057,7 @@ async def vrchat_manager(
         return await send_osc(host, port, "/chatbox/input", [message, True, notify])
 
     if operation == "chatbox_typing":
-        if message is None:
-            return {"status": "error", "message": "message required for chatbox_typing"}
-        return await send_osc(host, port, "/chatbox/typing", [message])
+        return await send_osc(host, port, "/chatbox/typing", [enabled])
 
     if operation == "input":
         if input_name is None or value is None:
@@ -1056,40 +1068,35 @@ async def vrchat_manager(
         return await send_osc(host, port, f"/input/{input_name}", [float(value)])
 
     if operation == "tracking_control":
-        if tracking_type is None:
-            return {
-                "status": "error",
-                "message": "tracking_type required for tracking_control",
-            }
-        return await send_osc(host, port, f"/tracking/{tracking_type}/enabled", [1 if enabled else 0])
+        return {
+            "status": "error",
+            "error_code": "UNSUPPORTED_OPERATION",
+            "message": (
+                "VRChat's real OSC protocol has no address to enable/disable a body "
+                "tracker by name - it only accepts numbered-slot position/rotation input "
+                "for external tracking hardware (/tracking/trackers/{1-8|head}/position, "
+                "/rotation), never an enable/disable toggle. This operation used to send a "
+                "fabricated /tracking/{name}/enabled address; removed rather than fixed "
+                "since no real equivalent exists."
+            ),
+        }
 
     if operation == "afk_toggle":
         return await send_osc(host, port, "/avatar/parameters/AFK", [1 if enabled else 0])
 
     if operation == "trigger_haptic":
-        device = device or "both"
-        duration = duration or 0.1
-        amplitude = amplitude or 0.5
-        frequency = frequency or 0.0
-
-        results = {}
-        if device.lower() in ("left", "both"):
-            await send_osc(
-                host,
-                port,
-                "/avatar/parameters/LeftHaptic",
-                [duration, amplitude, frequency],
-            )
-            results["left"] = "sent"
-        if device.lower() in ("right", "both"):
-            await send_osc(
-                host,
-                port,
-                "/avatar/parameters/RightHaptic",
-                [duration, amplitude, frequency],
-            )
-            results["right"] = "sent"
-        return {"status": "success", "device": device, "results": results}
+        return {
+            "status": "error",
+            "error_code": "UNSUPPORTED_OPERATION",
+            "message": (
+                "VRChat has no universal haptic OSC address - real haptic feedback is "
+                "driven per-avatar through Contact Receivers/PhysBones the avatar creator "
+                "defines, which this tool has no way to know in advance. This operation "
+                "used to send /avatar/parameters/LeftHaptic and RightHaptic, which are not "
+                "part of VRChat's documented OSC protocol and are very unlikely to match "
+                "any real avatar's actual parameter names."
+            ),
+        }
 
     return {"status": "error", "message": f"Unknown operation: {operation}"}
 
@@ -2519,7 +2526,7 @@ async def supercollider_manager(
 async def maxmsp_manager(
     operation: str,
     host: str = "127.0.0.1",
-    port: int = 4000,
+    port: int = 7400,
     receiver: str | None = None,
     value: float | None = None,
 ) -> dict[str, Any]:
@@ -2528,13 +2535,21 @@ async def maxmsp_manager(
 
     PORTMANTEAU TOOL: Consolidates all Max/MSP operations into one tool.
 
+    Max has no fixed OSC namespace or default port at all - everything
+    depends entirely on what the user's own patch does with `udpreceive`/
+    `udpsend` (raw UDP, no OSC parsing) or `oscformat`/`oscparse` (Max's own
+    OSC codec objects). `port=7400` here is this project's own convention
+    (matches `app_detect.py`'s registry entry - previously these two
+    disagreed, 4000 vs 7400), not a real Max default - always confirm the
+    port against the user's actual patch.
+
     Args:
         operation: Operation to perform
             - "send_bang" - Send bang message
             - "send_float" - Send float value
-            - "toggle_dsp" - Toggle DSP processing
+            - "toggle_dsp" - NOT SUPPORTED - see docstring below
         host: Target host (default: 127.0.0.1)
-        port: Target port (default: 4000)
+        port: Target port (default: 7400 - see note above, not a real Max default)
         receiver: Receiver name (for send_bang, send_float)
         value: Float value (for send_float)
 
@@ -2556,7 +2571,16 @@ async def maxmsp_manager(
         return await send_osc(host, port, f"/{receiver}", [value])
 
     if operation == "toggle_dsp":
-        return await send_osc(host, port, "/dsp/toggle", [])
+        return {
+            "status": "error",
+            "error_code": "UNSUPPORTED_OPERATION",
+            "message": (
+                "'/dsp/toggle' has no primary-source backing anywhere in Max/MSP's "
+                "documentation - Max has no built-in DSP-toggle OSC address; this would "
+                "need a [udpreceive]->[route]->[dspstate~] (or similar) wired into the "
+                "user's own patch, which this tool has no way to assume exists."
+            ),
+        }
 
     return {"status": "error", "message": f"Unknown operation: {operation}"}
 
@@ -2586,7 +2610,11 @@ async def resolume_manager(
         layer: Layer index (for play_clip, set_layer_opacity)
         column: Column index (for play_clip)
         opacity: Opacity value (0.0-1.0, for set_layer_opacity)
-        bpm: BPM value (for set_bpm)
+        bpm: BPM value (for set_bpm) - sent as a raw BPM number; some forum
+            reports suggest Resolume's tempo input actually expects a
+            0.0-1.0 value normalized over a 20-500 BPM range instead, but
+            this isn't confirmed against Resolume's own documentation -
+            verify against a real instance before relying on exact tempo.
 
     Returns:
         Operation result with status and details
@@ -2613,7 +2641,9 @@ async def resolume_manager(
     if operation == "set_bpm":
         if bpm is None:
             return {"status": "error", "message": "bpm required for set_bpm"}
-        return await send_osc(host, port, "/transport/tempo", [bpm])
+        # /transport/tempo appears nowhere in Resolume's own shipped OSC list -
+        # verified real address is /composition/tempocontroller/tempo.
+        return await send_osc(host, port, "/composition/tempocontroller/tempo", [bpm])
 
     return {"status": "error", "message": f"Unknown operation: {operation}"}
 
@@ -2718,7 +2748,7 @@ async def audio_workflow_manager(
 async def puredata_manager(
     operation: str,
     host: str = "127.0.0.1",
-    port: int = 3000,
+    port: int = 9000,
     receiver: str | None = None,
     value: float | None = None,
 ) -> dict[str, Any]:
@@ -2727,13 +2757,21 @@ async def puredata_manager(
 
     PORTMANTEAU TOOL: Consolidates all Pure Data operations into one tool.
 
+    Vanilla Pd has no built-in OSC support at all - every address here
+    depends entirely on the user's own patch (typically the mrpeach OSC
+    library's `[unpackOSC]`/`[routeOSC]` via Deken, receiving over
+    `[netreceive -b]` in binary mode - plain `[netreceive]` is FUDI-only,
+    not OSC). `port=9000` matches `app_detect.py`'s registry entry
+    (previously these two disagreed, 3000 vs 9000) but is this project's
+    own convention, not a real Pd default - there isn't one.
+
     Args:
         operation: Operation to perform
             - "send_bang" - Send bang message
             - "send_float" - Send float value
             - "toggle_dsp" - Toggle DSP processing
         host: Target host (default: 127.0.0.1)
-        port: Target port (default: 3000)
+        port: Target port (default: 9000 - see note above, not a real Pd default)
         receiver: Receiver name (for send_bang, send_float)
         value: Float value (for send_float)
 
@@ -2744,7 +2782,9 @@ async def puredata_manager(
     if operation == "send_bang":
         if receiver is None:
             return {"status": "error", "message": "receiver required for send_bang"}
-        return await send_osc(host, port, f"/{receiver}", ["bang"])
+        # Zero-argument OSC message, matching mrpeach's idiomatic bang-over-OSC
+        # convention (a string "bang" argument is not a documented mrpeach pattern).
+        return await send_osc(host, port, f"/{receiver}", [])
 
     if operation == "send_float":
         if receiver is None or value is None:
