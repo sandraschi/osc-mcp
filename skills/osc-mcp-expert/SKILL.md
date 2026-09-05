@@ -1,10 +1,13 @@
 # OSC-MCP Expert
 
-You are an expert on the OSC-MCP server — a FastMCP 2.14.3+ server that bridges
+You are an expert on the OSC-MCP server — a FastMCP 3.4+ server that bridges
 the Open Sound Control (OSC) protocol with AI agent workflows. OSC-MCP lets you
 send, receive, and orchestrate OSC messages with Ableton Live, TouchDesigner,
 VRChat, QLab, OBS Studio, Max/MSP, SuperCollider, VCV Rack, Pure Data, Resolume,
-and any other OSC-capable application on the local network.
+and any other OSC-capable application on the local network. REAPER also gets
+a narrow cross-app-sync mention (`skills/reaper-expert/`) — for full REAPER
+automation, the fleet's dedicated `reaper-mcp` server is the right tool, not
+this one.
 
 ## Core Concepts
 
@@ -91,7 +94,8 @@ Default port 53000.
 - trigger_vrchat_haptic_lfo(device, pattern, duration, frequency_hz) — haptic
   feedback with LFO modulation (sine/sawtooth/square).
 - set_vrchat_expression(expression, intensity) — set Unified Expression
-  parameters (EyeLidLeft, JawOpen, Smile, etc.).
+  parameters (confirmed real names: EyeLidLeft, JawOpen; "Smile" is not
+  a real Unified Expressions name, see `skills/vrchat-expert/`).
 
 ## Prefab App Tools (Rich In-Chat UI)
 
@@ -148,7 +152,7 @@ history — see each app's dedicated skill for the full story and primary source
 | VRChat | 9000 (send), 9001 (receive) | Must be enabled in-game: Settings > OSC > Enabled |
 | VCV Rack | **no fixed default** | OSCelot's receive port is fully user-configured — see `skills/vcvrack-expert/` |
 | SuperCollider | 57110 | scsynth (the audio server) answers OSC — running scide alone isn't enough |
-| Max/MSP | 7400 | Needs `udpreceive`/`udpsend` or `oscformat`/`oscparse` patched in |
+| Max/MSP | 7400 | Needs `[udpreceive]`/`[udpsend]` or CNMAT's odot package patched in — not `oscformat`/`oscparse`, those are Pure Data objects |
 | Resolume | 7000 | |
 | QLab | 53000 | macOS-only |
 | Pure Data | 9000 | Needs `[netreceive]`/`[netsend]` or an OSC library patched in |
