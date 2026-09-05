@@ -27,6 +27,9 @@ wheels/
 # PyInstaller
 *.manifest
 *.spec
+# osc-mcp-backend.spec is hand-maintained build config (hiddenimports, dist-info
+# preserve list), not disposable auto-generated boilerplate - keep it tracked.
+!/osc-mcp-backend.spec
 
 # Installer logs
 pip-log.txt
