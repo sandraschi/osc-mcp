@@ -9,10 +9,15 @@ wrong-but-internally-consistent unit choice, which is why live verification
 mattered here.
 """
 
+import json
+from pathlib import Path
+
 import pytest
 
 from oscmcp.vcv_patch_builder import PORT_SCHEMAS, PatchBuilder
 from oscmcp.vcv_presets import PRESETS, classic_subtractive_voice, grand_generative_patch, sequenced_arpeggio_trio
+
+PATCHES_DIR = Path(__file__).resolve().parent.parent / "patches"
 
 
 def test_add_unknown_module_raises():
@@ -125,3 +130,14 @@ def test_grand_generative_patch_has_no_midi_and_uses_two_mixers():
     assert plugins_models.count(("Fundamental", "Mixer")) == 2
     assert ("Fundamental", "Scope") in plugins_models
     assert len(patch["modules"]) == 19
+
+
+@pytest.mark.parametrize("name", list(PRESETS.keys()))
+def test_patches_depot_matches_generated_output(name):
+    """`patches/*.vcv` is committed build output (scripts/generate_vcv_patches.py) -
+    this guards against someone editing vcv_presets.py without regenerating it.
+    """
+    path = PATCHES_DIR / f"{name}.vcv"
+    assert path.exists(), f"patches/{name}.vcv is missing - run scripts/generate_vcv_patches.py"
+    on_disk = json.loads(path.read_text(encoding="utf-8"))
+    assert on_disk == PRESETS[name](), f"patches/{name}.vcv is stale - run scripts/generate_vcv_patches.py"

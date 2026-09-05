@@ -1,0 +1,67 @@
+{
+  "version": "2.6.6",
+  "unsaved": true,
+  "zoom": 1.0,
+  "gridOffset": [
+    0.0,
+    0.0
+  ],
+  "modules": [
+    {
+      "id": 1,
+      "plugin": "Core",
+      "version": "2.6.6",
+      "model": "MIDIToCVInterface",
+      "params": [],
+      "pos": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": 2,
+      "plugin": "Bogaudio",
+      "version": "2.6.47",
+      "model": "Bogaudio-FMOp",
+      "params": [],
+      "pos": [
+        15,
+        0
+      ]
+    },
+    {
+      "id": 3,
+      "plugin": "Core",
+      "version": "2.6.6",
+      "model": "AudioInterface2",
+      "params": [],
+      "pos": [
+        30,
+        0
+      ]
+    }
+  ],
+  "cables": [
+    {
+      "outputModuleId": 1,
+      "outputId": 0,
+      "inputModuleId": 2,
+      "inputId": 4,
+      "color": 0
+    },
+    {
+      "outputModuleId": 1,
+      "outputId": 1,
+      "inputModuleId": 2,
+      "inputId": 5,
+      "color": 0
+    },
+    {
+      "outputModuleId": 2,
+      "outputId": 0,
+      "inputModuleId": 3,
+      "inputId": 0,
+      "color": 0
+    }
+  ]
+}

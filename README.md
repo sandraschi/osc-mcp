@@ -44,6 +44,13 @@ See [INSTALL.md](INSTALL.md) for manual setup and Claude Desktop configuration.
 "Synthesize a 440 Hz sine wave in SuperCollider"
 ```
 
+## VCV Rack Preset Depot
+
+[`patches/`](patches/) holds ready-to-load `.vcv` files, generated from real
+module port schemas (no guessed indices) - from a minimal 3-module FM bell up
+to a 19-module fully self-playing generative patch. Open any of them in VCV
+Rack via **File > Open**. See [`patches/README.md`](patches/README.md).
+
 ## How It Runs
 
 | Mode | Host App | When |

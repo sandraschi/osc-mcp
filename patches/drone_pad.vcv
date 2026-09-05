@@ -1,0 +1,106 @@
+{
+  "version": "2.6.6",
+  "unsaved": true,
+  "zoom": 1.0,
+  "gridOffset": [
+    0.0,
+    0.0
+  ],
+  "modules": [
+    {
+      "id": 1,
+      "plugin": "Fundamental",
+      "version": "2.6.4",
+      "model": "VCO",
+      "params": [
+        {
+          "id": 2,
+          "value": -12.0
+        }
+      ],
+      "pos": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": 2,
+      "plugin": "Fundamental",
+      "version": "2.6.4",
+      "model": "LFO",
+      "params": [
+        {
+          "id": 2,
+          "value": -6.0
+        }
+      ],
+      "pos": [
+        0,
+        1
+      ]
+    },
+    {
+      "id": 3,
+      "plugin": "Bogaudio",
+      "version": "2.6.47",
+      "model": "Bogaudio-LFO",
+      "params": [],
+      "pos": [
+        15,
+        1
+      ]
+    },
+    {
+      "id": 4,
+      "plugin": "Fundamental",
+      "version": "2.6.4",
+      "model": "VCF",
+      "params": [],
+      "pos": [
+        15,
+        0
+      ]
+    },
+    {
+      "id": 5,
+      "plugin": "Core",
+      "version": "2.6.6",
+      "model": "AudioInterface2",
+      "params": [],
+      "pos": [
+        30,
+        0
+      ]
+    }
+  ],
+  "cables": [
+    {
+      "outputModuleId": 2,
+      "outputId": 0,
+      "inputModuleId": 1,
+      "inputId": 3,
+      "color": 0
+    },
+    {
+      "outputModuleId": 1,
+      "outputId": 3,
+      "inputModuleId": 4,
+      "inputId": 3,
+      "color": 0
+    },
+    {
+      "outputModuleId": 3,
+      "outputId": 4,
+      "inputModuleId": 4,
+      "inputId": 0,
+      "color": 0
+    },
+    {
+      "outputModuleId": 4,
+      "outputId": 0,
+      "inputModuleId": 5,
+      "inputId": 0,
+      "color": 0
+    }
+  ]
+}
