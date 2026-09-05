@@ -20,8 +20,8 @@ def test_tools_import():
 
 
 def test_apps_import():
-    from oscmcp.apps import AbletonLive, TouchDesignerOSC, VCVController
+    from oscmcp.apps import OBSOSC, QLabOSC, VRChatOSC
 
-    assert AbletonLive is not None
-    assert VCVController is not None
-    assert TouchDesignerOSC is not None
+    assert OBSOSC is not None
+    assert QLabOSC is not None
+    assert VRChatOSC is not None
