@@ -22,6 +22,7 @@ import re
 import sqlite3
 import time
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
 
 import aiohttp
@@ -303,11 +304,11 @@ def list_tags() -> list[dict]:
     return [{"tag": t, "count": c} for t, c in sorted(counts.items())]
 
 
-_DETAIL_LICENSE_RE = re.compile(r"License:\s*([^\n<]+)")
-_DETAIL_UPDATED_RE = re.compile(r"Last updated:\s*([^\n<]+)")
-_DETAIL_CREATED_RE = re.compile(r"Created:\s*([^\n<]+)")
+_DETAIL_LICENSE_RE = re.compile(r"License:\s*(?:<a[^>]*>)?\s*([^\n<]+)")
+_DETAIL_UPDATED_RE = re.compile(r'Last updated:\s*<span[^>]*data-timestamp="(\d+)"')
+_DETAIL_CREATED_RE = re.compile(r'Created:\s*<span[^>]*data-timestamp="(\d+)"')
 _DETAIL_POPULARITY_RE = re.compile(r"Popularity:\s*([\d,]+)")
-_DETAIL_AUTHOR_RE = re.compile(r"Author:\s*([^\n<]+)")
+_DETAIL_AUTHOR_RE = re.compile(r"Author:\s*(?:<a[^>]*>)?\s*([^\n<]+)")
 
 
 async def fetch_module_detail(plugin_slug: str, module_slug: str) -> dict:
@@ -328,13 +329,19 @@ async def fetch_module_detail(plugin_slug: str, module_slug: str) -> dict:
     created_match = _DETAIL_CREATED_RE.search(detail_html)
     popularity_match = _DETAIL_POPULARITY_RE.search(detail_html)
     author_match = _DETAIL_AUTHOR_RE.search(detail_html)
+
+    def _timestamp_to_iso(match: re.Match[str] | None) -> str | None:
+        if not match:
+            return None
+        return datetime.fromtimestamp(int(match.group(1)), tz=UTC).date().isoformat()
+
     return {
         "plugin_slug": plugin_slug,
         "module_slug": module_slug,
         "unavailable": unavailable,
         "license": license_match.group(1).strip() if license_match else None,
-        "last_updated": updated_match.group(1).strip() if updated_match else None,
-        "created": created_match.group(1).strip() if created_match else None,
+        "last_updated": _timestamp_to_iso(updated_match),
+        "created": _timestamp_to_iso(created_match),
         "popularity": int(popularity_match.group(1).replace(",", "")) if popularity_match else None,
         "author": author_match.group(1).strip() if author_match else None,
     }
