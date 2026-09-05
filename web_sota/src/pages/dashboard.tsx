@@ -11,6 +11,7 @@ import {
   Radio,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { AppsOnboarding } from "@/components/AppsOnboarding";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { API_BASE } from "../lib/api";
 
@@ -116,6 +117,8 @@ export function Dashboard() {
           </div>
         </div>
       </div>
+
+      <AppsOnboarding />
 
       {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
