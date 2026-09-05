@@ -196,6 +196,7 @@ _dashboard/
 
 # Build artifacts
 *.mcpb
+mcpb/src/
 
 # Tauri / Native
 native/target/

@@ -98,6 +98,7 @@ oscmcp = "oscmcp.cli:main"
 [tool.ruff]
 line-length = 120
 target-version = "py312"
+extend-exclude = ["mcpb/", "_llm_test_scripts/"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "S", "UP", "RUF"]
