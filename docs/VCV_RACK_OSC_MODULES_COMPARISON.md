@@ -1,6 +1,27 @@
 # VCV Rack OSC Modules Comparison
 
-## The Problem with OSCelot
+## Correction (2026-09-05)
+
+**This document's framing is wrong and its examples are fabricated.** It was
+written without ever running OSCelot or cvOSCcv, recommends switching away
+from OSCelot based on "confusing UI" rather than any protocol defect, and
+invents an OSC address (`/cv/0`) that doesn't appear anywhere in cvOSCcv's own
+docs. Live-tested this session against a real, running VCV Rack + OSCelot
+instance (see `docs/OSCELOT_MAPPING_GUIDE.md`): OSCelot's real `/fader`,
+`/encoder`, `/button` protocol works exactly as documented once two
+easy-to-miss defaults are handled (Send/Receive toggles start OFF; a freshly
+mapped slot needs the same message sent twice — see that doc for both). A
+real Organ Three parameter was mapped, driven by a real OSC message sent with
+osc-mcp's fixed `vcv_manager`, and visually confirmed moving live in Rack.
+
+cvOSCcv may well be a perfectly good module too, but nothing in this file has
+been verified against it — no cvOSCcv instance was ever installed or tested
+to produce the claims below. Don't treat this file as a recommendation until
+someone actually runs cvOSCcv and checks its real OSC format the same way
+OSCelot's was checked. `vcv_manager` already targets OSCelot's real protocol
+and doesn't need a module swap.
+
+## The Problem with OSCelot (original text below, unverified)
 
 OSCelot's UI is confusing:
 - Unclear mapping workflow
@@ -12,9 +33,9 @@ OSCelot's UI is confusing:
 
 ### 1. cvOSCcv (trowaSoft) - **RECOMMENDED**
 
-**Author:** j4s0n-c (trowaSoft)  
-**VCV Library:** https://library.vcvrack.com/trowaSoft/cvOSCcv  
-**License:** BSD-3-Clause  
+**Author:** j4s0n-c (trowaSoft)
+**VCV Library:** https://library.vcvrack.com/trowaSoft/cvOSCcv
+**License:** BSD-3-Clause
 **Popularity:** 47,397 downloads
 
 #### Features
@@ -52,8 +73,8 @@ Example: /cv/0 [0.5]  (Channel 0, 50% value)
 
 ### 2. Holonic Source (Holonic Systems)
 
-**Author:** Holonic Systems  
-**Website:** https://holon.ist/vcv/  
+**Author:** Holonic Systems
+**Website:** https://holon.ist/vcv/
 **Focus:** iOS app integration
 
 #### Features
@@ -69,7 +90,7 @@ Example: /cv/0 [0.5]  (Channel 0, 50% value)
 
 ### 3. OSCelot (Current - Not Recommended)
 
-**Author:** TheModularMind  
+**Author:** TheModularMind
 **Status:** Confusing UI, poor documentation
 
 #### Problems
@@ -160,21 +181,3 @@ await send_osc("127.0.0.1", 10001, "/cv/0", [0.5])
 - ✅ Standard modular workflow
 
 The only trade-off: You need to patch CV connections instead of direct parameter mapping, but that's actually more flexible and follows standard modular synthesis workflow.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

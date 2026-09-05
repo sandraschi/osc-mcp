@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- **`vcv_manager`**: Sent OSC addresses (`/param`, `/cv`, `/light`, `/midi/*`, `/transport/*`) that don't exist anywhere in OSCelot's real, documented protocol. Rewritten to send `/fader`, `/encoder`, `/button` — the only three address types OSCelot actually implements — each addressed by a manually-assigned mapping-slot `Id`. The 9 operations with no verified real address (`send_cv`, `set_light`, `play_midi`, `stop_midi`, `send_midi_cc`, `start_transport`, `stop_transport`, `reset_transport`, `set_transport_position`) now return a clear `UNSUPPORTED_OPERATION` error instead of silently firing a guessed address into the void.
+- **`resolume_manager`**: `set_layer_opacity` sent to `/composition/layers/{layer}/opacity` — the real Resolume OSC address is `/composition/layers/{layer}/video/opacity`.
+- **`supercollider_manager`**: defaulted to port `57120` (nothing in SuperCollider listens there) instead of `57110` (scsynth's real default).
+- **`music_orchestrator`**: MIDI parsing was completely fabricated (invented tempo/notes rather than reading the file). Now uses real `mido` parsing via a new `_parse_midi_file()` helper.
+- **`app_detect.py`**: VCV Rack's `default_osc_port` was a made-up `7000` — OSCelot's receive port has no fixed default, so this is now `None` with a note pointing at the real setup steps.
+
+### Documentation
+- **`docs/OSCELOT_MAPPING_GUIDE.md`**, **`docs/OSCELOT_UI_MAPPING_EXPLAINED.md`**: Rewritten against OSCelot's real, primary-source manual (`github.com/The-Modular-Mind/oscelot`). The previous versions described a fabricated `/param [ModuleID, ParamID, Value]` addressing mode and a right-click "choose slider/button/encoder" workflow — neither exists in the real plugin.
+- **`docs/OSCELOT_MAPPING_GUIDE.md`**: Documented two easy-to-miss OSCelot behaviors found via live testing against a real running VCV Rack instance: (1) a freshly-placed OSCelot module has its Send/Receive toggles OFF by default, so every OSC message is silently dropped with no error until they're enabled; (2) the first OSC message to a newly-mapped slot only creates and types the slot — the identical message must be sent a second time to actually apply the value, per OSCelot's own `processOscMessage` source.
+- **`docs/VCV_RACK_OSC_MODULES_COMPARISON.md`**: Flagged as unverified — it recommended switching away from OSCelot to `cvOSCcv` based on "confusing UI" and an invented OSC address, without ever running either module. `vcv_manager` targets OSCelot's real protocol and needs no module swap.
+- Live end-to-end validation: mapped a real Organ Three parameter in OSCelot, drove it with a real `/button` message sent via `vcv_manager`'s fixed address format, and visually confirmed it changing state in VCV Rack. Separately confirmed a full MIDI-file-to-audio pipeline in the same patch (Entrian Free's "Player: Timeline" module → V/Oct + Gate into Organ Three → VCV's core Audio module → real speakers) — this path is orthogonal to OSCelot/OSC entirely and not part of osc-mcp's own toolset, but documents a working way to get an actual MIDI file playing in VCV Rack.
+
 ## [0.3.2] — 2026-07-21
 
 ### Security
@@ -352,4 +367,3 @@ First public release with core OSC functionality.
 - [Repository](https://github.com/sandraschi/osc-mcp)
 - [FastMCP](https://github.com/jlowin/fastmcp)
 - [OSC Specification](http://opensoundcontrol.org/spec-1_0)
-
