@@ -9,6 +9,7 @@ import { Ableton } from "@/pages/ableton";
 import { ApiDocsPage } from "@/pages/api-docs";
 import { Apps } from "@/pages/apps";
 import { Chat } from "@/pages/chat";
+import { CommunityPatches } from "@/pages/community-patches";
 import { Control } from "@/pages/control";
 import { Dashboard } from "@/pages/dashboard";
 import { Help } from "@/pages/help";
@@ -44,6 +45,7 @@ function App() {
           <Route path="/supercollider" element={<SuperCollider />} />
           <Route path="/vcvrack" element={<VCVRack />} />
           <Route path="/vcv-library" element={<VcvLibrary />} />
+          <Route path="/community-patches" element={<CommunityPatches />} />
           <Route path="/tools" element={<Tools />} />
           <Route path="/skills" element={<Skills />} />
           <Route path="/api-docs" element={<ApiDocsPage />} />
