@@ -1,0 +1,406 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.3.3] — 2026-09-05
+
+### Fixed
+- **Packaging CM-2 FAIL** — Root `manifest.json` was CMS fiction (`name: oscmcp`, CMS keywords, `main: server/server.py`, `fastmcp >=2.10`); rewired to `manifest_version 0.2`, `entry_point src/oscmcp/server.py`, `47` tools with real descriptions, `version 0.3.3`, `author sandraschi` — now matches `mcpb/manifest.json`.
+- **`mcpb/manifest.json` CM-2** — Tool table was placeholder echoes + fake entries (`main_stdio`, `health`); regenerated from `await server.list_tools()` (47 real tools).
+- **`.mcpbignore` missing** — Added root + `mcpb/.mcpbignore` (covers `.venv/`, `node_modules/`, `tests/`, `dist/`, `*.bak`, Tauri `target/`, web `dist/`).
+- **Frontend lint CM-3** — `web_sota` had `useExhaustiveDependencies` on `fetchApps`/`fetchTools`/`fetchData`; wrapped all three in `useCallback`.
+- **Dashboard onboarding CM-1** — Added big-red `data-testid="onboarding-cue"` CTA under hero (→ `docs/ONBOARDING.md`) + `MOCK`-until-onboarded banner (`data-testid="mock-banner"`) with fake names Joe Mocky/Sandra Mockinger that clears when `/api/v1/onboarding/apps` reports healthy.
+- **`native/tauri.conf.json` version drift** — `0.1.0 → 0.3.3` (matches `pyproject.toml`).
+- **`start.ps1` — NAKED_PC** — Added `Require-Command` guards for `uv`/`node`/`npx`; fixed `.env.example` port `57120 → 57110` + VCV note.
+- **`justfile`** — Added `mcpb-pack` recipe (`scripts/mcpb-pack.ps1` fresh wipe+recopy per `PACKAGING_STANDARDS.md §2.5`).
+- **`assets/prompts` CM-6** — Rewrote `system.md` (3245w), `user.md` (4238w), regenerated `examples.json` (105 entries) covering full 47-tool surface — passes 3-4-100 word-count + JSON-length gates. Mirrored to `mcpb/assets/prompts/` and added `assets/icon.png` 256×256.
+- **`pyproject.toml`** — `version 0.3.0 → 0.3.3`, `fastmcp` floor `3.4` description, `[tool.fastmcp]` `0.3.3`.
+- **`scripts/cua-nsis-config.json`** — `feature_smoke_path /api/v1/system/info → /api/v1/stats` (real route).
+- **CUA webapp** — Added `web_sota/e2e/dashboard.spec.ts` (hero, onboarding-cue, KPIs, backend-dot, MOCK banner) + `playwright.config.ts` (port 10766, `reuseExistingServer`).
+
+## [Unreleased]
+
+### Added
+- **`src/oscmcp/patchstorage_client.py`**, **`api/v1/endpoints/patchstorage.py`**, **`web_sota/src/pages/community-patches.tsx`**: a "Community Patches" page browsing the real Patchstorage.com Beta REST API (`https://patchstorage.com/api/beta/patches` - live-verified, no auth needed to read). Thin proxy, no local sync/cache step like the VCV Library page needs, since Patchstorage already does server-side search/filter/sort/pagination. Covers all 92 platforms it hosts (VCV Rack, SuperCollider, Max for Live, TouchOSC, Bitwig, and 88 others) via a platform dropdown, defaulting to VCV Rack; sortable by newest/most liked/most downloaded/most viewed. Cards link out to the real Patchstorage page to download, matching the VCV Library page's click-through pattern.
+- **`src/oscmcp/vcv_library.py`**, **`api/v1/endpoints/vcv_library.py`**, **`web_sota/src/pages/vcv-library.tsx`**: a "VCV Module Library" catalog page — scrapes the official `library.vcvrack.com` (fully server-rendered HTML with real query-string filters, no login needed to browse) into a local SQLite cache, exposed via search/brand/license filters and its own sidebar page, separate from onboarding. Full catalog: 4,468 modules, 345 brands. Popularity/last-updated/license are only on individual detail pages (not the bulk listing) - `fetch_module_detail()` fetches one on demand rather than eagerly fetching all ~4,500.
+- **`src/oscmcp/vcv_patch_builder.py`**, **`src/oscmcp/vcv_presets.py`**: generates real, loadable `.vcv` patch files - modules *and* cables - entirely as JSON, no GUI automation. Port indices (undocumented anywhere except each module's own C++ `InputIds`/`OutputIds` enum) were extracted from real source (Fundamental, Bogaudio, VCV Core on GitHub) via `scripts/vcv_port_schema_extract.py`, covering 18 modules including SEQ3 (a free-running 3-lane step sequencer). Seven presets included, from a minimal 3-module FM bell to `grand_generative_patch` - a fully self-playing, no-MIDI 19-module/23-cable patch combining a SEQ3-driven 3-voice arpeggio (with a detuned unison double via an 8vert attenuverter), a free-running noise/LFO percussion layer, and a Scope tap on the final mix. Live-verified: every new preset loaded in a real running VCV Rack with all cables correctly wired, zero errors, and (for the flagship) a live moving waveform on the Scope confirming real audio flow - two wrong guesses at the patch's Y-axis row-spacing unit (15, then 380) were both caught by reading back a real Rack save rather than shipping either.
+
+### Added
+- **`skills/reaper-expert/SKILL.md`** (11th per-app skill): covers only `osc-mcp`'s narrow REAPER usage (cross-app transport/tempo sync inside `music_loader_manager`/`audio_workflow_manager`) - full REAPER automation belongs in the fleet's separate, dedicated `reaper-mcp` server, which this skill explicitly defers to rather than duplicating. Verified against REAPER's own default `.ReaperOSC` pattern config and its real action-list, not assumed.
+- **10 per-app skills** (`skills/{app}-expert/SKILL.md` for Ableton, VCV Rack, TouchDesigner, VRChat, SuperCollider, Max/MSP, Resolume, QLab, Pure Data, OBS), registered in `api/v1/endpoints/skills.py`'s manifest alongside the existing generic `osc-mcp-expert`. Each was researched against real primary sources (official docs, GitHub repos of any bridge/plugin involved) rather than written from memory - the research directly caught several real bugs (see Fixed below), confirming the fleet's own generic skill had been shipping fabricated port/address info.
+
+### Fixed
+- **`audio_workflow_manager`/`music_loader_manager` REAPER calls**: `sync_tempo_all` and the Bach-organ setup step both sent a raw BPM number to bare `/tempo`, which per REAPER's own default OSC pattern config is *normalized* 0.0-1.0, not a BPM value - fixed to `/tempo/raw`. `reset_all` sent `/rewind` with no argument to mean "reset to start," but `/rewind` is a hold-to-rewind gesture (needs an explicit 1/0), not a seek - fixed to trigger REAPER's real "Transport: Go to start of project" action via its generic `/action <command_id>` mechanism (id `40042`, confirmed against REAPER's own action list). `/play`, `/stop`, and `/track/1/volume` were already correct.
+- **`ableton_manager`**: `play`, `stop`, and `set_tempo` sent `/live/play`, `/live/stop`, `/live/tempo` - none of which exist anywhere in AbletonOSC's real, documented address space (confirmed by literal-string search of its README). Fixed to the real addresses: `/live/song/start_playing`, `/live/song/stop_playing`, `/live/song/set/tempo`.
+- **`resolume_manager`**: `set_bpm` sent `/transport/tempo`, which appears nowhere in Resolume's own shipped OSC list. Fixed to `/composition/tempocontroller/tempo`.
+- **`vrchat_manager`**: `chatbox_typing` sent the message text where VRChat's real `/chatbox/typing` expects a single bool - fixed to send the `enabled` flag, no message required. `tracking_control` and `trigger_haptic` both sent addresses with no basis in VRChat's real OSC protocol (no named-tracker enable/disable address exists; no universal haptic parameter exists) - both now return `UNSUPPORTED_OPERATION` instead of silently no-opping. Docstring's `input_name` list dropped the non-existent `LookUp`/`LookDown`.
+- **`apps/vrchat.py`'s `VRChatOSC` class**: `DEFAULT_INPUT_PORT`/`DEFAULT_OUTPUT_PORT` were swapped relative to VRChat's real convention (receive 9000, send 9001) - affected the standalone `set_vrchat_expression` and `trigger_vrchat_haptic_lfo` tools (which don't go through `vrchat_manager`), making every call through them a silent no-op unless VRChat's own `--osc` ports happened to be non-default. `set_vrchat_expression`'s docstring/examples used `Smile` as an example expression, which isn't a real Unified Expressions name - swapped for the confirmed-real `JawOpen`.
+- **`maxmsp_manager`**: `toggle_dsp` sent `/dsp/toggle`, with no primary-source backing anywhere in Max/MSP's documentation - now returns `UNSUPPORTED_OPERATION`. Default port (was `4000`) now matches `app_detect.py`'s `default_osc_port=7400` for the same app - previously the two disagreed with each other in the same codebase (neither is a real Max default; Max has none).
+- **`puredata_manager`**: `send_bang` sent a string `"bang"` argument, which isn't mrpeach's documented bang-over-OSC convention (a zero-argument message is) - fixed. Default port (was `3000`) now matches `app_detect.py`'s `default_osc_port=9000` for the same app.
+- **`app_detect.py`, `docs/ONBOARDING.md`**: both mislabeled `[oscformat]`/`[oscparse]` as Max/MSP objects - they're Pure Data objects. Corrected to name CNMAT's odot package (`o.pack`/`o.unpack`/`o.route`) as the real Max-side OSC codec.
+- **`obs_manager`**: docstring never mentioned that every call depends on a separate bridge script (`scripts/obs_websocket_bridge.py`) actually running - silent no-op otherwise. `volume`'s documented range (0.0-1.0) didn't match what the bridge actually accepts (0.0-2.0, a linear gain multiplier) - both now documented correctly.
+- **`web_sota/src/pages/skills.tsx`**: two pre-existing bugs, unrelated to the skills above but found while verifying they render - the skill-list fetch only handled a bare-array response shape via `Array.isArray(data)`, but the real endpoint returns `{"skills": [...], "count": N}`, so this page has always shown "No skills available" even with the original single skill. The skill-detail fetch called `.text()` on a JSON response (`{"name", "content"}`), which would have displayed the raw JSON wrapper as content instead of the actual skill markdown, had any skill ever been reachable to click. Both fixed.
+- **`scripts/vcv_port_schema_extract.py`**: a `// added in X.Y.Z` full-line comment sitting *before* an enum member (no comma between them) caused `line.split("//")[0]` to silently eat the real member that followed on the next line - found while extracting SEQ3, which lost `RUN_INPUT` and had `STEPS_OUTPUT`/`CLOCK_OUTPUT`/`RUN_OUTPUT`/`RESET_OUTPUT` all shifted one index low. Re-auditing every already-shipped schema against this fix (per the fleet bug-discovery protocol) found the same bug had already corrupted two committed, live-tested entries: Fundamental **LFO** was missing `RESET_INPUT`/`CLOCK_INPUT` with `PW_INPUT` at the wrong index (2 instead of 3), and Fundamental **Scope** had lost both of its real outputs entirely (shipped as an empty list). Neither had been wired into by any preset, so nothing broke in practice, but both were wrong in the schema table. Fixed the extractor (comments are now stripped per physical line, not across the whole comma-delimited chunk) and re-verified all 18 module schemas against real source; only these two needed correction.
+- **`vcv_library.py` detail-page regexes**: Author:/License: are wrapped in `<a href="...">text</a>` - the parser's `[^<]` character class couldn't match through the tag, so both always returned `None`. Last updated:/Created: aren't plain text at all - they're `<span data-timestamp="UNIX_EPOCH">` rendered client-side; the regex expected literal text and never matched.
+- **`vcv_manager`**: Sent OSC addresses (`/param`, `/cv`, `/light`, `/midi/*`, `/transport/*`) that don't exist anywhere in OSCelot's real, documented protocol. Rewritten to send `/fader`, `/encoder`, `/button` — the only three address types OSCelot actually implements — each addressed by a manually-assigned mapping-slot `Id`. The 9 operations with no verified real address (`send_cv`, `set_light`, `play_midi`, `stop_midi`, `send_midi_cc`, `start_transport`, `stop_transport`, `reset_transport`, `set_transport_position`) now return a clear `UNSUPPORTED_OPERATION` error instead of silently firing a guessed address into the void.
+- **`resolume_manager`**: `set_layer_opacity` sent to `/composition/layers/{layer}/opacity` — the real Resolume OSC address is `/composition/layers/{layer}/video/opacity`.
+- **`supercollider_manager`**: defaulted to port `57120` (nothing in SuperCollider listens there) instead of `57110` (scsynth's real default).
+- **`music_orchestrator`**: MIDI parsing was completely fabricated (invented tempo/notes rather than reading the file). Now uses real `mido` parsing via a new `_parse_midi_file()` helper.
+- **`app_detect.py`**: VCV Rack's `default_osc_port` was a made-up `7000` — OSCelot's receive port has no fixed default, so this is now `None` with a note pointing at the real setup steps.
+
+### Documentation
+- **`docs/OSCELOT_MAPPING_GUIDE.md`**, **`docs/OSCELOT_UI_MAPPING_EXPLAINED.md`**: Rewritten against OSCelot's real, primary-source manual (`github.com/The-Modular-Mind/oscelot`). The previous versions described a fabricated `/param [ModuleID, ParamID, Value]` addressing mode and a right-click "choose slider/button/encoder" workflow — neither exists in the real plugin.
+- **`docs/OSCELOT_MAPPING_GUIDE.md`**: Documented two easy-to-miss OSCelot behaviors found via live testing against a real running VCV Rack instance: (1) a freshly-placed OSCelot module has its Send/Receive toggles OFF by default, so every OSC message is silently dropped with no error until they're enabled; (2) the first OSC message to a newly-mapped slot only creates and types the slot — the identical message must be sent a second time to actually apply the value, per OSCelot's own `processOscMessage` source.
+- **`docs/VCV_RACK_OSC_MODULES_COMPARISON.md`**: Flagged as unverified — it recommended switching away from OSCelot to `cvOSCcv` based on "confusing UI" and an invented OSC address, without ever running either module. `vcv_manager` targets OSCelot's real protocol and needs no module swap.
+- Live end-to-end validation: mapped a real Organ Three parameter in OSCelot, drove it with a real `/button` message sent via `vcv_manager`'s fixed address format, and visually confirmed it changing state in VCV Rack. Separately confirmed a full MIDI-file-to-audio pipeline in the same patch (Entrian Free's "Player: Timeline" module → V/Oct + Gate into Organ Three → VCV's core Audio module → real speakers) — this path is orthogonal to OSCelot/OSC entirely and not part of osc-mcp's own toolset, but documents a working way to get an actual MIDI file playing in VCV Rack.
+
+## [0.3.2] — 2026-07-21
+
+### Security
+- **CORS**: Replaced `allow_origins=["*"]` with explicit fleet origins + Tailscale/LAN regex in `api/main.py` and `web_sota/backend/server.py` (CRITICAL)
+- **run_http_async**: Replaced with `uvicorn.Server` on `mcp.http_app()` with CORS middleware to prevent middleware being dropped (CRITICAL)
+- **.env bundling**: Fixed `native/build.ps1` to bundle `.env.example` instead of `.env` (CRITICAL — prevented API key leakage in NSIS installer)
+- **tauri.conf.json**: Resources now point to `.env.example` instead of `.env` (CRITICAL)
+- **Created `.env.example`** at repo root with template configuration vars (HIGH)
+- **Updated `.gitignore`** to add `*.mcpb`, `native/target/`, `native/gen/`, `*.bak`, and `.env` patterns
+
+### Fixed
+- **start.ps1**: Added port zombie clearing, TCP readiness health poll, and auto-open browser (was missing fleet-standard startup protocol)
+- **backend.rs**: Added multi-layer `free_port()` with Stop-Process → taskkill → UAC elevated → 240s poll; added stdout/stderr stream watching with `emit("backend-status", "ready")` on backend ready
+- **justfile**: Added `serve`, `test`, `fmt`, `types`, `gates-green`, `build-native`, `cua-nsis-test`, `mcpb-pack`, `e2e` recipes
+- **pyproject.toml**: Fixed invalid `fastmcp[all]` extra (removed `[all]`); fixed mypy `python_version` from "3.10" to "3.12"
+- **Created CLAUDE.md**: Per-repo agent behavioral instructions
+
+### Added
+- **Skills system**: `GET /api/v1/skills`, `GET /api/v1/skills/{name}` endpoints + `skills/osc-mcp-expert/SKILL.md` with 190-line comprehensive skill
+- **LLM discovery**: `GET /api/v1/llm/discover` endpoint probing Ollama on localhost:11434
+- **Diagnostics**: `GET /api/v1/diagnostics` endpoint with tool count, version, system info
+- **Error response**: `src/oscmcp/tools/_error_response()` with auto-logging via `logger.exception()`
+- **Webapp**: Zustand state management, Ctrl+Scroll zoom hook (`useZoom`), `color-scheme: dark`, `data-testid` attributes on all dashboard KPIs, exponential backoff health check (1s→2s→4s→8s→16s), Skills page, 6 example prompts, localStorage chat persistence, personality selector with 4 options, .txt export
+- **Tests**: 9 unit tests covering imports, error response, health, diagnostics endpoints
+- **Session context**: `.opencode/skills/session-context/SKILL.md` for tool-awareness injection
+- **CLAUDE.md**: Per-repo agent behavioral instructions
+
+### Fixed
+- **print()→logging**: Converted 35 `print()` calls to `logger.info()` across 9 app files
+- **Router prefixes**: Fixed API endpoint path double-v1 issue (simplified router prefix chain)
+- **Removed 8 stale .bak files** across the repo
+- **Cleaned up** pre-existing ruff lint issues (unused imports, type annotations)
+
+### Documentation
+- Added `docs/assess-reports/2026-07-21.md` — full SOTA compliance assessment
+
+## [0.3.1] — 2026-07-11
+
+### Fixed
+- **Tool Registration**: Unified `server.py` and `mcp_server.py` to register all 25 creative app integration tools (Ableton, TouchDesigner, VRChat, etc.) on a single FastMCP instance, correcting the frontend integration tool failures.
+- **MCPB Dual Transport**: Overhauled `run_server.py` and `mcpb/run_server.py` to run stdio transport under Claude Desktop/MCPB, preventing uvicorn stdout logs from corrupting the JSON-RPC channel.
+- **Documentation Errors**: Corrected package name references (`osc_mcp` -> `oscmcp`) in `INSTALL.md` execution guidelines.
+- **Package Restructuring**: Updated `mcpb/src` to nest code under the correct `oscmcp` package directory to avoid `ModuleNotFoundError` during MCPB import.
+- **Metadata Sync**: Updated `glama.json` framework mapping to `FastMCP 3.4` and tool count.
+
+## [0.3.0] - 2026-06-14
+
+### Added
+- Tauri 2.0 native wrapper with `bundle.resources` + `std::process::Command`
+- PyInstaller frozen backend embedded in NSIS installer
+- CUA-NSIS smoke test (`scripts/cua-smoke.py`, `scripts/cua-nsis-config.json`)
+- `just cua-nsis-test` recipe
+- Tauri CORS: `tauri://localhost` origins for WebView API access
+- `GET /api/v1/diagnostics` endpoint for CUA verification
+
+### Changed
+- **FastMCP Upgrade** - Bumped minimum version to `3.1.1` (FastMCP 3.1 GA)
+- **Web Dashboard Restoration** - Fully restored `web_sota` dashboard functionality:
+  - Fixed React 19 / Vite 7 build resolution for Shadcn components
+  - Implemented missing `DropdownMenu` component and fixed `Input` imports
+  - Resolved `useCallback` and `useEffect` cascading render patterns in Settings
+  - Fixed TypeScript `unknown` casts for `Badge` component in all orchestration pages
+  - Cleaned up unused imports and variables across the frontend
+- **Port Allocation** - Standardized on port portmanteau: **10766** (Frontend) / **10767** (Backend)
+
+### Fixed
+- **Build Failures** - Restored production build capability (Verified 1833 modules transformed)
+- **Settings Synchronization** - Corrected async state updates for Ollama connection checks
+
+## [0.2.2] - 2025-12-14
+
+### Changed
+- **Project Status**: Marked as **Beta** (Development Status :: 4 - Beta)
+  - Core functionality is stable and production-ready
+  - Advanced features may continue to evolve
+  - Ready for broader community testing and feedback
+
+### Added
+- Beta status badge in README.md
+- Project analysis documentation (`docs/PROJECT_ANALYSIS.md`)
+- **Bidirectional OSC Communication** - True receive capabilities with message buffering
+  - **Message Buffer System** - OSCServer now buffers all received messages with timestamps
+  - **get_received_messages()** - Retrieve buffered OSC messages with filtering
+  - **get_latest_message()** - Quick access to most recent parameter changes
+  - **get_osc_server_stats()** - Monitor message traffic and buffer usage
+  - **clear_osc_message_buffer()** - Reset message history
+
+- **Portmanteau Manager Architecture** - Replaced 35+ individual tools with 8 scalable managers
+  - `vcv_manager` - VCV Rack modular synthesis (18 operations)
+  - `ableton_manager` - Ableton Live DAW (6 operations)
+  - `vrchat_manager` - VRChat avatar control (3 operations)
+  - `touchdesigner_manager` - TouchDesigner visual programming (3 operations)
+  - `supercollider_manager` - SuperCollider audio synthesis (3 operations)
+  - `maxmsp_manager` - Max/MSP audio/visual programming (3 operations)
+  - `resolume_manager` - Resolume Arena VJ software (3 operations)
+  - `puredata_manager` - Pure Data visual programming (3 operations)
+
+- **Comprehensive VCV Rack OSC Extensions** - 16 new tools (18+ total VCV Rack tools)
+  - **MIDI Control (3 tools):**
+    - `vcvrack_play_midi` - Play MIDI notes (0-127) with velocity and channel
+    - `vcvrack_stop_midi` - Stop MIDI notes
+    - `vcvrack_send_midi_cc` - Send MIDI CC messages
+  - **CV & Light Control (2 tools):**
+    - `vcvrack_send_cv` - Send control voltages (-10.0 to 10.0V)
+    - `vcvrack_set_light` - Control module lights/LEDs (0.0-1.0)
+  - **Module-Specific Controls (11 tools):**
+    - `vcvrack_set_vco_frequency` - Set VCO frequency in Hz (auto-conversion)
+    - `vcvrack_set_vca_level` - Set VCA amplitude level
+    - `vcvrack_set_lfo_rate` - Set LFO modulation rate
+    - `vcvrack_set_filter_cutoff` - Set filter cutoff frequency
+    - `vcvrack_set_envelope_attack` - Set ADSR envelope attack
+    - `vcvrack_set_envelope_decay` - Set ADSR envelope decay
+    - `vcvrack_set_envelope_sustain` - Set ADSR envelope sustain
+    - `vcvrack_set_envelope_release` - Set ADSR envelope release
+
+- **VCV Rack Controller Class Extensions** - Added MIDI methods to `vcvrack.py`
+- **Demo Script** - `examples/vcv_rack_demo.py` for testing all new functionality
+- **ADN Documentation** - Detailed controlee documentation for 8 applications
+
+### Changed
+- **Tool Count** - Reduced from 43+ to 48 total tools (8 managers + 9 core + 31 app-specific)
+- **Architecture** - Portmanteau design for better scalability and UX
+- **OSC Server** - Enhanced with message buffering for bidirectional communication
+- **README.md** - Added bidirectional OSC examples and updated tool inventory
+- **docs/APPLICATION_TOOLS_ANALYSIS.md** - Updated for portmanteau architecture
+
+### Features
+- **True Bidirectional OSC** - Send commands AND receive feedback from applications
+- **Real-Time Monitoring** - Detect parameter changes, knob twists, user interactions
+- **Message Buffering** - Persistent storage of OSC messages with timestamps
+- **Advanced Filtering** - Query messages by address pattern, age, and limits
+- **MIDI Integration** - Full MIDI note and CC control via OSC
+- **CV Modulation** - Bidirectional control voltage sending
+- **Semantic Controls** - Human-readable module controls (frequency in Hz, not normalized values)
+- **ADSR Envelope Control** - Complete envelope shaping tools
+- **Light Control** - Visual feedback and LED control
+
+### Breaking Changes
+- **Individual Tools Deprecated** - 35+ individual application tools replaced with 8 managers
+- **OSC Server Storage** - Changed from transport objects to OSCServer instances
+- **API Changes** - Portmanteau tools use `operation` parameter instead of separate functions
+
+### Use Cases Added
+- **Live Performance Monitoring** - React to knob twists and parameter changes in real-time
+- **Interactive Installations** - Bidirectional communication with sensors and displays
+- **Generative Systems** - AI can respond to user interactions and system feedback
+- **Debugging & Monitoring** - Inspect OSC message traffic and application state
+- **Complex Workflows** - Chain commands and responses for sophisticated automation
+
+### Impact
+- **True Bidirectional Control** - OSC-MCP now supports full send/receive communication
+- **Real-Time Responsiveness** - AI can react to user interactions immediately
+- **Scalable Architecture** - Portmanteau design supports future application additions
+- **Enhanced User Experience** - Natural operation selection instead of tool hunting
+- **Professional Workflows** - Enables complex interactive systems and performances
+
+## [0.2.1] - 2025-11-26
+
+### Added
+- **27+ Application-Specific Tools** - High-level interfaces for 8 professional applications
+  - **Ableton Live (6 tools):** `ableton_play`, `ableton_stop`, `ableton_set_tempo`, `ableton_play_clip`, `ableton_set_volume`, `ableton_set_pan`
+  - **VRChat (3 tools):** `vrchat_set_parameter`, `vrchat_send_chat`, `vrchat_trigger_haptic`
+  - **TouchDesigner (3 tools):** `touchdesigner_set_parameter`, `touchdesigner_set_constant`, `touchdesigner_trigger_button`
+  - **SuperCollider (3 tools):** `supercollider_create_synth`, `supercollider_free_node`, `supercollider_set_control`
+  - **Max/MSP (3 tools):** `maxmsp_send_bang`, `maxmsp_send_float`, `maxmsp_toggle_dsp`
+  - **VCV Rack (2 tools):** `vcvrack_set_parameter`, `vcvrack_trigger`
+  - **Resolume Arena (3 tools):** `resolume_play_clip`, `resolume_set_layer_opacity`, `resolume_set_bpm`
+  - **Pure Data (3 tools):** `puredata_send_bang`, `puredata_send_float`, `puredata_toggle_dsp`
+
+- **Test Tool:** `test_osc_echo` - End-to-end OSC functionality testing
+
+### Documentation
+- **docs/APPLICATION_TOOLS_ANALYSIS.md** - Comprehensive 400+ line analysis document
+  - Tool inventory and coverage analysis
+  - Architecture and design pattern documentation
+  - User experience improvements
+  - Migration guide
+  - Roadmap and metrics
+
+### Changed
+- **FastMCP 2.13.1 Compatibility Fixes**
+  - Removed `ResponseCachingMiddleware` import (not available in 2.13.1)
+  - Removed `@server.lifespan` decorator (not supported in 2.13.1)
+  - Server now starts successfully without errors
+
+- **README.md Updates**
+  - Updated tool count from 3 to 27+ tools
+  - Added comprehensive application-specific tools section
+  - Updated project structure documentation
+  - Added reference to analysis document
+
+### Fixed
+- **Server Startup Issues**
+  - Fixed import errors preventing server from starting
+  - Resolved worktree path issues
+  - Corrected MCP configuration to use `oscmcp.mcp_server`
+
+### Impact
+- **User Experience:** Natural language control now possible without OSC address knowledge
+- **Developer Experience:** Type-safe, IDE-autocompleteable tool names
+- **Adoption:** Significant reduction in barrier to entry for OSC control
+
+### Statistics
+- **Tool Count:** Increased from 3 to 27+ (800% increase)
+- **Applications Covered:** 8 professional applications
+- **Code Addition:** ~160 lines of application tool wrappers
+- **Documentation:** 400+ lines of comprehensive analysis
+
+## [0.2.0] - 2025-11-25
+
+### Added
+- **Comprehensive Tool Docstrings** - 400+ lines of extensive documentation
+  - Protocol explanations and domain context
+  - Detailed parameter documentation with examples
+  - Common port numbers for popular applications
+  - Application-specific usage tips (Ableton, TouchDesigner, VRChat, SuperCollider)
+  - Performance characteristics and benchmarks
+  - Security considerations and best practices
+  - Troubleshooting guides with solutions
+  - Multiple real-world examples per tool
+
+### Changed
+- **Updated README.md** - Complete rewrite with production-ready documentation
+  - Clear value proposition and use cases
+  - Installation instructions with Claude Desktop integration
+  - Application-specific usage examples
+  - Comprehensive troubleshooting section
+  - Roadmap and contribution guidelines
+
+- **Created CHANGELOG.md** - Formal change tracking
+- **Created PRODUCT_REQUIREMENTS.md** - Product vision and specifications
+
+### Documentation
+- All docstrings now follow comprehensive standards
+- Each tool includes 6-8 practical examples
+- Cross-references between related tools
+- Performance and security sections added
+
+## [0.1.1] - 2025-11-25
+
+### Added
+- **FastMCP 2.13.1 Compliance** - Upgraded from 2.10.0
+  - Server lifespan hooks with async context managers
+  - Response caching middleware (60s TTL)
+  - Pydantic input validation models
+  - Enhanced error handling
+
+- **Documentation**
+  - UPGRADE_NOTES.md - Comprehensive migration guide
+  - .claude/REPO_STATUS_AND_ROADMAP.md - Repository analysis and roadmap
+  - Detailed upgrade instructions and testing recommendations
+
+### Changed
+- **pyproject.toml** - Updated FastMCP dependency to `>=2.13.1`
+- **mcp_server.py** - Added lifespan hooks, caching, Pydantic models
+- **stdio_server.py** - Added lifespan hooks, caching, Pydantic models
+- **server.py** - Added lifespan hooks, caching, Pydantic models
+
+### Fixed
+- Resource leaks - OSC servers now properly cleaned up on shutdown
+- Port conflicts - Servers tracked globally with proper lifecycle management
+
+### Performance
+- Response caching reduces redundant operations
+- Cached clients avoid connection overhead
+- < 5ms latency for localhost OSC sends
+
+## [0.1.0] - 2025-11-24
+
+### Added
+- **Initial Release** - FastMCP 2.10 compliant OSC-MCP server
+- **Core Features**
+  - `send_osc()` - Send OSC messages to applications
+  - `start_osc_server()` - Start OSC listener for incoming messages
+  - `stop_osc_server()` - Stop OSC listener
+
+- **Server Implementations**
+  - `mcp_server.py` - Primary stdio transport server
+  - `stdio_server.py` - Alternative stdio server with test utilities
+  - `server.py` - HTTP transport variant
+
+- **OSC Protocol Support**
+  - Full OSC 1.0 specification
+  - UDP transport
+  - Type support: int, float, string, bool
+  - Bidirectional communication
+
+- **Application Integration Layer**
+  - Ableton Live (`apps/ableton.py`)
+  - TouchDesigner (`apps/touchdesigner.py`)
+  - VRChat (`apps/vrchat.py`)
+  - Max/MSP (`apps/maxmsp.py`)
+  - SuperCollider (`apps/supercollider.py`)
+  - Pure Data (`apps/puredata.py`)
+  - VCV Rack (`apps/vcvrack.py`)
+  - Resolume Arena (`apps/resolume.py`)
+  - OSCQuery (`apps/oscquery.py`)
+  - MIDI Bridge (`apps/midibridge.py`)
+
+- **Development Tools**
+  - pytest test suite
+  - Black code formatting
+  - isort import sorting
+  - flake8 linting
+  - mypy type checking
+
+### Dependencies
+- fastmcp[all]>=2.10.0 (later upgraded to 2.13.1)
+- python-osc>=1.8.0
+- python-rtmidi>=1.5.0
+- numpy>=1.21.0
+- asyncio>=3.4.3
+
+## Version History
+
+### [0.2.0] - Documentation & Compliance Update
+Major documentation improvements and FastMCP 2.13 full compliance.
+
+### [0.1.1] - FastMCP 2.13 Upgrade
+Critical infrastructure upgrade for production readiness.
+
+### [0.1.0] - Initial Release
+First public release with core OSC functionality.
+
+---
+
+## Legend
+
+- **Added** - New features
+- **Changed** - Changes to existing functionality
+- **Deprecated** - Soon-to-be removed features
+- **Removed** - Removed features
+- **Fixed** - Bug fixes
+- **Security** - Security improvements
+- **Performance** - Performance improvements
+- **Documentation** - Documentation changes
+
+## Migration Guides
+
+- [FastMCP 2.10 → 2.13](UPGRADE_NOTES.md) - Detailed migration instructions
+- [Repository Roadmap](.claude/REPO_STATUS_AND_ROADMAP.md) - Future plans
+
+## Links
+
+- [Repository](https://github.com/sandraschi/osc-mcp)
+- [FastMCP](https://github.com/jlowin/fastmcp)
+- [OSC Specification](http://opensoundcontrol.org/spec-1_0)
