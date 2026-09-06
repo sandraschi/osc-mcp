@@ -64,9 +64,8 @@ build-native:
     $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"
     .\build.ps1
 
-# MCPB pack — MUST wipe+recopy src -> mcpb/src before pack (see PACKAGING_STANDARDS.md 2.5)
-mcpb-pack:
-    pwsh.exe -NoProfile -ExecutionPolicy Bypass -File scripts/mcpb-pack.ps1
+# MCPB pack via fleet.just (`just mcpb-pack` → mcpb/pack.ps1: wipe+recopy, validate, pack).
+# (Retired scripts/mcpb-pack.ps1: staged only, left pack/validate manual.)
 
 # E2E Playwright tests
 e2e:
