@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "oscmcp"
-version = "0.3.0"
-description = "FastMCP 3.1.0 OSC Server with conversational AI and LLM sampling"
+version = "0.3.3"
+description = "FastMCP 3.4 OSC Server — bidirectional OSC, MIDI bridge, OSCQuery, reactive triggers, Arazzo workflows"
 readme = "README.md"
 requires-python = ">=3.12"
 license = {text = "MIT"}
@@ -24,7 +24,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-    "fastmcp[all]>=3.1.0,<4",
+    "fastmcp>=3.4.4,<4",
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.32.0",
     "python-osc>=1.8.0",
@@ -32,14 +32,21 @@ dependencies = [
     "numpy>=1.21.0",
     "pydantic>=2.0.0",
     "prefab-ui>=0.14.0",
+    "pyyaml>=6.0.0",
+    "mido>=1.3.0",
+    "zeroconf>=0.132.0",
+    "aiohttp>=3.9.0",
+    "psutil>=5.9.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0.0",
     "pytest-asyncio>=0.20.0",
-    "ruff>=0.6.0",
+    "httpx>=0.27.0",
+    "ruff>=0.16.0,<0.17",
     "mypy>=1.0.0",
+    "pyinstaller>=6.0.0",
 ]
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -48,7 +55,7 @@ where = ["src"]
 asyncio_mode = "auto"
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
@@ -70,11 +77,11 @@ ignore_errors = true
 exclude_dirs = ["tests", ".git", "__pycache__"]
 skips = ["B101", "B601"]  # Skip assert checks and shell usage
 
-# FastMCP 3.1+ server configuration
+# FastMCP 3.4 server configuration
 [tool.fastmcp]
 name = "OSC-MCP"
-version = "0.3.0"
-description = "FastMCP 3.1.0+ OSC Server with conversational AI and LLM sampling"
+version = "0.3.3"
+description = "FastMCP 3.4 OSC Server — bidirectional OSC, MIDI bridge, OSCQuery, reactive triggers, Arazzo workflows"
 entry_point = "oscmcp.server:server"
 transport = "stdio"
 capabilities = ["conversational_tools", "llm_sampling", "osc_automation"]
@@ -92,11 +99,28 @@ oscmcp = "oscmcp.cli:main"
 [tool.ruff]
 line-length = 120
 target-version = "py312"
+extend-exclude = ["mcpb/", "_llm_test_scripts/"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "S", "UP", "RUF"]
-ignore = ["S101", "B008"]
+ignore = ["S101", "B008", "S106", "S110", "S112", "S101", "B008", "S106", "S110", "S112", "RUF012", "S603", "S607", "S324", "E402", "E501", "B904", "S104", "RUF006", "S311"]
 
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.6.1",
+    "httpx>=0.28.1",
+    "pytest>=9.0.2",
+    "pytest-asyncio>=1.3.0",
+    "ruff>=0.16.0,<0.17",
+    "pyinstaller>=6.21.0",
+    "pywin32>=311",
+    "pywinauto>=0.6.9",
+]
+
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/*" = ["B007", "S310", "S603", "S607", "B905", "E722", "F841"]
