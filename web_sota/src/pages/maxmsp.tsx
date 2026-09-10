@@ -10,18 +10,18 @@ export function MaxMSP() {
   const [loading, setLoading] = useState(false);
 
   const callManager = async (
-    action: string,
+    operation: string,
     kwargs: Record<string, unknown> = {},
   ) => {
     setLoading(true);
-    setStatus({ status: "sending", message: `Executing ${action}...` });
+    setStatus({ status: "sending", message: `Executing ${operation}...` });
     try {
       const response = await fetch("http://localhost:10767/api/v1/tools/call", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: "maxmsp_manager",
-          arguments: { action, ...kwargs },
+          arguments: { operation, ...kwargs },
         }),
       });
       const data = await response.json();

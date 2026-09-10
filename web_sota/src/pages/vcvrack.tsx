@@ -15,7 +15,7 @@ export function VCVRack() {
   const [status, setStatus] = useState<any>(null);
 
   const callManager = async (
-    action: string,
+    operation: string,
     args: Record<string, any> = {},
   ) => {
     setLoading(true);
@@ -25,7 +25,7 @@ export function VCVRack() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: "vcv_manager",
-          arguments: { action, ...args },
+          arguments: { operation, ...args },
         }),
       });
       const data = await response.json();

@@ -125,3 +125,26 @@ resets 2026-09-06 evening). Everything below is committed and pushed to
    got this session. This is a frontend design/build task, not a bug
    audit - read each existing page first to see current state before
    redesigning.
+
+   - **TouchDesigner: TBD, deliberately deferred (2026-09-10).** Unlike
+     every other manager, `touchdesigner_manager`'s 40+ operations aren't
+     checkable against a real protocol — TouchDesigner has no built-in
+     OSC address convention at all (confirmed in
+     `skills/touchdesigner-expert/SKILL.md`); the tool's address patterns
+     (`/project1/const1/value1`) are this repo's own invented convention,
+     unverifiable against any stock `.toe` project. Bringing it to VCV
+     standard needs a different move first — ship a reference `.toe`
+     network (OSC In CHOP/DAT wired to match the convention), the same
+     way real `.vcv` presets were shipped — not just a webapp polish pass.
+     Also noted in passing: the tool defaults to port 9000 but
+     `server.py`'s in-app help claims TouchDesigner is port 12000;
+     unreconciled. Picking this back up: read the skill file first, decide
+     whether to ship a reference network or rescope the tool's addresses
+     entirely, before touching the webapp page.
+
+   - **Found while investigating TD (2026-09-10): every app-manager
+     webapp page's buttons were dead fleet-wide**, not a TD-specific
+     issue — see the `fix(webapp)` commit right after this note for the
+     root cause and fix. Worth remembering when tackling remaining pages:
+     nobody has actually click-tested any of these pages end-to-end yet,
+     only the VCV *file-generation* path got a real CUA smoke test.

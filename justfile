@@ -49,9 +49,14 @@ fmt:
     uv run ruff format .
 
 # TypeScript typecheck
+# NOTE: bare `tsc --noEmit` against this repo's root tsconfig.json (a
+# project-references-only file with "files": []) silently checks zero
+# files and always exits 0 -- must target tsconfig.app.json explicitly.
+# Also: `just` runs each recipe line as its own PowerShell process, so
+# Set-Location on its own line has no effect on the next line -- must be
+# one `;`-joined line (see the `bootstrap` recipe above for the same fix).
 types:
-    Set-Location '{{justfile_directory()}}\web_sota'
-    npx tsc --noEmit
+    Set-Location '{{justfile_directory()}}\web_sota'; npx tsc --noEmit --project tsconfig.app.json
 
 # All gates green: lint + types + test
 gates-green: lint types
