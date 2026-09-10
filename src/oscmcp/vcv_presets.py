@@ -304,24 +304,21 @@ def bach_organ() -> dict:
         "filterLambda": 30.0,
         "midi": {"driver": 4, "device": 1, "channel": -1},
     }
+    # Single saw voice on purpose: a second same-pitch VCO gang-preset into one
+    # mixer channel clips the sum (distortion) and the mono MIDIToCV retriggers
+    # the gate on every overlapping chord note (clicking). One voice + soft
+    # attack + open filter = clean organ lead for the monophonic Toccata
+    # opening. Full fugue chords want a poly rebuild (see below).
     vco1 = b.add("Fundamental", "VCO", 1 * COL, 0)
-    vco2 = b.add("Fundamental", "VCO", 1 * COL, ROW_HEIGHT)
-    # vco2 an octave up: 1V/oct pitch is 1.0V per octave, so add 1.0V via
-    # 8vert offset? 8vert has no offset, but we can just tune vco2's
-    # base FREQ_PARAM up 12 semitones (param 0 is octave, but easier: set
-    # pitch CV via 8vert with +1V offset emulated by param). Keep simple:
-    # use same MIDI pitch, second VCO will be manually tuned +12 in Rack.
     mixer = b.add("Fundamental", "Mixer", 2 * COL, 0)
-    adsr = b.add("Fundamental", "ADSR", 2 * COL, ROW_HEIGHT, params={0: 0.05, 1: 0.2, 2: 0.9, 3: 0.3})
-    vcf = b.add("Fundamental", "VCF", 3 * COL, 0, params={0: -2.0})
+    adsr = b.add("Fundamental", "ADSR", 2 * COL, ROW_HEIGHT, params={0: 0.12, 1: 0.2, 2: 0.9, 3: 0.4})
+    vcf = b.add("Fundamental", "VCF", 3 * COL, 0)
     vca = b.add("Fundamental", "VCA-1", 4 * COL, 0)
     audio = b.add("Core", "AudioInterface2", 5 * COL, 0)
 
     b.connect(midi, "1V/octave pitch", vco1, "1V/octave pitch")
-    b.connect(midi, "1V/octave pitch", vco2, "1V/octave pitch")
     b.connect(midi, "Gate", adsr, "Gate")
     b.connect(vco1, "Sawtooth", mixer, "Channel 1")
-    b.connect(vco2, "Square", mixer, "Channel 2")
     b.connect(mixer, "Mix", vcf, "Audio")
     # Organ envelope also tames filter
     b.connect(adsr, "Envelope", vcf, "Frequency")
