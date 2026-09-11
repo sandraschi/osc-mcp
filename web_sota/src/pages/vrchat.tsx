@@ -1,13 +1,15 @@
-import { MessageSquare, Terminal, User, Zap } from "lucide-react";
+import { MessageSquare, Terminal, Zap } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 
 export function VRChat() {
   const [status, setStatus] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(false);
+  const [chatMessage, setChatMessage] = useState("");
 
   const callManager = async (
     operation: string,
@@ -91,18 +93,6 @@ export function VRChat() {
         </Card>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avatar Status</CardTitle>
-            <User className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-500">Connected</div>
-          </CardContent>
-        </Card>
-      </div>
-
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
@@ -118,10 +108,9 @@ export function VRChat() {
                 defaultValue={[85]}
                 max={100}
                 onValueCommit={(val) =>
-                  callManager("set_avatar_parameter", {
-                    parameter: "Voice",
+                  callManager("set_parameter", {
+                    param_name: "Voice",
                     value: val[0] / 100,
-                    type: "float",
                   })
                 }
               />
@@ -136,10 +125,9 @@ export function VRChat() {
                 max={15}
                 step={1}
                 onValueCommit={(val) =>
-                  callManager("set_avatar_parameter", {
-                    parameter: "Viseme",
+                  callManager("set_parameter", {
+                    param_name: "Viseme",
                     value: val[0],
-                    type: "int",
                   })
                 }
               />
@@ -153,10 +141,9 @@ export function VRChat() {
                 defaultValue={[50]}
                 max={100}
                 onValueCommit={(val) =>
-                  callManager("set_avatar_parameter", {
-                    parameter: "Mood",
+                  callManager("set_parameter", {
+                    param_name: "Mood",
                     value: val[0] / 100,
-                    type: "float",
                   })
                 }
               />
@@ -168,48 +155,56 @@ export function VRChat() {
           <CardHeader>
             <CardTitle>Input Simulation</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-3 gap-3">
-            {["Jump", "Mute", "Reset", "Sit", "AFK", "Menu"].map((action) => (
+          <CardContent className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              VRChat's real Input OSC surface only covers movement/camera/
+              action buttons -- there's no OSC address for menu, sit, mute, or
+              reset. Only what VRChat actually listens for is offered.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
               <Button
-                key={action}
                 variant="outline"
                 className="flex items-center gap-2"
                 onClick={() =>
-                  callManager("simulate_input", {
-                    button: action.toLowerCase(),
-                    state: 1,
-                  })
+                  callManager("input", { input_name: "Jump", value: 1 })
                 }
                 disabled={loading}
               >
                 <Zap className="h-3 w-3" />
-                {action}
+                Jump
               </Button>
-            ))}
+              <Button
+                variant="outline"
+                className="flex items-center gap-2"
+                onClick={() => callManager("afk_toggle", { enabled: true })}
+                disabled={loading}
+              >
+                <Zap className="h-3 w-3" />
+                AFK
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Chatbox Preview</CardTitle>
+          <CardTitle>Chatbox</CardTitle>
           <MessageSquare className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-md p-4 font-mono text-emerald-400">
-            "Synthesizing new audio patterns..."
-          </div>
+          <Input
+            placeholder="Type a message to send to your VRChat chatbox..."
+            value={chatMessage}
+            onChange={(e) => setChatMessage(e.target.value)}
+            className="font-mono"
+          />
           <Button
             className="w-full"
-            onClick={() =>
-              callManager("send_chatbox", {
-                message: "Synthesizing new audio patterns...",
-                show_keyboard: false,
-              })
-            }
-            disabled={loading}
+            onClick={() => callManager("send_chat", { message: chatMessage })}
+            disabled={loading || !chatMessage}
           >
-            Update Chatbox Text
+            Send to Chatbox
           </Button>
         </CardContent>
       </Card>

@@ -1,4 +1,4 @@
-import { Radio, Terminal, Zap } from "lucide-react";
+import { Terminal, Zap } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -93,83 +93,54 @@ export function MaxMSP() {
         </Card>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">DSP Status</CardTitle>
-            <Radio className="h-4 w-4 text-emerald-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">ON</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Global Messaging</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="secondary"
-                className="font-mono"
-                onClick={() => callManager("send_bang", { receiver: "global" })}
-                disabled={loading}
-              >
-                <Zap className="mr-2 h-4 w-4" /> bang
-              </Button>
-              <Button
-                variant="secondary"
-                className="font-mono"
-                onClick={() => callManager("reset_state", { component: "all" })}
-                disabled={loading}
-              >
-                reset
-              </Button>
+      <Card>
+        <CardHeader>
+          <CardTitle>Global Messaging</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-xs text-muted-foreground">
+            Max has no fixed OSC namespace or reply convention -- these messages
+            send one-way. There is no live DSP/telemetry readout to show without
+            a patch that scripts its own reply.
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="secondary"
+              className="font-mono"
+              onClick={() => callManager("send_bang", { receiver: "global" })}
+              disabled={loading}
+            >
+              <Zap className="mr-2 h-4 w-4" /> bang
+            </Button>
+            <Button
+              variant="secondary"
+              className="font-mono"
+              onClick={() => callManager("reset_state", { component: "all" })}
+              disabled={loading}
+            >
+              reset
+            </Button>
+          </div>
+          <div className="space-y-2 pt-4 border-t">
+            <label className="text-xs font-semibold uppercase text-muted-foreground">
+              Global Float
+            </label>
+            <div className="flex items-center gap-4">
+              <Slider
+                defaultValue={[0]}
+                max={100}
+                className="flex-1"
+                onValueCommit={(val) =>
+                  callManager("set_float", {
+                    receiver: "global",
+                    value: val[0] / 100,
+                  })
+                }
+              />
             </div>
-            <div className="space-y-2 pt-4 border-t">
-              <label className="text-xs font-semibold uppercase text-muted-foreground">
-                Global Float
-              </label>
-              <div className="flex items-center gap-4">
-                <Slider
-                  defaultValue={[0]}
-                  max={100}
-                  className="flex-1"
-                  onValueCommit={(val) =>
-                    callManager("set_float", {
-                      receiver: "global",
-                      value: val[0] / 100,
-                    })
-                  }
-                />
-                <span className="font-mono text-sm">0.00</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Telemetry Stream</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[120px] w-full bg-slate-900/50 rounded flex items-end justify-between p-2 gap-1 border border-slate-800">
-              {[40, 60, 45, 90, 100, 80, 30, 45, 50, 70, 85, 40, 20, 60].map(
-                (h, i) => (
-                  <div
-                    key={i}
-                    className="bg-emerald-500/40 w-full rounded-t-sm"
-                    style={{ height: `${h}%` } as React.CSSProperties}
-                  ></div>
-                ),
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

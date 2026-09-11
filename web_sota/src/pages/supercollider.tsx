@@ -1,13 +1,15 @@
-import { Activity, Cpu, Terminal } from "lucide-react";
+import { Terminal } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 
 export function SuperCollider() {
   const [status, setStatus] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(false);
+  const [nodeId, setNodeId] = useState(1000);
 
   const callManager = async (
     operation: string,
@@ -91,78 +93,57 @@ export function SuperCollider() {
         </Card>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Synth Nodes</CardTitle>
-            <Cpu className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">12 Active</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">CPU Load</CardTitle>
-            <Activity className="h-4 w-4 text-yellow-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">4.2%</div>
-          </CardContent>
-        </Card>
-      </div>
-
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Fast Node Controls</CardTitle>
+            <CardTitle>Node Control</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-3 border rounded-lg bg-slate-500/5">
-              <span className="font-mono text-sm">node [1000] - \sine</span>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => callManager("free_node", { node_id: 1000 })}
-                  disabled={loading}
-                >
-                  Free
-                </Button>
-              </div>
-            </div>
-            <div className="flex items-center justify-between p-3 border rounded-lg bg-slate-500/5">
-              <span className="font-mono text-sm">node [1001] - \saw</span>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => callManager("free_node", { node_id: 1001 })}
-                  disabled={loading}
-                >
-                  Free
-                </Button>
-              </div>
+            <p className="text-xs text-muted-foreground">
+              scsynth has no default reply convention this tool queries, so
+              there's no live node/CPU list to show -- enter the node ID of a
+              synth you already booted (via sclang or a .scd script).
+            </p>
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-semibold uppercase text-muted-foreground shrink-0">
+                Node ID
+              </label>
+              <Input
+                type="number"
+                value={nodeId}
+                onChange={(e) => setNodeId(Number(e.target.value))}
+                className="font-mono"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => callManager("free_node", { node_id: nodeId })}
+                disabled={loading}
+              >
+                Free
+              </Button>
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Global Synth Params</CardTitle>
+            <CardTitle>Set Node Parameters</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <p className="text-xs text-muted-foreground">
+              Sends to node {nodeId} (set above).
+            </p>
             <div className="space-y-2">
-              <div className="flex justify-between text-sm font-mono">
-                <span>amp</span>
-                <span>0.25</span>
-              </div>
+              <label className="text-xs font-semibold uppercase text-muted-foreground">
+                amp
+              </label>
               <Slider
                 defaultValue={[25]}
                 max={100}
                 onValueCommit={(val) =>
                   callManager("set_node_parameter", {
-                    node_id: 1000,
+                    node_id: nodeId,
                     parameter: "amp",
                     value: val[0] / 100,
                   })
@@ -170,17 +151,16 @@ export function SuperCollider() {
               />
             </div>
             <div className="space-y-2">
-              <div className="flex justify-between text-sm font-mono">
-                <span>freq</span>
-                <span>440 Hz</span>
-              </div>
+              <label className="text-xs font-semibold uppercase text-muted-foreground">
+                freq
+              </label>
               <Slider
                 defaultValue={[440]}
                 max={2000}
                 min={20}
                 onValueCommit={(val) =>
                   callManager("set_node_parameter", {
-                    node_id: 1000,
+                    node_id: nodeId,
                     parameter: "freq",
                     value: val[0],
                   })
