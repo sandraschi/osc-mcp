@@ -4,11 +4,11 @@
     Name         = 'osc-mcp'
     BackendPort  = 10767
     FrontendPort = 10766
-    HealthPath   = '/health'
-    WebRoot      = 'D:\Dev\repos\osc-mcp\web_sota'
+    HealthPath   = '/api/v1/health'
+    WebRoot      = 'web_sota'
     Backend = @{
         Kind          = 'uvicorn'
-        UvicornTarget = 'oscmcp.api.main:app'
+        UvicornTarget = 'server:app'
         SyncExtras    = @('dev')
         Env           = @{ WEB_PORT = '10767' }
     }
