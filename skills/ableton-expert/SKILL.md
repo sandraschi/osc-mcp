@@ -71,41 +71,57 @@ README. Those three strings simply do not exist in the protocol.
 
 ```python
 ableton_manager(operation, host="127.0.0.1", port=11000, track_index=None,
-                 clip_slot=None, bpm=None, volume=None, pan=None)
+                 clip_slot=None, scene_id=None, bpm=None, volume=None,
+                 pan=None, mute=None, solo=None)
 ```
 
 | Operation | Sends | Matches real AbletonOSC? |
 |---|---|---|
 | `play` | `/live/song/start_playing`, `[]` | **Fixed** — used to send `/live/play`, which AbletonOSC has no handler for (silent no-op) |
 | `stop` | `/live/song/stop_playing`, `[]` | **Fixed** — used to send `/live/stop` |
+| `stop_all_clips` | `/live/song/stop_all_clips`, `[]` | Added - real address, was previously unexposed |
 | `set_tempo` | `/live/song/set/tempo`, `[bpm]` | **Fixed** — used to send `/live/tempo` |
+| `tap_tempo` | `/live/song/tap_tempo`, `[]` | Added - real address, was previously unexposed |
+| `trigger_record` | `/live/song/trigger_session_record`, `[]` | Added - real address, replaces the webapp's old `record` button, which called an operation that never existed server-side at all |
 | `play_clip` | `/live/clip/fire`, `[track_index, clip_slot]` | Yes — matches the real address and argument order exactly. |
+| `stop_clip` | `/live/clip/stop`, `[track_index, clip_slot]` | Added - real address, was previously unexposed |
+| `fire_scene` | `/live/scene/fire`, `[scene_id]` | Added - real address, replaces the webapp's old `launch_scene` button, which called an operation that never existed server-side either |
 | `set_volume` | `/live/track/set/volume`, `[track_index, volume]` | Yes — matches exactly, including the documented 0.0–1.0 range. |
 | `set_pan` | `/live/track/set/panning`, `[track_index, pan]` | Yes — matches exactly, including the documented -1.0–1.0 range. |
+| `set_mute` | `/live/track/set/mute`, `[track_index, 1 or 0]` | Added - real address, was previously unexposed |
+| `set_solo` | `/live/track/set/solo`, `[track_index, 1 or 0]` | Added - real address, was previously unexposed |
 
 **Known gaps:**
 
 1. ~~`play`, `stop`, and `set_tempo` sent addresses AbletonOSC does not
    recognize~~ — fixed to send `/live/song/start_playing`,
    `/live/song/stop_playing`, and `/live/song/set/tempo` respectively.
-2. **`set_tempo`'s real valid range** is documented informally as roughly
+2. ~~No mute, solo, scene-fire, clip-stop, tap-tempo, or record
+   operations~~ — all six added, backed by real addresses from the table
+   above. The webapp page's old `record`/`launch_scene` buttons called
+   operations (`record`, `launch_scene`) that never existed in
+   `ableton_manager` at all - not just wrong addresses, entirely fictional
+   operations returning "Unknown operation" - now wired to the real
+   `trigger_record`/`fire_scene` operations instead.
+3. **No send-level operations** — AbletonOSC documents
+   `/live/track/set/send` but `ableton_manager` doesn't expose it. Real
+   gap in coverage, not a bug.
+4. **`set_tempo`'s real valid range** is documented informally as roughly
    20–999 BPM by Live's own tempo field limits, not a hard range AbletonOSC
    itself enforces — don't assume AbletonOSC will clamp or validate; Live's
    own UI does.
-3. **No mute, solo, or send-level operations** are exposed by
-   `ableton_manager` even though AbletonOSC documents
-   `/live/track/set/mute`, `/live/track/set/solo`, and
-   `/live/track/set/send` — a real gap in coverage, not a bug, since no
-   existing operation claims to do this and fails silently.
-4. **No clip-slot toggle (`/live/clip_slot/fire`) or scene-fire
-   (`/live/scene/fire`) operation** exists in `ableton_manager` — only the
-   `/live/clip/fire` variant is reachable via `play_clip`.
 5. **`track_id` vs `track_index` naming**: AbletonOSC's own docs call the
    first argument `track_id`/`track_index` inconsistently across its own
    README sections; empirically it is a 0-based track index in Live's
    track list, matching what `ableton_manager`'s `track_index` parameter
    assumes. Not verified against a live Ableton instance in this pass —
    flagging as consistent-with-docs, not independently re-tested.
+6. **No read-back at all** — every operation above is fire-and-forget;
+   there is no way for `ableton_manager` or its webapp page to know how
+   many tracks, scenes, or clips actually exist in the user's live set.
+   The webapp page (`web_sota/src/pages/ableton.tsx`) handles this
+   honestly: track/scene/clip indices are plain number inputs the user
+   fills in, not a fake dropdown implying real discovery.
 
 ## Best Practices
 
@@ -116,9 +132,9 @@ ableton_manager(operation, host="127.0.0.1", port=11000, track_index=None,
 2. **Port 11000 is a real fixed default**, not a guess — unlike VCV Rack's
    OSCelot (no default) or TouchDesigner's user-configured OSC In CHOP,
    AbletonOSC really does listen on 11000 out of the box.
-3. If a user needs mute/solo/send control or scene firing, that needs new
-   `ableton_manager` operations built against the addresses in the table
-   above — don't invent a workaround address.
+3. If a user needs send-level control (the one remaining real gap), that
+   needs a new `ableton_manager` operation built against
+   `/live/track/set/send` — don't invent a workaround address.
 
 ## Primary sources
 

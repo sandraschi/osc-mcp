@@ -896,30 +896,49 @@ async def ableton_manager(
     port: int = 11000,
     track_index: int | None = None,
     clip_slot: int | None = None,
+    scene_id: int | None = None,
     bpm: float | None = None,
     volume: float | None = None,
     pan: float | None = None,
+    mute: bool | None = None,
+    solo: bool | None = None,
 ) -> dict[str, Any]:
     """
-    Ableton Live Manager - Professional DAW control.
+    Ableton Live Manager - Professional DAW control via the AbletonOSC remote script.
 
     PORTMANTEAU TOOL: Consolidates all Ableton Live operations into one tool.
 
+    Every address below is verified against AbletonOSC's own README
+    (github.com/ideoforms/AbletonOSC) - see skills/ableton-expert/ for the
+    full research. Live has no native OSC of its own; every operation here
+    is a silent UDP no-op if AbletonOSC isn't installed and selected as a
+    Control Surface in Live's Preferences.
+
     Args:
         operation: Operation to perform
-            - "play" - Start playback
-            - "stop" - Stop playback
-            - "set_tempo" - Set BPM
-            - "play_clip" - Play specific clip
-            - "set_volume" - Set track volume (0.0-1.0)
-            - "set_pan" - Set track pan (-1.0 to 1.0)
+            - "play" - Start session playback
+            - "stop" - Stop session playback
+            - "stop_all_clips" - Stop every currently-playing clip
+            - "set_tempo" - Set song tempo (requires bpm)
+            - "tap_tempo" - Mimic a tap of the Tap Tempo button
+            - "trigger_record" - Trigger session-mode record
+            - "play_clip" - Fire a clip (requires track_index, clip_slot)
+            - "stop_clip" - Stop a clip (requires track_index, clip_slot)
+            - "fire_scene" - Trigger a scene (requires scene_id)
+            - "set_volume" - Set track volume 0.0-1.0 (requires track_index, volume)
+            - "set_pan" - Set track pan -1.0 to 1.0 (requires track_index, pan)
+            - "set_mute" - Mute/unmute a track (requires track_index, mute)
+            - "set_solo" - Solo/unsolo a track (requires track_index, solo)
         host: Target host (default: 127.0.0.1)
-        port: Target port (default: 11000)
-        track_index: Track index (for clip, volume, pan operations)
-        clip_slot: Clip slot index (for play_clip)
+        port: Target port (default: 11000 - AbletonOSC's real fixed listen port)
+        track_index: 0-based track index (for clip/volume/pan/mute/solo operations)
+        clip_slot: 0-based clip slot index (for play_clip/stop_clip)
+        scene_id: 0-based scene index (for fire_scene)
         bpm: Tempo in BPM (for set_tempo)
         volume: Volume level (0.0-1.0, for set_volume)
         pan: Pan position (-1.0 to 1.0, for set_pan)
+        mute: True to mute, False to unmute (for set_mute)
+        solo: True to solo, False to unsolo (for set_solo)
 
     Returns:
         Operation result with status and details
@@ -931,10 +950,19 @@ async def ableton_manager(
     if operation == "stop":
         return await send_osc(host, port, "/live/song/stop_playing", [])
 
+    if operation == "stop_all_clips":
+        return await send_osc(host, port, "/live/song/stop_all_clips", [])
+
     if operation == "set_tempo":
         if bpm is None:
             return {"status": "error", "message": "bpm required for set_tempo"}
         return await send_osc(host, port, "/live/song/set/tempo", [bpm])
+
+    if operation == "tap_tempo":
+        return await send_osc(host, port, "/live/song/tap_tempo", [])
+
+    if operation == "trigger_record":
+        return await send_osc(host, port, "/live/song/trigger_session_record", [])
 
     if operation == "play_clip":
         if track_index is None or clip_slot is None:
@@ -943,6 +971,19 @@ async def ableton_manager(
                 "message": "track_index and clip_slot required for play_clip",
             }
         return await send_osc(host, port, "/live/clip/fire", [track_index, clip_slot])
+
+    if operation == "stop_clip":
+        if track_index is None or clip_slot is None:
+            return {
+                "status": "error",
+                "message": "track_index and clip_slot required for stop_clip",
+            }
+        return await send_osc(host, port, "/live/clip/stop", [track_index, clip_slot])
+
+    if operation == "fire_scene":
+        if scene_id is None:
+            return {"status": "error", "message": "scene_id required for fire_scene"}
+        return await send_osc(host, port, "/live/scene/fire", [scene_id])
 
     if operation == "set_volume":
         if track_index is None or volume is None:
@@ -959,6 +1000,22 @@ async def ableton_manager(
                 "message": "track_index and pan required for set_pan",
             }
         return await send_osc(host, port, "/live/track/set/panning", [track_index, pan])
+
+    if operation == "set_mute":
+        if track_index is None or mute is None:
+            return {
+                "status": "error",
+                "message": "track_index and mute required for set_mute",
+            }
+        return await send_osc(host, port, "/live/track/set/mute", [track_index, 1 if mute else 0])
+
+    if operation == "set_solo":
+        if track_index is None or solo is None:
+            return {
+                "status": "error",
+                "message": "track_index and solo required for set_solo",
+            }
+        return await send_osc(host, port, "/live/track/set/solo", [track_index, 1 if solo else 0])
 
     return {"status": "error", "message": f"Unknown operation: {operation}"}
 
