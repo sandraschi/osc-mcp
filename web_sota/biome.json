@@ -1,5 +1,6 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.5.0/schema.json",
+  "root": true,
   "vcs": { "enabled": false, "clientKind": "git", "useIgnoreFile": true },
   "files": {
     "includes": ["src/**", "vite.config.ts", "e2e/**"],
