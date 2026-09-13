@@ -85,9 +85,11 @@ Reference.
 | `/n_set` | `nodeID (int), [controlName/index, value]...` | Sets one or more named/indexed controls on an existing node |
 | `/n_free` | `nodeID (int) [, nodeID...]` | Frees one or more nodes |
 | `/n_run` | `[nodeID, runFlag]...` | Not implemented by `supercollider_manager` |
-| `/g_new` | `[groupID, addAction, addTargetID]...` | Not implemented by `supercollider_manager` — group 0 is the always-present root group |
+| `/g_new` | `[groupID, addAction, addTargetID]...` | Implemented as `create_group` |
+| `/g_freeAll` | `groupID (int) [, groupID...]` | Implemented as `free_group` — frees every node *inside* the group, the group itself remains (verified live: `num_groups` unchanged after calling this on a freshly-created empty group) |
 | `/notify` | `receiveFlag (0/1), clientID (optional)` | Registers the sender's return address for server notifications/replies. Not implemented by `supercollider_manager` — see Known gaps. |
-| `/status` | none | Requests server status; not implemented |
+| `/status` | none | Requests server status - server replies to whatever address the request came from. Implemented as `status`, using a dedicated request/reply socket (`_query_scsynth_status`), not the shared fire-and-forget `send_osc` helper every other operation here uses. |
+| `/status.reply` | `unused, num_ugens, num_synths, num_groups, num_synthdefs, avg_cpu_percent, peak_cpu_percent, nominal_sample_rate, actual_sample_rate` | The real reply to `/status` - live-verified against a running `scsynth.exe` 3.14.1 before shipping (see below) |
 | `/d_recv` | `buffer (bytes), completionMsg (optional bytes)` | Loads a compiled SynthDef into the server; not implemented — see setup chain above |
 
 ## `supercollider_manager` — what osc-mcp actually implements
@@ -103,35 +105,45 @@ supercollider_manager(operation, host="127.0.0.1", port=57110,
 | `create_synth` | `/s_new, (def_name, node_id, add_action or 0, target or 0)` | **Correct** — matches the real argument order and defaults exactly (`add_action=0` is `addToHead`, `target=0` is the root group) |
 | `free_node` | `/n_free, (node_id)` | **Correct** |
 | `set_control` | `/n_set, (node_id, control_name, value)` | **Correct** — real `/n_set` accepts a control name (string) or index (int) interchangeably, matches |
+| `create_group` | `/g_new, (node_id, add_action or 0, target or 0)` | **Added** — `node_id` doubles as the new group's ID (nodes and groups share one ID space in scsynth) |
+| `free_group` | `/g_freeAll, (node_id)` | **Added** — `node_id` is the group's ID here |
+| `status` | `/status`, waits for `/status.reply` on the same socket | **Added** — the one genuinely bidirectional operation in this whole tool; every other operation here (and in every other app-manager in this fleet except QLab/obs-websocket) is fire-and-forget |
 
 Unlike the VRChat and VCV Rack integrations, everything this tool actually
-implements matches the real protocol exactly — the gaps here are entirely
-about missing operations, not wrong ones.
+implements matches the real protocol exactly — the remaining gaps are
+entirely about missing operations, not wrong ones.
+
+**Live-verified** (real running `scsynth.exe` 3.14.1, `-u 57110`, before
+shipping any of this): `status` returned real telemetry (`num_groups`
+correctly at 1 with nothing running, CPU/sample-rate fields all genuine,
+non-fabricated numbers, actual sample rate showing real clock drift from
+nominal - 48020.65 Hz vs 48000 Hz nominal on the test machine);
+`create_group`/`free_group` confirmed against a live `status` diff
+(`num_groups` 1→2 on create, staying at 2 after `free_group` since that
+only empties the group rather than deleting it, exactly as documented).
 
 ## Known gaps
 
 1. **No `/notify` call anywhere.** `supercollider_manager` never registers
-   a return address with the server. Practically: you can fire `/s_new`,
-   `/n_set`, `/n_free` all day with zero feedback channel back to
-   `osc-mcp` — no confirmation a synth actually started, and (not verified
-   from docs fetched this session — needs live testing) it's unclear
-   whether `/notify` registration also gates delivery of `/fail` error
-   replies for malformed commands, versus only gating node-lifecycle
-   notifications (`/n_go`/`/n_end`/`/n_off`/`/n_on`). Either way, this tool
-   currently has no way to detect a silently-failed `/s_new` (e.g. an
-   unloaded SynthDef name) beyond checking for audible/visible effect.
+   a return address with the server for node-lifecycle notifications
+   (`/n_go`/`/n_end`/`/n_off`/`/n_on`) or `/fail` error replies - `status`
+   now provides real *server-level* telemetry, but there's still no way to
+   confirm an individual `/s_new` actually started (e.g. because the named
+   SynthDef isn't loaded) beyond checking `status`'s `num_synths` before
+   and after, or audible/visible effect.
 2. **No SynthDef loading path** (`/d_recv`/`/d_load`) — `create_synth`
    only works for `def_name="default"` (the server's built-in SynthDef) or
    a name already loaded into the running server through `sclang` or the
    server's synthdefs directory. There is no way, through this tool alone,
    to get a custom SynthDef onto the server.
-3. **No `/status` or `/g_new`/`/g_free`** — no way to query server health
-   or manage groups (beyond the always-present root group `0`, which
-   `create_synth`'s `target=0` default already targets correctly).
-4. **Port confusion risk**: don't let a user's SuperCollider language code
+3. **Port confusion risk**: don't let a user's SuperCollider language code
    (which talks about `NetAddr.langPort`, 57120) bleed into the port you
    configure here — that's `sclang`'s own port, unrelated to `scsynth`'s
    57110.
+4. **`status` blocks the event loop's thread pool for up to 2s on
+   timeout** (`asyncio.to_thread` wraps a blocking socket call) — fine for
+   occasional polling from the webapp's Refresh button, not something to
+   call in a tight loop.
 
 ## Best Practices
 
@@ -143,10 +155,12 @@ about missing operations, not wrong ones.
    the one SynthDef guaranteed to exist without any extra setup.
 3. **Never target 57120** for `supercollider_manager` calls — that's the
    language port, not the server.
-4. **No feedback means no feedback** — without `/notify`, a "successful"
-   `create_synth` call only means the UDP packet was sent, not that
-   `scsynth` did anything with it. Cross-check with audible output or the
-   SuperCollider IDE's own node tree view when troubleshooting.
+4. **`create_synth`/`free_node`/`set_control`/`create_group`/`free_group`
+   are still fire-and-forget** — a "successful" call only means the UDP
+   packet was sent, not that `scsynth` did anything with it. Use the new
+   `status` operation before/after to cross-check `num_synths`/
+   `num_groups` changed as expected, or check the SuperCollider IDE's own
+   node tree view.
 
 ## Primary sources
 

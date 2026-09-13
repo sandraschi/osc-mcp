@@ -11,11 +11,14 @@ graph entirely (osc-mcp quality-check, 2026-09-04).
 
 import asyncio
 import logging
+import socket
 from pathlib import Path
 from typing import Any
 
 import mido
 from pydantic import BaseModel, Field
+from pythonosc.osc_message import OscMessage
+from pythonosc.osc_message_builder import OscMessageBuilder
 
 from .osc.client import OSCClient
 from .osc.server import OSCServer
@@ -84,9 +87,9 @@ async def send_osc(
             - 8000: Generic OSC applications
             - 9000: TouchDesigner, QLab
             - 9001: VCV Rack
-            - 11000: Ableton Live (with LiveOSC or Connection Kit)
-            - 57120: SuperCollider
-            - 57131: Max/MSP
+            - 11000: Ableton Live (via the AbletonOSC remote script - fixed, real port)
+            - 57110: SuperCollider's scsynth (the audio server; 57120 is sclang's
+              own separate default, a common mix-up - see supercollider_manager)
         address: OSC address pattern starting with "/" (e.g., "/volume", "/track/1/mute").
             Address patterns follow a hierarchical structure similar to file paths:
             - Single segment: "/volume"
@@ -120,10 +123,10 @@ async def send_osc(
         - Serialization error: Unsupported value type in values list
 
     Examples:
-        # Send volume control to Ableton Live
-        >>> await send_osc("127.0.0.1", 11000, "/live/volume", [0.8])
+        # Send volume control to Ableton Live (via AbletonOSC; track_id 0, 0.0-1.0)
+        >>> await send_osc("127.0.0.1", 11000, "/live/track/set/volume", [0, 0.8])
         {'status': 'success', 'host': '127.0.0.1', 'port': 11000,
-         'address': '/live/volume', 'values': [0.8]}
+         'address': '/live/track/set/volume', 'values': [0, 0.8]}
 
         # Mute track 1 in a DAW
         >>> await send_osc("localhost", 8000, "/track/1/mute", [1])
@@ -157,24 +160,27 @@ async def send_osc(
         - Cached clients avoid connection overhead
         - Response caching enabled (60s TTL) for identical calls
 
-    Application-Specific Tips:
-        Ableton Live (port 11000):
-            - /live/play - Start playback
-            - /live/stop - Stop playback
-            - /live/tempo [bpm] - Set tempo
-            - /live/track/{n}/volume [0.0-1.0] - Track volume
+    Application-Specific Tips (verified against each app's real, documented
+    protocol - see skills/{app}-expert/ for the full research and primary sources):
+        Ableton Live (port 11000, via AbletonOSC - github.com/ideoforms/AbletonOSC):
+            - /live/song/start_playing - Start playback
+            - /live/song/stop_playing - Stop playback
+            - /live/song/set/tempo [bpm] - Set tempo
+            - /live/track/set/volume [track_id, 0.0-1.0] - Track volume
 
-        TouchDesigner (port 9000):
-            - /project/comp1/opacity [0.0-1.0]
-            - /project/comp1/tx [x] - Translate X
+        TouchDesigner (no fixed convention - has no built-in address-to-parameter
+            mapping at all; this is only meaningful for a project scripted to match it):
+            - /project1/const1/value1 [x] - one convention, not a TouchDesigner standard
 
-        VRChat (port 9000):
-            - /avatar/parameters/{name} [value] - Avatar parameter
-            - /input/Voice [0.0-1.0] - Voice activation
+        VRChat (port 9000, native OSC - docs.vrchat.com/docs/osc-overview):
+            - /avatar/parameters/{name} [value] - Avatar parameter (one value per address)
+            - /input/Jump [1] - Input controller emulation
 
-        SuperCollider (port 57120):
+        SuperCollider (port 57110 - scsynth, not sclang's 57120):
             - /s_new ["synthname", nodeID, addAction, target]
             - /n_free [nodeID] - Free synth node
+            - /status - Real bidirectional query; scsynth replies with /status.reply
+              (synth/group/ugen counts, CPU load, sample rate) - see supercollider_manager
     """
     if values is None:
         values = []
@@ -2487,6 +2493,48 @@ async def music_orchestrator(
     return {"status": "error", "message": f"Unknown operation: {operation}"}
 
 
+async def _query_scsynth_status(host: str, port: int, timeout: float = 2.0) -> dict[str, Any]:
+    """Send /status to scsynth and wait for its /status.reply on the same socket.
+
+    Real request/reply exchange (doc.sccode.org/Reference/Server-Command-Reference.html) -
+    scsynth replies to whatever address the request came from. This is the one
+    genuinely bidirectional query in this whole file; every other manager tool in
+    this fleet is fire-and-forget only, so this needs its own raw-socket round trip
+    rather than the shared send_osc() helper.
+
+    Real, documented /status.reply argument order: unused, num_ugens, num_synths,
+    num_groups, num_synthdefs, avg_cpu_percent, peak_cpu_percent, nominal_sample_rate,
+    actual_sample_rate.
+    """
+
+    def _blocking_query() -> dict[str, Any]:
+        request = OscMessageBuilder(address="/status").build()
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.settimeout(timeout)
+        try:
+            sock.sendto(request.dgram, (host, port))
+            data, _ = sock.recvfrom(4096)
+        finally:
+            sock.close()
+
+        reply = OscMessage(data)
+        if reply.address != "/status.reply":
+            raise ValueError(f"Unexpected reply address: {reply.address}")
+        params = list(reply.params)
+        return {
+            "num_ugens": params[1],
+            "num_synths": params[2],
+            "num_groups": params[3],
+            "num_synthdefs": params[4],
+            "avg_cpu_percent": params[5],
+            "peak_cpu_percent": params[6],
+            "nominal_sample_rate": params[7],
+            "actual_sample_rate": params[8],
+        }
+
+    return await asyncio.to_thread(_blocking_query)
+
+
 @server.tool()
 async def supercollider_manager(
     operation: str,
@@ -2500,26 +2548,41 @@ async def supercollider_manager(
     value: float | None = None,
 ) -> dict[str, Any]:
     """
-    SuperCollider Manager - Algorithmic composition and audio synthesis.
+    SuperCollider Manager - Algorithmic composition and audio synthesis via scsynth.
 
     PORTMANTEAU TOOL: Consolidates all SuperCollider operations into one tool.
 
+    Every address below is verified against SuperCollider's own Server Command
+    Reference (doc.sccode.org/Reference/Server-Command-Reference.html). scsynth
+    (the audio server), not sclang (the language) or scide, is what answers these
+    messages - see skills/supercollider-expert/ for the full research.
+
     Args:
         operation: Operation to perform
-            - "create_synth" - Create synth
-            - "free_node" - Free synth node
-            - "set_control" - Set control value
+            - "create_synth" - Create synth (requires def_name, node_id)
+            - "free_node" - Free synth node (requires node_id)
+            - "set_control" - Set control value (requires node_id, control_name, value)
+            - "create_group" - Create a group (requires node_id as the new group's ID)
+            - "free_group" - Free all nodes in a group (requires node_id as the group's ID)
+            - "status" - Query real server status (synth/group/ugen counts, CPU load,
+              sample rate) - the one operation here with a real reply, not fire-and-forget
         host: Target host (default: 127.0.0.1)
-        port: Target port (default: 57110)
-        def_name: Synth definition name (for create_synth)
-        node_id: Node ID (for all operations)
-        add_action: Add action (default: 0, for create_synth)
-        target: Target node (default: 0, for create_synth)
+        port: Target port (default: 57110 - scsynth's real default; NOT 57120, which
+            is sclang's own separate default port)
+        def_name: Synth definition name (for create_synth) - must already be loaded
+            into scsynth (e.g. via sclang); this tool cannot compile/load SynthDefs
+        node_id: Node ID (for create_synth/free_node/set_control), or group ID (for
+            create_group/free_group) - nodes and groups share one ID space in scsynth
+        add_action: Add action 0-4 (default: 0, for create_synth/create_group)
+        target: Target node/group ID (default: 0, for create_synth/create_group)
         control_name: Control parameter name (for set_control)
         value: Control value (for set_control)
 
     Returns:
-        Operation result with status and details
+        Operation result with status and details. "status" returns the real
+        server telemetry dict on success, or a clear timeout/error if scsynth
+        isn't running, isn't on this port, or is in /dumpOSC mode (which silently
+        suppresses /status replies per SuperCollider's own docs).
     """
 
     if operation == "create_synth":
@@ -2544,6 +2607,42 @@ async def supercollider_manager(
                 "message": "node_id, control_name, and value required for set_control",
             }
         return await send_osc(host, port, "/n_set", [node_id, control_name, value])
+
+    if operation == "create_group":
+        if node_id is None:
+            return {"status": "error", "message": "node_id (new group's ID) required for create_group"}
+        add_action = add_action or 0
+        target = target or 0
+        return await send_osc(host, port, "/g_new", [node_id, add_action, target])
+
+    if operation == "free_group":
+        if node_id is None:
+            return {"status": "error", "message": "node_id (group's ID) required for free_group"}
+        return await send_osc(host, port, "/g_freeAll", [node_id])
+
+    if operation == "status":
+        try:
+            server_status = await _query_scsynth_status(host, port)
+            return {"status": "success", **server_status}
+        except TimeoutError:
+            return {
+                "status": "error",
+                "message": (
+                    f"No /status.reply from scsynth at {host}:{port} within 2s - is scsynth "
+                    "actually running on this port (not just scide/sclang), and not in /dumpOSC mode?"
+                ),
+            }
+        except ConnectionResetError:
+            # Windows-specific: sending UDP to a port nothing is listening on gets an
+            # ICMP port-unreachable back, surfaced here as a reset rather than a plain
+            # timeout - confirmed live (nothing listening on 57110). Probably the single
+            # most common real case (scsynth just isn't running), so give it its own message.
+            return {
+                "status": "error",
+                "message": f"Nothing is listening on {host}:{port} - scsynth (the audio server) doesn't appear to be running there.",
+            }
+        except Exception as e:
+            return {"status": "error", "message": f"Status query failed: {e}"}
 
     return {"status": "error", "message": f"Unknown operation: {operation}"}
 
