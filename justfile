@@ -18,18 +18,11 @@ bootstrap:
 
 # Execute Ruff SOTA v13.1 linting
 lint:
-    Set-Location '{{justfile_directory()}}'
-    uv run ruff check .
-    Set-Location '{{justfile_directory()}}\web_sota'
-    npx @biomejs/biome ci .
+    Set-Location '{{justfile_directory()}}'; uv run ruff check .; Set-Location '{{justfile_directory()}}\web_sota'; npx @biomejs/biome ci .
 
 # Execute Ruff SOTA v13.1 fix and formatting
 fix:
-    Set-Location '{{justfile_directory()}}'
-    uv run ruff check . --fix --unsafe-fixes
-    uv run ruff format .
-    Set-Location '{{justfile_directory()}}\web_sota'
-    npx @biomejs/biome check --write .
+    Set-Location '{{justfile_directory()}}'; uv run ruff check . --fix --unsafe-fixes; uv run ruff format .; Set-Location '{{justfile_directory()}}\web_sota'; npx @biomejs/biome check --write .
 
 # --- Hardening ---
 
@@ -65,17 +58,14 @@ gates-green: lint types
 
 # Build the Tauri NSIS desktop installer
 build-native:
-    Set-Location '{{justfile_directory()}}\native'
-    $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"
-    .\build.ps1
+    Set-Location '{{justfile_directory()}}\native'; $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"; .\build.ps1
 
 # MCPB pack via fleet.just (`just mcpb-pack` → mcpb/pack.ps1: wipe+recopy, validate, pack).
 # (Retired scripts/mcpb-pack.ps1: staged only, left pack/validate manual.)
 
 # E2E Playwright tests
 e2e:
-    Set-Location '{{justfile_directory()}}\web_sota'
-    npx playwright test
+    Set-Location '{{justfile_directory()}}\web_sota'; npx playwright test
 
 # Execute Bandit security audit
 check-sec:
