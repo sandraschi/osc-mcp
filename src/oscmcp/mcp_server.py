@@ -2157,7 +2157,7 @@ async def music_loader_manager(
             try:
                 from oscmcp.cua.vcv_cua import launch_vcv_with_patch
 
-                cua_result = launch_vcv_with_patch(_Path(patch_path))
+                cua_result = await asyncio.to_thread(launch_vcv_with_patch, _Path(patch_path))
             except Exception as _e:
                 cua_result = {"launched": False, "error": str(_e)}
 
