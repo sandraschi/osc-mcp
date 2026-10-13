@@ -57,9 +57,9 @@
 
 ## ⚠️ Correction (2026-09-04)
 
-The 2026-07-11 claims above — "Unified tool registration (All 25 tools from mcp_server and
+The 2026-07-11 claims above -- "Unified tool registration (All 25 tools from mcp_server and
 server registered on main instance)" and "DONE: Integrate legacy tools from monolithic
-server.py" — were **false** as of 2026-09-04: `server.py` imported exactly one symbol
+server.py" -- were **false** as of 2026-09-04: `server.py` imported exactly one symbol
 (`osc_servers`) from `mcp_server.py`; none of its 11 `@server.tool()`-decorated app managers
 (Ableton, VCV Rack, TouchDesigner, SuperCollider, Max/MSP, Resolume, Pure Data, audio workflow,
 OSC recorder, music orchestrator/loader) were reachable via `server.list_tools()`, and 6 Prefab

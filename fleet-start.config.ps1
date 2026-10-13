@@ -1,4 +1,4 @@
-﻿# Per-repo fleet start config for osc-mcp
+# Per-repo fleet start config for osc-mcp
 # Edit ports/backend target here - start.ps1 is fleet-standard.
 @{
     Name         = 'osc-mcp'
@@ -10,6 +10,7 @@
         Kind          = 'uvicorn'
         UvicornTarget = 'server:app'
         SyncExtras    = @('dev')
+        SyncOnStart  = $true
         Env           = @{ WEB_PORT = '10767' }
     }
     Frontend = @{
